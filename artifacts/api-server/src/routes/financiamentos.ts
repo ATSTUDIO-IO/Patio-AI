@@ -245,7 +245,11 @@ router.post(
     const entradaMinPct = financiamento ? Number(financiamento.entradaMinPct) : 20;
     const entradaEfetiva = Math.max(entrada_pct, entradaMinPct);
 
-    const valorParcela = calcularParcela(precoVenda, entradaEfetiva, n_parcelas, taxaMensal);
+    const parcelasMin = financiamento?.parcelasMin ?? 1;
+    const parcelasMax = financiamento?.parcelasMax ?? 360;
+    const nParcelasEfetivo = Math.min(Math.max(n_parcelas, parcelasMin), parcelasMax);
+
+    const valorParcela = calcularParcela(precoVenda, entradaEfetiva, nParcelasEfetivo, taxaMensal);
     const valorEntrada = precoVenda * (entradaEfetiva / 100);
     const valorFinanciado = precoVenda - valorEntrada;
 
@@ -257,12 +261,12 @@ router.post(
       entrada_pct: entradaEfetiva,
       valor_entrada: valorEntrada,
       valor_financiado: valorFinanciado,
-      n_parcelas,
+      n_parcelas: nParcelasEfetivo,
       taxa_mensal: taxaMensal,
       valor_parcela: valorParcela,
       banco: financiamento?.banco ?? null,
       modalidade: financiamento?.modalidade ?? null,
-      descricao: `Com ${entradaEfetiva}% de entrada (${fmtBRL(valorEntrada)}), em ${n_parcelas} parcelas${financiamento ? ` (${financiamento.banco} - ${financiamento.modalidade})` : ""}, você pagaria aproximadamente ${fmtBRL(valorParcela)} por mês.`,
+      descricao: `Com ${entradaEfetiva}% de entrada (${fmtBRL(valorEntrada)}), em ${nParcelasEfetivo} parcelas${financiamento ? ` (${financiamento.banco} - ${financiamento.modalidade})` : ""}, você pagaria aproximadamente ${fmtBRL(valorParcela)} por mês.`,
     });
   },
 );

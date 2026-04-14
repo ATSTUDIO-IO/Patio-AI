@@ -77,7 +77,13 @@ router.get("/conversas", requireAuth, async (req, res): Promise<void> => {
       resumo_ia: r.conversa.resumoIa,
       simulacao_realizada: r.conversa.simulacaoRealizada,
       consentimento_lgpd: r.conversa.consentimentoLgpd,
-      veiculo: r.veiculo,
+      veiculo: {
+        id: r.veiculo.id,
+        marca: r.veiculo.marca,
+        modelo: r.veiculo.modelo,
+        ano_fabricacao: r.veiculo.anoFabricacao,
+        ano_modelo: r.veiculo.anoModelo,
+      },
       lead: r.lead,
     })),
   );
