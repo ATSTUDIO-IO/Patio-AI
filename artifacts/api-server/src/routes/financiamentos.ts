@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { db, financiamentos, veiculos, qrcodes } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
+import { simular } from "../lib/simulator";
 
 const router: IRouter = Router();
 
@@ -43,22 +44,6 @@ const SimularBody = z.object({
   financiamento_id: z.string().uuid().optional(),
 });
 
-function calcularParcela(
-  precoVenda: number,
-  entradaPct: number,
-  nParcelas: number,
-  taxaMensal: number,
-): number {
-  const valorFinanciado = precoVenda * (1 - entradaPct / 100);
-  const taxa = taxaMensal / 100;
-
-  if (taxa === 0) {
-    return valorFinanciado / nParcelas;
-  }
-
-  const fator = Math.pow(1 + taxa, nParcelas);
-  return (valorFinanciado * (taxa * fator)) / (fator - 1);
-}
 
 function mapFinanciamento(f: typeof financiamentos.$inferSelect) {
   return {
@@ -215,59 +200,15 @@ router.post(
 
     const precoVenda = Number(veiculo.precoVenda);
 
-    let financiamento: typeof financiamentos.$inferSelect | null = null;
-
-    if (financiamento_id) {
-      const [found] = await db
-        .select()
-        .from(financiamentos)
-        .where(
-          and(
-            eq(financiamentos.id, financiamento_id),
-            eq(financiamentos.lojaId, veiculo.lojaId),
-            eq(financiamentos.ativo, true),
-          ),
-        )
-        .limit(1);
-      financiamento = found ?? null;
-    }
-
-    if (!financiamento) {
-      const [first] = await db
-        .select()
-        .from(financiamentos)
-        .where(and(eq(financiamentos.lojaId, veiculo.lojaId), eq(financiamentos.ativo, true)))
-        .limit(1);
-      financiamento = first ?? null;
-    }
-
-    const taxaMensal = financiamento ? Number(financiamento.taxaMensal) : 1.5;
-    const entradaMinPct = financiamento ? Number(financiamento.entradaMinPct) : 20;
-    const entradaEfetiva = Math.max(entrada_pct, entradaMinPct);
-
-    const parcelasMin = financiamento?.parcelasMin ?? 1;
-    const parcelasMax = financiamento?.parcelasMax ?? 360;
-    const nParcelasEfetivo = Math.min(Math.max(n_parcelas, parcelasMin), parcelasMax);
-
-    const valorParcela = calcularParcela(precoVenda, entradaEfetiva, nParcelasEfetivo, taxaMensal);
-    const valorEntrada = precoVenda * (entradaEfetiva / 100);
-    const valorFinanciado = precoVenda - valorEntrada;
-
-    const fmtBRL = (v: number) =>
-      v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-    res.json({
-      preco_venda: precoVenda,
-      entrada_pct: entradaEfetiva,
-      valor_entrada: valorEntrada,
-      valor_financiado: valorFinanciado,
-      n_parcelas: nParcelasEfetivo,
-      taxa_mensal: taxaMensal,
-      valor_parcela: valorParcela,
-      banco: financiamento?.banco ?? null,
-      modalidade: financiamento?.modalidade ?? null,
-      descricao: `Com ${entradaEfetiva}% de entrada (${fmtBRL(valorEntrada)}), em ${nParcelasEfetivo} parcelas${financiamento ? ` (${financiamento.banco} - ${financiamento.modalidade})` : ""}, você pagaria aproximadamente ${fmtBRL(valorParcela)} por mês.`,
+    const resultado = await simular({
+      lojaId: veiculo.lojaId,
+      precoVenda,
+      entradaPct: entrada_pct,
+      nParcelas: n_parcelas,
+      financiamentoId: financiamento_id,
     });
+
+    res.json(resultado);
   },
 );
 

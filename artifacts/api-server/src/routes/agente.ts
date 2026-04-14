@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import {
   db,
   qrcodes,
@@ -8,7 +8,6 @@ import {
   conversas,
   mensagens,
   leads,
-  financiamentos,
   type Veiculo,
   type Loja,
   type Conversa,
@@ -26,6 +25,7 @@ import {
 } from "@workspace/integrations-openai-ai-server/audio";
 import { formatZodError } from "../lib/errors";
 import { logger } from "../lib/logger";
+import { simular, formatarSimulacaoParaAgente } from "../lib/simulator";
 
 const router: IRouter = Router();
 
@@ -137,46 +137,6 @@ function extrairEntradaEParcelas(texto: string): {
   }
 
   return { entrada_pct, n_parcelas };
-}
-
-function calcularParcelaPrice(
-  precoVenda: number,
-  entradaPct: number,
-  nParcelas: number,
-  taxaMensal: number,
-): number {
-  const valorFinanciado = precoVenda * (1 - entradaPct / 100);
-  const taxa = taxaMensal / 100;
-  if (taxa === 0) return valorFinanciado / nParcelas;
-  const fator = Math.pow(1 + taxa, nParcelas);
-  return (valorFinanciado * (taxa * fator)) / (fator - 1);
-}
-
-async function simularFinanciamento(
-  veiculoId: string,
-  lojaId: string,
-  entradaPct: number,
-  nParcelas: number,
-  precoVenda: number,
-): Promise<string | null> {
-  const [financiamento] = await db
-    .select()
-    .from(financiamentos)
-    .where(and(eq(financiamentos.lojaId, lojaId), eq(financiamentos.ativo, true)))
-    .limit(1);
-
-  const taxaMensal = financiamento ? Number(financiamento.taxaMensal) : 1.5;
-  const entradaMinPct = financiamento ? Number(financiamento.entradaMinPct) : 20;
-  const entradaEfetiva = Math.max(entradaPct, entradaMinPct);
-
-  const valorParcela = calcularParcelaPrice(precoVenda, entradaEfetiva, nParcelas, taxaMensal);
-  const valorEntrada = precoVenda * (entradaEfetiva / 100);
-
-  const fmtBRL = (v: number) =>
-    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-  const banco = financiamento?.banco ? ` pelo ${financiamento.banco}` : "";
-  return `[SIMULAÇÃO DE FINANCIAMENTO] Com ${entradaEfetiva}% de entrada (${fmtBRL(valorEntrada)}), em ${nParcelas} parcelas${banco}, a parcela estimada seria de ${fmtBRL(valorParcela)} por mês (taxa ${taxaMensal}% a.m.).`;
 }
 
 
@@ -390,19 +350,19 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
 
   if (detectarPedidoFinanciamento(transcricao)) {
     const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
-    const resultadoSimulacao = await simularFinanciamento(
-      veiculo.id,
-      veiculo.lojaId,
-      entrada_pct,
-      n_parcelas,
-      Number(veiculo.precoVenda),
-    ).catch((err) => {
+    const resultadoSimulacao = await simular({
+      lojaId: veiculo.lojaId,
+      precoVenda: Number(veiculo.precoVenda),
+      entradaPct: entrada_pct,
+      nParcelas: n_parcelas,
+    }).catch((err) => {
       logger.warn({ err }, "Falha ao simular financiamento");
       return null;
     });
 
     if (resultadoSimulacao) {
-      systemPrompt += `\n\n${resultadoSimulacao}\nUse estes valores calculados ao responder sobre financiamento.`;
+      const textoSimulacao = formatarSimulacaoParaAgente(resultadoSimulacao);
+      systemPrompt += `\n\n${textoSimulacao}\nUse estes valores calculados ao responder sobre financiamento.`;
       simulacaoInjetada = true;
     }
   }
