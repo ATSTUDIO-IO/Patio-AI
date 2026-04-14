@@ -1,6 +1,17 @@
 import { Router, type IRouter } from "express";
 import { eq, asc } from "drizzle-orm";
-import { db, qrcodes, veiculos, lojas, conversas, mensagens, leads } from "@workspace/db";
+import {
+  db,
+  qrcodes,
+  veiculos,
+  lojas,
+  conversas,
+  mensagens,
+  leads,
+  type Veiculo,
+  type Loja,
+  type Conversa,
+} from "@workspace/db";
 import {
   IniciarSessaoAgenteBody,
   EnviarMensagemAgenteBody,
@@ -17,46 +28,77 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-const SYSTEM_PROMPT = (veiculo: {
-  marca: string;
-  modelo: string;
-  anoFabricacao: number;
-  anoModelo: number;
-  quilometragem: number;
-  precoVenda: string;
-  cor: string | null;
-  cambio: string | null;
-  combustivel: string | null;
-  opcionais: string[] | null;
-  descricaoAgente: string | null;
-}, loja: { nomeFantasia: string; cidade: string | null }) => `Você é o Pátio AI, um agente de voz especialista em vendas de veículos seminovos para a loja "${loja.nomeFantasia}"${loja.cidade ? ` em ${loja.cidade}` : ""}.
+const CLAUDE_MODEL = "claude-sonnet-4-6";
+
+function buildSystemPrompt(
+  veiculo: Pick<
+    Veiculo,
+    | "marca"
+    | "modelo"
+    | "anoFabricacao"
+    | "anoModelo"
+    | "quilometragem"
+    | "precoVenda"
+    | "cor"
+    | "cambio"
+    | "combustivel"
+    | "opcionais"
+    | "descricaoAgente"
+  >,
+  loja: Pick<Loja, "nomeFantasia" | "cidade">,
+): string {
+  const km = veiculo.quilometragem.toLocaleString("pt-BR");
+  const preco = Number(veiculo.precoVenda).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+
+  const linhasOpcional: string[] = [];
+  if (veiculo.cor) linhasOpcional.push(`- Cor: ${veiculo.cor}`);
+  if (veiculo.cambio) linhasOpcional.push(`- Câmbio: ${veiculo.cambio}`);
+  if (veiculo.combustivel) linhasOpcional.push(`- Combustível: ${veiculo.combustivel}`);
+  if (veiculo.opcionais && veiculo.opcionais.length > 0)
+    linhasOpcional.push(`- Opcionais: ${veiculo.opcionais.join(", ")}`);
+  if (veiculo.descricaoAgente)
+    linhasOpcional.push(`\nInformações adicionais: ${veiculo.descricaoAgente}`);
+
+  return `Você é o Pátio AI, agente de voz especialista em vendas de veículos seminovos para a loja "${loja.nomeFantasia}"${loja.cidade ? ` em ${loja.cidade}` : ""}.
 
 Veículo em destaque:
 - Modelo: ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}/${veiculo.anoModelo}
-- Quilometragem: ${veiculo.quilometragem.toLocaleString("pt-BR")} km
-- Preço: R$ ${Number(veiculo.precoVenda).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-${veiculo.cor ? `- Cor: ${veiculo.cor}` : ""}
-${veiculo.cambio ? `- Câmbio: ${veiculo.cambio}` : ""}
-${veiculo.combustivel ? `- Combustível: ${veiculo.combustivel}` : ""}
-${veiculo.opcionais && veiculo.opcionais.length > 0 ? `- Opcionais: ${veiculo.opcionais.join(", ")}` : ""}
-${veiculo.descricaoAgente ? `\nInformações adicionais: ${veiculo.descricaoAgente}` : ""}
+- Quilometragem: ${km} km
+- Preço: ${preco}
+${linhasOpcional.join("\n")}
 
-Seu objetivo:
-1. Apresentar o veículo de forma entusiasmada e profissional
+Objetivos:
+1. Apresentar o veículo com entusiasmo e profissionalismo
 2. Responder perguntas sobre o veículo, financiamento e test drive
-3. Coletar nome, telefone e e-mail do lead de forma natural
-4. Para financiamento: pergunte valor de entrada desejado e simule parcelas estimadas
+3. Coletar nome, telefone e e-mail do lead de forma natural durante a conversa
+4. Para financiamento: pergunte valor de entrada e simule parcelas estimadas
 5. Sempre em Português Brasileiro, tom amigável e direto
 
-Regras importantes:
+Regras:
 - Respostas curtas e conversacionais (máx 3 frases por turno)
-- Se o lead quiser test drive, confirme entusiasmo e peça contato
-- Se quiser encerrar, agradeça e despede-se profissionalmente
-- NUNCA invente especificações que não foram fornecidas
+- Se o lead quiser encerrar, agradeça e despede-se profissionalmente
+- NUNCA invente especificações não fornecidas
 - Se não souber responder, diga que vai verificar com a equipe`;
+}
 
-function gerarSaudacao(veiculo: { marca: string; modelo: string; anoFabricacao: number }, loja: { nomeFantasia: string }): string {
+function gerarSaudacaoTexto(
+  veiculo: Pick<Veiculo, "marca" | "modelo" | "anoFabricacao">,
+  loja: Pick<Loja, "nomeFantasia">,
+): string {
   return `Olá! Bem-vindo ao Pátio AI, o assistente virtual da ${loja.nomeFantasia}! Vi que você se interessou pelo ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}. Fico feliz em apresentar esse veículo incrível pra você! Pode fazer suas perguntas, estou aqui pra ajudar.`;
+}
+
+async function gerarAudioBase64(texto: string): Promise<string> {
+  try {
+    const buf = await textToSpeech(texto, "nova", "mp3");
+    return buf.toString("base64");
+  } catch (err) {
+    logger.warn({ err }, "Falha ao gerar áudio TTS");
+    return "";
+  }
 }
 
 router.post("/agente/sessao", async (req, res): Promise<void> => {
@@ -110,7 +152,7 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
     })
     .returning();
 
-  const saudacaoTexto = gerarSaudacao(
+  const saudacaoTexto = gerarSaudacaoTexto(
     { marca: veiculo.marca, modelo: veiculo.modelo, anoFabricacao: veiculo.anoFabricacao },
     { nomeFantasia: loja.nomeFantasia },
   );
@@ -121,13 +163,7 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
     conteudo: saudacaoTexto,
   });
 
-  let saudacaoAudio = "";
-  try {
-    const audioBuffer = await textToSpeech(saudacaoTexto, "nova", "mp3");
-    saudacaoAudio = audioBuffer.toString("base64");
-  } catch (err) {
-    logger.warn({ err }, "Falha ao gerar áudio da saudação, retornando vazio");
-  }
+  const saudacaoAudio = await gerarAudioBase64(saudacaoTexto);
 
   res.status(201).json({
     conversa_id: conversa.id,
@@ -155,24 +191,31 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/agente/mensagem", async (req, res): Promise<void> => {
-  const body = EnviarMensagemAgenteBody.safeParse(req.body);
-  if (!body.success) {
-    res.status(400).json({ error: formatZodError(body.error) });
-    return;
-  }
+async function resolveConversaComSlug(
+  conversaId: string,
+  slug: string,
+): Promise<
+  | { conversa: Conversa; veiculo: Veiculo; loja: Loja; qr: typeof qrcodes.$inferSelect }
+  | { error: string; status: number }
+> {
+  const [qr] = await db
+    .select()
+    .from(qrcodes)
+    .where(eq(qrcodes.slug, slug))
+    .limit(1);
 
-  const { conversa_id, audio_base64, formato } = body.data;
+  if (!qr) return { error: "QR code não encontrado", status: 404 };
 
   const [conversa] = await db
     .select()
     .from(conversas)
-    .where(eq(conversas.id, conversa_id))
+    .where(eq(conversas.id, conversaId))
     .limit(1);
 
-  if (!conversa || conversa.encerradaEm) {
-    res.status(404).json({ error: "Sessão não encontrada ou encerrada" });
-    return;
+  if (!conversa) return { error: "Sessão não encontrada", status: 404 };
+
+  if (conversa.qrcodeId !== qr.id) {
+    return { error: "Sessão não pertence a este veículo", status: 403 };
   }
 
   const [veiculo] = await db
@@ -181,53 +224,73 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     .where(eq(veiculos.id, conversa.veiculoId))
     .limit(1);
 
+  if (!veiculo) return { error: "Veículo não encontrado", status: 404 };
+
   const [loja] = await db
     .select()
     .from(lojas)
-    .where(eq(lojas.id, veiculo!.lojaId))
+    .where(eq(lojas.id, veiculo.lojaId))
     .limit(1);
 
-  const audioBuffer = Buffer.from(audio_base64, "base64");
-  const { buffer: compatBuffer, format: compatFormat } = await ensureCompatibleFormat(audioBuffer);
+  if (!loja) return { error: "Loja não encontrada", status: 404 };
 
-  const textoUsuario = await speechToText(compatBuffer, compatFormat);
+  return { conversa, veiculo, loja, qr };
+}
+
+router.post("/agente/mensagem", async (req, res): Promise<void> => {
+  const body = EnviarMensagemAgenteBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: formatZodError(body.error) });
+    return;
+  }
+
+  const { slug, conversa_id, audio_base64, formato } = body.data;
+
+  const resolved = await resolveConversaComSlug(conversa_id, slug);
+  if ("error" in resolved) {
+    res.status(resolved.status).json({ error: resolved.error });
+    return;
+  }
+
+  const { conversa, veiculo, loja } = resolved;
+
+  if (conversa.encerradaEm) {
+    res.status(400).json({ error: "Sessão já encerrada" });
+    return;
+  }
+
+  const inputBuf = Buffer.from(audio_base64, "base64");
+  const audioFmt = (formato ?? "webm") as "webm" | "mp3" | "wav" | "mp4" | "ogg";
+
+  let transcricao: string;
+  if (audioFmt === "wav" || audioFmt === "mp3") {
+    transcricao = await speechToText(inputBuf, audioFmt);
+  } else {
+    const { buffer: compatBuffer, format: compatFormat } = await ensureCompatibleFormat(inputBuf);
+    transcricao = await speechToText(compatBuffer, compatFormat);
+  }
 
   await db.insert(mensagens).values({
     conversaId: conversa.id,
     papel: "user",
-    conteudo: textoUsuario,
+    conteudo: transcricao,
   });
 
-  const historicoMsgs = await db
+  const historico = await db
     .select()
     .from(mensagens)
     .where(eq(mensagens.conversaId, conversa.id))
     .orderBy(asc(mensagens.criadoEm));
 
-  const systemPrompt = SYSTEM_PROMPT(
-    {
-      marca: veiculo!.marca,
-      modelo: veiculo!.modelo,
-      anoFabricacao: veiculo!.anoFabricacao,
-      anoModelo: veiculo!.anoModelo,
-      quilometragem: veiculo!.quilometragem,
-      precoVenda: veiculo!.precoVenda,
-      cor: veiculo!.cor,
-      cambio: veiculo!.cambio,
-      combustivel: veiculo!.combustivel,
-      opcionais: veiculo!.opcionais,
-      descricaoAgente: veiculo!.descricaoAgente,
-    },
-    { nomeFantasia: loja!.nomeFantasia, cidade: loja!.cidade },
-  );
+  const systemPrompt = buildSystemPrompt(veiculo, loja);
 
-  const claudeMsgs = historicoMsgs.map((m) => ({
+  const claudeMsgs = historico.map((m) => ({
     role: m.papel === "user" ? ("user" as const) : ("assistant" as const),
     content: m.conteudo,
   }));
 
   const claudeResp = await anthropic.messages.create({
-    model: "claude-sonnet-4-5",
+    model: CLAUDE_MODEL,
     max_tokens: 8192,
     system: systemPrompt,
     messages: claudeMsgs,
@@ -235,7 +298,7 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
 
   const textoAgente = claudeResp.content
     .filter((b) => b.type === "text")
-    .map((b) => (b as { type: "text"; text: string }).text)
+    .map((b) => ("text" in b ? (b.text as string) : ""))
     .join("");
 
   await db.insert(mensagens).values({
@@ -244,13 +307,7 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     conteudo: textoAgente,
   });
 
-  let audioAgente = "";
-  try {
-    const audioBuffer2 = await textToSpeech(textoAgente, "nova", "mp3");
-    audioAgente = audioBuffer2.toString("base64");
-  } catch (err) {
-    logger.warn({ err }, "Falha ao gerar TTS da resposta");
-  }
+  const audioAgente = await gerarAudioBase64(textoAgente);
 
   const encerrar =
     textoAgente.toLowerCase().includes("até logo") ||
@@ -260,12 +317,99 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     textoAgente.toLowerCase().includes("até breve");
 
   res.json({
-    texto_usuario: textoUsuario,
+    texto_usuario: transcricao,
     texto_agente: textoAgente,
     audio_agente: audioAgente,
     encerrar,
   });
 });
+
+type LeadExtraido = {
+  nome: string | null;
+  telefone: string | null;
+  email: string | null;
+  interesse: "alto" | "medio" | "baixo";
+  pediu_financiamento: boolean;
+  pediu_test_drive: boolean;
+  resumo: string;
+};
+
+async function extrairLeadDaTranscricao(
+  transcricao: string,
+): Promise<LeadExtraido> {
+  const prompt = `Analise esta conversa de venda de veículo e extraia as informações em JSON estrito, sem markdown:
+{
+  "nome": "nome do lead ou null",
+  "telefone": "telefone mencionado ou null",
+  "email": "email mencionado ou null",
+  "interesse": "alto|medio|baixo",
+  "pediu_financiamento": true|false,
+  "pediu_test_drive": true|false,
+  "resumo": "resumo breve em 2-3 frases"
+}
+
+Conversa:
+${transcricao}`;
+
+  const resp = await anthropic.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 1024,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const rawText = resp.content
+    .filter((b) => b.type === "text")
+    .map((b) => ("text" in b ? (b.text as string) : ""))
+    .join("");
+
+  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return {
+      nome: null,
+      telefone: null,
+      email: null,
+      interesse: "baixo",
+      pediu_financiamento: false,
+      pediu_test_drive: false,
+      resumo: "Conversa encerrada sem extração de dados.",
+    };
+  }
+
+  const parsed: unknown = JSON.parse(jsonMatch[0]);
+
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    Array.isArray(parsed)
+  ) {
+    return {
+      nome: null,
+      telefone: null,
+      email: null,
+      interesse: "baixo",
+      pediu_financiamento: false,
+      pediu_test_drive: false,
+      resumo: "Conversa encerrada.",
+    };
+  }
+
+  const obj = parsed as Record<string, unknown>;
+
+  const interesse =
+    obj["interesse"] === "alto" || obj["interesse"] === "medio" || obj["interesse"] === "baixo"
+      ? (obj["interesse"] as "alto" | "medio" | "baixo")
+      : "baixo";
+
+  return {
+    nome: typeof obj["nome"] === "string" ? obj["nome"] : null,
+    telefone: typeof obj["telefone"] === "string" ? obj["telefone"] : null,
+    email: typeof obj["email"] === "string" ? obj["email"] : null,
+    interesse,
+    pediu_financiamento: Boolean(obj["pediu_financiamento"]),
+    pediu_test_drive: Boolean(obj["pediu_test_drive"]),
+    resumo: typeof obj["resumo"] === "string" ? obj["resumo"] : "Conversa encerrada.",
+  };
+}
 
 router.post("/agente/encerrar", async (req, res): Promise<void> => {
   const body = EncerrarSessaoAgenteBody.safeParse(req.body);
@@ -274,102 +418,68 @@ router.post("/agente/encerrar", async (req, res): Promise<void> => {
     return;
   }
 
-  const { conversa_id, nome, telefone, email } = body.data;
+  const { slug, conversa_id, nome: nomeManual, telefone: telefoneManual, email: emailManual } = body.data;
 
-  const [conversa] = await db
-    .select()
-    .from(conversas)
-    .where(eq(conversas.id, conversa_id))
-    .limit(1);
-
-  if (!conversa) {
-    res.status(404).json({ error: "Sessão não encontrada" });
+  const resolved = await resolveConversaComSlug(conversa_id, slug);
+  if ("error" in resolved) {
+    res.status(resolved.status).json({ error: resolved.error });
     return;
   }
 
-  const iniciadaEm = conversa.iniciadaEm;
+  const { conversa, veiculo } = resolved;
+
   const encerradaEm = new Date();
   const duracaoSegundos = Math.floor(
-    (encerradaEm.getTime() - iniciadaEm.getTime()) / 1000,
+    (encerradaEm.getTime() - conversa.iniciadaEm.getTime()) / 1000,
   );
 
-  const historicoMsgs = await db
+  const historico = await db
     .select()
     .from(mensagens)
     .where(eq(mensagens.conversaId, conversa.id))
     .orderBy(asc(mensagens.criadoEm));
 
-  const transcricao = historicoMsgs
+  const transcricao = historico
     .map((m) => `${m.papel === "user" ? "Usuário" : "Agente"}: ${m.conteudo}`)
     .join("\n");
 
-  let resumo = "";
-  let pediuFinanciamento = false;
-  let pediuTestDrive = false;
-  let interesse: "alto" | "medio" | "baixo" = "baixo";
+  const leadExtraido = await extrairLeadDaTranscricao(transcricao).catch((err) => {
+    logger.warn({ err }, "Falha ao extrair lead da transcrição");
+    return {
+      nome: null,
+      telefone: null,
+      email: null,
+      interesse: "baixo" as const,
+      pediu_financiamento: false,
+      pediu_test_drive: false,
+      resumo: "Conversa encerrada.",
+    };
+  });
 
-  try {
-    const resumoResp = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: `Analise esta conversa de venda de veículo e responda em JSON:
-{
-  "resumo": "resumo breve da conversa em 2-3 frases",
-  "interesse": "alto|medio|baixo",
-  "pediu_financiamento": true|false,
-  "pediu_test_drive": true|false
-}
-
-Conversa:
-${transcricao}`,
-        },
-      ],
-    });
-
-    const jsonText = resumoResp.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b as { type: "text"; text: string }).text)
-      .join("");
-
-    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      resumo = parsed.resumo ?? "";
-      pediuFinanciamento = parsed.pediu_financiamento ?? false;
-      pediuTestDrive = parsed.pediu_test_drive ?? false;
-      interesse = parsed.interesse ?? "baixo";
-    }
-  } catch (err) {
-    logger.warn({ err }, "Falha ao gerar resumo da conversa");
-    resumo = "Conversa encerrada.";
-  }
-
-  const [veiculo] = await db
-    .select()
-    .from(veiculos)
-    .where(eq(veiculos.id, conversa.veiculoId))
-    .limit(1);
+  const nomeF = nomeManual ?? leadExtraido.nome;
+  const telefoneF = telefoneManual ?? leadExtraido.telefone;
+  const emailF = emailManual ?? leadExtraido.email;
 
   let leadId: string | null = null;
-  if (nome || telefone || email) {
+  const temDados = nomeF || telefoneF || emailF;
+
+  if (temDados) {
     const [lead] = await db
       .insert(leads)
       .values({
         veiculoId: conversa.veiculoId,
-        lojaId: veiculo!.lojaId,
-        nome: nome ?? null,
-        telefone: telefone ?? null,
-        email: email ?? null,
-        interesse,
-        pediuFinanciamento,
-        pediuTestDrive,
+        lojaId: veiculo.lojaId,
+        nome: nomeF ?? null,
+        telefone: telefoneF ?? null,
+        email: emailF ?? null,
+        interesse: leadExtraido.interesse,
+        pediuFinanciamento: leadExtraido.pediu_financiamento,
+        pediuTestDrive: leadExtraido.pediu_test_drive,
         statusCrm: "novo",
         origem: "qr_patio",
       })
       .returning();
+
     leadId = lead.id;
 
     await db
@@ -384,15 +494,15 @@ ${transcricao}`,
       encerradaEm,
       duracaoSegundos,
       transcricao,
-      resumoIa: resumo,
-      simulacaoRealizada: pediuFinanciamento,
+      resumoIa: leadExtraido.resumo,
+      simulacaoRealizada: leadExtraido.pediu_financiamento,
     })
     .where(eq(conversas.id, conversa.id));
 
   res.json({
     lead_id: leadId,
     duracao_segundos: duracaoSegundos,
-    resumo,
+    resumo: leadExtraido.resumo,
   });
 });
 

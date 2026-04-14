@@ -448,6 +448,7 @@ export const IniciarSessaoAgenteBody = zod.object({
 export const enviarMensagemAgenteBodyFormatoDefault = `webm`;
 
 export const EnviarMensagemAgenteBody = zod.object({
+  slug: zod.string().describe("Vehicle QR slug to validate session ownership"),
   conversa_id: zod.string().uuid(),
   audio_base64: zod
     .string()
@@ -472,6 +473,7 @@ export const EnviarMensagemAgenteResponse = zod.object({
  * @summary End voice session, extract lead and save transcript
  */
 export const EncerrarSessaoAgenteBody = zod.object({
+  slug: zod.string().describe("Vehicle QR slug to validate session ownership"),
   conversa_id: zod.string().uuid(),
   nome: zod.string().optional(),
   telefone: zod.string().optional(),

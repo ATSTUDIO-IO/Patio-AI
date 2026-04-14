@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "paths": {
+      "@workspace/integrations-anthropic-ai": ["../../lib/integrations-anthropic-ai/src/index.ts"],
+      "@workspace/integrations-anthropic-ai/*": ["../../lib/integrations-anthropic-ai/src/*.ts"],
+      "@workspace/integrations-openai-ai-server/audio": ["../../lib/integrations-openai-ai-server/src/audio/index.ts"],
+      "@workspace/integrations-openai-ai-server": ["../../lib/integrations-openai-ai-server/src/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": [
+    "../../lib/integrations-anthropic-ai/src/batch",
+    "../../lib/integrations-openai-ai-server/src/batch"
+  ],
+  "references": [
+    {
+      "path": "../../lib/db"
+    },
+    {
+      "path": "../../lib/api-zod"
+    }
+  ]
+}

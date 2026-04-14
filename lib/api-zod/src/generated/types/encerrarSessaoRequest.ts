@@ -7,6 +7,8 @@
  */
 
 export interface EncerrarSessaoRequest {
+  /** Vehicle QR slug to validate session ownership */
+  slug: string;
   conversa_id: string;
   nome?: string;
   telefone?: string;

@@ -22,6 +22,7 @@ type EstadoSessao =
   | "pronto"
   | "gravando"
   | "processando"
+  | "sem_microfone"
   | "encerrado"
   | "erro";
 
@@ -163,6 +164,10 @@ export default function AgenteVoz() {
 
   const handleGravarInicio = useCallback(async () => {
     if (estado !== "pronto") return;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setEstado("sem_microfone");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
@@ -174,7 +179,7 @@ export default function AgenteVoz() {
       mediaRecorderRef.current = mr;
       setEstado("gravando");
     } catch {
-      setErro("Sem acesso ao microfone. Verifique as permissões.");
+      setEstado("sem_microfone");
     }
   }, [estado]);
 
@@ -198,7 +203,7 @@ export default function AgenteVoz() {
     const base64 = btoa(bin);
 
     try {
-      const resp = await enviarMensagem(conversaId!, base64, "webm");
+      const resp = await enviarMensagem(slug!, conversaId!, base64, "webm");
       setMensagens((prev) => [
         ...prev,
         { papel: "user", texto: resp.texto_usuario },
@@ -213,13 +218,14 @@ export default function AgenteVoz() {
       } else {
         setEstado("pronto");
       }
-    } catch (err: any) {
-      setErro(err.message ?? "Falha ao processar mensagem");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Falha ao processar mensagem";
+      setErro(msg);
       setEstado("pronto");
     }
-  }, [estado, conversaId, playAudio]);
+  }, [estado, slug, conversaId, playAudio]);
 
-  const handleEncerrar = useCallback(async () => {
+  const handleEncerrar = useCallback(() => {
     if (!conversaId) return;
     setMostrarFormulario(true);
     setEstado("encerrado");
@@ -227,15 +233,16 @@ export default function AgenteVoz() {
   }, [conversaId]);
 
   const handleEnviarLead = useCallback(async () => {
-    if (!conversaId) return;
+    if (!conversaId || !slug) return;
     try {
-      await encerrarSessao(conversaId, {
+      await encerrarSessao(slug, conversaId, {
         nome: nomeLead || undefined,
         telefone: telefoneLead || undefined,
       });
-    } catch {}
+    } catch {
+    }
     setMostrarFormulario(false);
-  }, [conversaId, nomeLead, telefoneLead]);
+  }, [slug, conversaId, nomeLead, telefoneLead]);
 
   if (estado === "carregando") {
     return (
@@ -408,6 +415,45 @@ export default function AgenteVoz() {
       ) : estado === "encerrado" ? (
         <div className="p-4 border-t border-white/10 text-center">
           <p className="text-white/60 text-sm">Conversa encerrada. Obrigado!</p>
+        </div>
+      ) : estado === "sem_microfone" ? (
+        <div className="p-4 border-t border-white/10">
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-3">
+            <p className="text-yellow-300 font-medium text-sm mb-1">🎙️ Microfone indisponível</p>
+            <p className="text-yellow-200/70 text-xs leading-relaxed">
+              Não foi possível acessar o microfone. Verifique as permissões do navegador ou deixe seu contato para o vendedor entrar em contato.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <input
+              type="text"
+              placeholder="Seu nome"
+              value={nomeLead}
+              onChange={(e) => setNomeLead(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-white placeholder-white/40 text-sm focus:outline-none focus:border-blue-400"
+            />
+            <input
+              type="tel"
+              placeholder="Seu telefone (WhatsApp)"
+              value={telefoneLead}
+              onChange={(e) => setTelefoneLead(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-white placeholder-white/40 text-sm focus:outline-none focus:border-blue-400"
+            />
+          </div>
+          <button
+            onClick={handleEnviarLead}
+            className="w-full mt-3 py-3 rounded-xl font-semibold text-white text-sm
+              bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-400 hover:to-emerald-400
+              active:scale-95 transition-all"
+          >
+            Enviar contato
+          </button>
+          <button
+            onClick={() => setEstado("pronto")}
+            className="w-full mt-2 py-2 text-white/40 text-xs"
+          >
+            Tentar microfone novamente
+          </button>
         </div>
       ) : (
         <div className="p-4 border-t border-white/10">

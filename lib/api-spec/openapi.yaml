@@ -1043,6 +1043,9 @@ components:
     MensagemAgenteRequest:
       type: object
       properties:
+        slug:
+          type: string
+          description: Vehicle QR slug to validate session ownership
         conversa_id:
           type: string
           format: uuid
@@ -1054,6 +1057,7 @@ components:
           enum: [webm, mp3, wav, mp4, ogg]
           default: webm
       required:
+        - slug
         - conversa_id
         - audio_base64
 
@@ -1081,6 +1085,9 @@ components:
     EncerrarSessaoRequest:
       type: object
       properties:
+        slug:
+          type: string
+          description: Vehicle QR slug to validate session ownership
         conversa_id:
           type: string
           format: uuid
@@ -1091,6 +1098,7 @@ components:
         email:
           type: string
       required:
+        - slug
         - conversa_id
 
     EncerrarSessaoResponse:

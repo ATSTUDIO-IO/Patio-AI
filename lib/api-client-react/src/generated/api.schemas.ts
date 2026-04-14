@@ -353,6 +353,8 @@ export const MensagemAgenteRequestFormato = {
 } as const;
 
 export interface MensagemAgenteRequest {
+  /** Vehicle QR slug to validate session ownership */
+  slug: string;
   conversa_id: string;
   /** Base64-encoded audio from user microphone */
   audio_base64: string;
@@ -371,6 +373,8 @@ export interface MensagemAgenteResponse {
 }
 
 export interface EncerrarSessaoRequest {
+  /** Vehicle QR slug to validate session ownership */
+  slug: string;
   conversa_id: string;
   nome?: string;
   telefone?: string;

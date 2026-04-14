@@ -8,6 +8,8 @@
 import type { MensagemAgenteRequestFormato } from "./mensagemAgenteRequestFormato";
 
 export interface MensagemAgenteRequest {
+  /** Vehicle QR slug to validate session ownership */
+  slug: string;
   conversa_id: string;
   /** Base64-encoded audio from user microphone */
   audio_base64: string;

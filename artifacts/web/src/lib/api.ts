@@ -82,6 +82,7 @@ export async function iniciarSessao(
 }
 
 export async function enviarMensagem(
+  slug: string,
   conversaId: string,
   audioBase64: string,
   formato: string = "webm",
@@ -90,6 +91,7 @@ export async function enviarMensagem(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      slug,
       conversa_id: conversaId,
       audio_base64: audioBase64,
       formato,
@@ -103,13 +105,14 @@ export async function enviarMensagem(
 }
 
 export async function encerrarSessao(
+  slug: string,
   conversaId: string,
   dados?: { nome?: string; telefone?: string; email?: string },
 ): Promise<EncerrarSessaoResponse> {
   const res = await fetch(`${API}/agente/encerrar`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ conversa_id: conversaId, ...dados }),
+    body: JSON.stringify({ slug, conversa_id: conversaId, ...dados }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Erro desconhecido" }));
