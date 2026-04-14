@@ -47,23 +47,31 @@ export const ciclosBilling = pgTable(
   (table) => [
     unique("uq_ciclo_loja_mes").on(table.lojaId, table.mesRef),
     index("idx_ciclos_loja_mes").on(table.lojaId, table.mesRef),
+    index("idx_ciclos_status").on(table.status),
   ],
 );
 
-export const eventosBilling = pgTable("eventos_billing", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  lojaId: uuid("loja_id")
-    .notNull()
-    .references(() => lojas.id),
-  veiculoId: uuid("veiculo_id")
-    .notNull()
-    .references(() => veiculos.id),
-  tipo: tipoBillingEnum("tipo").notNull(),
-  ocorridoEm: timestamp("ocorrido_em", { withTimezone: true }).defaultNow(),
-  motivo: text("motivo"),
-});
+export const eventosBilling = pgTable(
+  "eventos_billing",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    lojaId: uuid("loja_id")
+      .notNull()
+      .references(() => lojas.id),
+    veiculoId: uuid("veiculo_id")
+      .notNull()
+      .references(() => veiculos.id),
+    tipo: tipoBillingEnum("tipo").notNull(),
+    ocorridoEm: timestamp("ocorrido_em", { withTimezone: true }).defaultNow(),
+    motivo: text("motivo"),
+  },
+  (table) => [
+    index("idx_eventos_loja").on(table.lojaId),
+    index("idx_eventos_veiculo").on(table.veiculoId),
+    index("idx_eventos_ocorrido_em").on(table.ocorridoEm),
+  ],
+);
 
-// ─── Ciclos de Billing ────────────────────────────────────────────────────────
 export const insertCicloBillingSchema = createInsertSchema(ciclosBilling).omit(
   { id: true, geradoEm: true, pagoEm: true },
 );
@@ -71,7 +79,6 @@ export const selectCicloBillingSchema = createSelectSchema(ciclosBilling);
 export type InsertCicloBilling = z.infer<typeof insertCicloBillingSchema>;
 export type CicloBilling = typeof ciclosBilling.$inferSelect;
 
-// ─── Eventos de Billing ───────────────────────────────────────────────────────
 export const insertEventoBillingSchema = createInsertSchema(
   eventosBilling,
 ).omit({ id: true, ocorridoEm: true });

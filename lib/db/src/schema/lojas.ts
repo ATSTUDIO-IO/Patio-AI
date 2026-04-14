@@ -5,10 +5,13 @@ import {
   boolean,
   timestamp,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
+// pgEnum enforces domain check constraints at the PostgreSQL type level,
+// equivalent to CHECK (col IN (...)) in the PRD DDL.
 export const planoEnum = pgEnum("plano", ["starter", "pro", "full"]);
 export const perfilEnum = pgEnum("perfil", [
   "dono",
@@ -29,29 +32,40 @@ export const lojas = pgTable("lojas", {
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
 });
 
-export const usuarios = pgTable("usuarios", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  // admin_patioai has null loja_id (transversal super-user per PRD rule 14)
-  lojaId: uuid("loja_id").references(() => lojas.id, { onDelete: "cascade" }),
-  nome: text("nome").notNull(),
-  email: text("email").unique().notNull(),
-  senhaHash: text("senha_hash").notNull(),
-  perfil: perfilEnum("perfil").notNull().default("vendedor"),
-  ultimoAcesso: timestamp("ultimo_acesso", { withTimezone: true }),
-  criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
-});
+export const usuarios = pgTable(
+  "usuarios",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    lojaId: uuid("loja_id").references(() => lojas.id, {
+      onDelete: "cascade",
+    }),
+    nome: text("nome").notNull(),
+    email: text("email").unique().notNull(),
+    senhaHash: text("senha_hash").notNull(),
+    perfil: perfilEnum("perfil").notNull().default("vendedor"),
+    ultimoAcesso: timestamp("ultimo_acesso", { withTimezone: true }),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [index("idx_usuarios_loja").on(table.lojaId)],
+);
 
-export const sessoes = pgTable("sessoes", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  usuarioId: uuid("usuario_id")
-    .notNull()
-    .references(() => usuarios.id, { onDelete: "cascade" }),
-  token: text("token").notNull(),
-  expiraEm: timestamp("expira_em", { withTimezone: true }).notNull(),
-  criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
-});
+export const sessoes = pgTable(
+  "sessoes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    usuarioId: uuid("usuario_id")
+      .notNull()
+      .references(() => usuarios.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    expiraEm: timestamp("expira_em", { withTimezone: true }).notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index("idx_sessoes_usuario").on(table.usuarioId),
+    index("idx_sessoes_token").on(table.token),
+  ],
+);
 
-// ─── Lojas ───────────────────────────────────────────────────────────────────
 export const insertLojaSchema = createInsertSchema(lojas).omit({
   id: true,
   criadoEm: true,
@@ -60,7 +74,6 @@ export const selectLojaSchema = createSelectSchema(lojas);
 export type InsertLoja = z.infer<typeof insertLojaSchema>;
 export type Loja = typeof lojas.$inferSelect;
 
-// ─── Usuários ─────────────────────────────────────────────────────────────────
 export const insertUsuarioSchema = createInsertSchema(usuarios).omit({
   id: true,
   criadoEm: true,
@@ -70,7 +83,6 @@ export const selectUsuarioSchema = createSelectSchema(usuarios);
 export type InsertUsuario = z.infer<typeof insertUsuarioSchema>;
 export type Usuario = typeof usuarios.$inferSelect;
 
-// ─── Sessões ──────────────────────────────────────────────────────────────────
 export const insertSessaoSchema = createInsertSchema(sessoes).omit({
   id: true,
   criadoEm: true,

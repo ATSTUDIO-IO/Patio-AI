@@ -26,9 +26,6 @@ export const leads = pgTable(
   "leads",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    // veiculo_id and loja_id are nullable per PRD DDL — a lead can exist
-    // without full attribution (e.g. anonymous scan). PRD rule 9 states
-    // nome/telefone/email are nullable; veiculo_id/loja_id follow same DDL pattern.
     veiculoId: uuid("veiculo_id")
       .notNull()
       .references(() => veiculos.id),
@@ -46,6 +43,8 @@ export const leads = pgTable(
   (table) => [
     index("idx_leads_loja").on(table.lojaId),
     index("idx_leads_interesse").on(table.interesse),
+    index("idx_leads_veiculo").on(table.veiculoId),
+    index("idx_leads_criado_em").on(table.criadoEm),
   ],
 );
 
@@ -53,7 +52,6 @@ export const conversas = pgTable(
   "conversas",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    // lead_id is nullable: conversation starts before lead is identified
     leadId: uuid("lead_id").references(() => leads.id),
     veiculoId: uuid("veiculo_id")
       .notNull()
@@ -74,20 +72,25 @@ export const conversas = pgTable(
   (table) => [
     index("idx_conversas_veiculo").on(table.veiculoId),
     index("idx_conversas_data").on(table.iniciadaEm),
+    index("idx_conversas_lead").on(table.leadId),
+    index("idx_conversas_qrcode").on(table.qrcodeId),
   ],
 );
 
-export const mensagens = pgTable("mensagens", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  conversaId: uuid("conversa_id")
-    .notNull()
-    .references(() => conversas.id, { onDelete: "cascade" }),
-  papel: papelEnum("papel").notNull(),
-  conteudo: text("conteudo").notNull(),
-  criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
-});
+export const mensagens = pgTable(
+  "mensagens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversaId: uuid("conversa_id")
+      .notNull()
+      .references(() => conversas.id, { onDelete: "cascade" }),
+    papel: papelEnum("papel").notNull(),
+    conteudo: text("conteudo").notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [index("idx_mensagens_conversa").on(table.conversaId)],
+);
 
-// ─── Leads ────────────────────────────────────────────────────────────────────
 export const insertLeadSchema = createInsertSchema(leads).omit({
   id: true,
   criadoEm: true,
@@ -96,7 +99,6 @@ export const selectLeadSchema = createSelectSchema(leads);
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type Lead = typeof leads.$inferSelect;
 
-// ─── Conversas ────────────────────────────────────────────────────────────────
 export const insertConversaSchema = createInsertSchema(conversas).omit({
   id: true,
   iniciadaEm: true,
@@ -105,7 +107,6 @@ export const selectConversaSchema = createSelectSchema(conversas);
 export type InsertConversa = z.infer<typeof insertConversaSchema>;
 export type Conversa = typeof conversas.$inferSelect;
 
-// ─── Mensagens ────────────────────────────────────────────────────────────────
 export const insertMensagemSchema = createInsertSchema(mensagens).omit({
   id: true,
   criadoEm: true,
