@@ -10,6 +10,7 @@ import {
   UpdateLojaResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requirePerfil } from "../middlewares/auth";
+import { formatZodError } from "../lib/errors";
 
 const router: IRouter = Router();
 
@@ -20,13 +21,13 @@ router.put(
   async (req, res): Promise<void> => {
     const params = UpdateLojaParams.safeParse(req.params);
     if (!params.success) {
-      res.status(400).json({ error: params.error.message });
+      res.status(400).json({ error: formatZodError(params.error) });
       return;
     }
 
     const body = UpdateLojaBody.safeParse(req.body);
     if (!body.success) {
-      res.status(400).json({ error: body.error.message });
+      res.status(400).json({ error: formatZodError(body.error) });
       return;
     }
 
@@ -98,13 +99,13 @@ router.post(
   async (req, res): Promise<void> => {
     const params = CreateVendedorParams.safeParse(req.params);
     if (!params.success) {
-      res.status(400).json({ error: params.error.message });
+      res.status(400).json({ error: formatZodError(params.error) });
       return;
     }
 
     const body = CreateVendedorBody.safeParse(req.body);
     if (!body.success) {
-      res.status(400).json({ error: body.error.message });
+      res.status(400).json({ error: formatZodError(body.error) });
       return;
     }
 

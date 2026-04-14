@@ -10,13 +10,14 @@ import {
   LogoutResponse,
 } from "@workspace/api-zod";
 import { requireAuth, signToken } from "../middlewares/auth";
+import { formatZodError } from "../lib/errors";
 
 const router: IRouter = Router();
 
 router.post("/auth/register", async (req, res): Promise<void> => {
   const parsed = RegisterLojaBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
 
@@ -105,7 +106,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
 router.post("/auth/login", async (req, res): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
 

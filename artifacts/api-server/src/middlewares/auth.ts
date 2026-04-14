@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { createHmac } from "crypto";
 import { eq, and, gt } from "drizzle-orm";
 import { db, sessoes } from "@workspace/db";
 
@@ -18,11 +19,14 @@ declare global {
 }
 
 function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET não configurado");
+  if (process.env.JWT_SECRET) {
+    return process.env.JWT_SECRET;
   }
-  return secret;
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    throw new Error("DATABASE_URL não configurado — não é possível derivar JWT_SECRET");
+  }
+  return createHmac("sha256", dbUrl).update("patioai-jwt-v1").digest("hex");
 }
 
 export async function requireAuth(
