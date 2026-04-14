@@ -494,6 +494,349 @@ export const EncerrarSessaoAgenteResponse = zod.object({
 });
 
 /**
+ * @summary List CRM leads for the store
+ */
+export const listLeadsQueryLimitDefault = 50;
+export const listLeadsQueryLimitMax = 200;
+
+export const listLeadsQueryOffsetDefault = 0;
+export const listLeadsQueryOffsetMin = 0;
+
+export const ListLeadsQueryParams = zod.object({
+  status: zod.enum(["novo", "em_contato", "perdido", "ganho"]).optional(),
+  interesse: zod.enum(["alto", "medio", "baixo"]).optional(),
+  veiculo_id: zod.coerce.string().uuid().optional(),
+  desde: zod.date().optional(),
+  ate: zod.date().optional(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listLeadsQueryLimitMax)
+    .default(listLeadsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .min(listLeadsQueryOffsetMin)
+    .default(listLeadsQueryOffsetDefault),
+});
+
+export const ListLeadsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  nome: zod.string().nullish(),
+  telefone: zod.string().nullish(),
+  email: zod.string().nullish(),
+  interesse: zod.enum(["alto", "medio", "baixo"]),
+  pediu_financiamento: zod.boolean().nullish(),
+  pediu_test_drive: zod.boolean().nullish(),
+  status_crm: zod.enum(["novo", "em_contato", "perdido", "ganho"]),
+  origem: zod.string().nullish(),
+  criado_em: zod.coerce.date().nullish(),
+  veiculo: zod
+    .union([
+      zod.object({
+        marca: zod.string(),
+        modelo: zod.string(),
+        ano_fabricacao: zod.number(),
+        ano_modelo: zod.number(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+export const ListLeadsResponse = zod.array(ListLeadsResponseItem);
+
+/**
+ * @summary Get lead detail with conversation history
+ */
+export const GetLeadParams = zod.object({
+  leadId: zod.coerce.string().uuid(),
+});
+
+export const GetLeadResponse = zod.object({
+  id: zod.string().uuid(),
+  nome: zod.string().nullish(),
+  telefone: zod.string().nullish(),
+  email: zod.string().nullish(),
+  interesse: zod.enum(["alto", "medio", "baixo"]),
+  pediu_financiamento: zod.boolean().nullish(),
+  pediu_test_drive: zod.boolean().nullish(),
+  status_crm: zod.enum(["novo", "em_contato", "perdido", "ganho"]),
+  origem: zod.string().nullish(),
+  criado_em: zod.coerce.date().nullish(),
+  veiculo: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        marca: zod.string(),
+        modelo: zod.string(),
+        placa: zod.string(),
+        ano_fabricacao: zod.number(),
+        ano_modelo: zod.number(),
+        preco_venda: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  conversas: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        iniciada_em: zod.coerce.date(),
+        encerrada_em: zod.coerce.date().nullish(),
+        duracao_segundos: zod.number().nullish(),
+        resumo_ia: zod.string().nullish(),
+        transcricao: zod.string().nullish(),
+        simulacao_realizada: zod.boolean().nullish(),
+        mensagens: zod
+          .array(
+            zod.object({
+              id: zod.string().uuid(),
+              papel: zod.enum(["user", "agente"]),
+              conteudo: zod.string(),
+              criado_em: zod.coerce.date().nullish(),
+            }),
+          )
+          .optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Update lead CRM status
+ */
+export const PatchLeadStatusParams = zod.object({
+  leadId: zod.coerce.string().uuid(),
+});
+
+export const PatchLeadStatusBody = zod.object({
+  status: zod.enum(["novo", "em_contato", "perdido", "ganho"]),
+});
+
+export const PatchLeadStatusResponse = zod.object({
+  id: zod.string().uuid(),
+  status_crm: zod.enum(["novo", "em_contato", "perdido", "ganho"]),
+});
+
+/**
+ * @summary List conversations for the store
+ */
+export const listConversasQueryLimitDefault = 50;
+export const listConversasQueryLimitMax = 200;
+
+export const listConversasQueryOffsetDefault = 0;
+export const listConversasQueryOffsetMin = 0;
+
+export const ListConversasQueryParams = zod.object({
+  veiculo_id: zod.coerce.string().uuid().optional(),
+  lead_id: zod.coerce.string().uuid().optional(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listConversasQueryLimitMax)
+    .default(listConversasQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .min(listConversasQueryOffsetMin)
+    .default(listConversasQueryOffsetDefault),
+});
+
+export const ListConversasResponseItem = zod.object({
+  id: zod.string().uuid(),
+  iniciada_em: zod.coerce.date(),
+  encerrada_em: zod.coerce.date().nullish(),
+  duracao_segundos: zod.number().nullish(),
+  resumo_ia: zod.string().nullish(),
+  simulacao_realizada: zod.boolean().nullish(),
+  consentimento_lgpd: zod.boolean(),
+  veiculo: zod.object({
+    id: zod.string().uuid(),
+    marca: zod.string(),
+    modelo: zod.string(),
+    ano_fabricacao: zod.number(),
+    ano_modelo: zod.number(),
+  }),
+  lead: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        nome: zod.string().nullish(),
+        interesse: zod.enum(["alto", "medio", "baixo"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+export const ListConversasResponse = zod.array(ListConversasResponseItem);
+
+/**
+ * @summary Get conversation with full transcript and messages
+ */
+export const GetConversaParams = zod.object({
+  conversaId: zod.coerce.string().uuid(),
+});
+
+export const GetConversaResponse = zod.object({
+  id: zod.string().uuid(),
+  iniciada_em: zod.coerce.date(),
+  encerrada_em: zod.coerce.date().nullish(),
+  duracao_segundos: zod.number().nullish(),
+  transcricao: zod.string().nullish(),
+  resumo_ia: zod.string().nullish(),
+  simulacao_realizada: zod.boolean().nullish(),
+  consentimento_lgpd: zod.boolean(),
+  veiculo: zod.object({
+    id: zod.string().uuid(),
+    marca: zod.string(),
+    modelo: zod.string(),
+    placa: zod.string(),
+    ano_fabricacao: zod.number(),
+    ano_modelo: zod.number(),
+    preco_venda: zod.string(),
+  }),
+  lead: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        nome: zod.string().nullish(),
+        telefone: zod.string().nullish(),
+        email: zod.string().nullish(),
+        interesse: zod.enum(["alto", "medio", "baixo"]),
+        pediu_financiamento: zod.boolean().nullish(),
+        pediu_test_drive: zod.boolean().nullish(),
+        status_crm: zod.enum(["novo", "em_contato", "perdido", "ganho"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  mensagens: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        papel: zod.enum(["user", "agente"]),
+        conteudo: zod.string(),
+        criado_em: zod.coerce.date().nullish(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Get active automated CRM alerts
+ */
+export const ListAlertasResponseItem = zod.object({
+  tipo: zod.enum([
+    "lead_quente_sem_contato",
+    "veiculo_sem_scans",
+    "scans_sem_lead",
+    "lead_financiamento_pendente",
+  ]),
+  prioridade: zod.enum(["alta", "media"]),
+  titulo: zod.string(),
+  descricao: zod.string(),
+  contexto: zod.record(zod.string(), zod.unknown()),
+});
+export const ListAlertasResponse = zod.array(ListAlertasResponseItem);
+
+/**
+ * @summary List financing tables for the store
+ */
+export const ListFinanciamentosResponseItem = zod.object({
+  id: zod.string().uuid(),
+  banco: zod.string(),
+  modalidade: zod.enum(["CDC", "consorcio", "leasing"]),
+  taxa_mensal: zod.number(),
+  parcelas_min: zod.number().nullish(),
+  parcelas_max: zod.number().nullish(),
+  entrada_min_pct: zod.number().nullish(),
+  ativo: zod.boolean().nullish(),
+});
+export const ListFinanciamentosResponse = zod.array(
+  ListFinanciamentosResponseItem,
+);
+
+/**
+ * @summary Create a financing table
+ */
+export const createFinanciamentoBodyParcelasMinDefault = 12;
+export const createFinanciamentoBodyParcelasMaxDefault = 60;
+export const createFinanciamentoBodyEntradaMinPctDefault = 20;
+export const createFinanciamentoBodyAtivoDefault = true;
+
+export const CreateFinanciamentoBody = zod.object({
+  banco: zod.string(),
+  modalidade: zod.enum(["CDC", "consorcio", "leasing"]),
+  taxa_mensal: zod.number(),
+  parcelas_min: zod.number().default(createFinanciamentoBodyParcelasMinDefault),
+  parcelas_max: zod.number().default(createFinanciamentoBodyParcelasMaxDefault),
+  entrada_min_pct: zod
+    .number()
+    .default(createFinanciamentoBodyEntradaMinPctDefault),
+  ativo: zod.boolean().default(createFinanciamentoBodyAtivoDefault),
+});
+
+/**
+ * @summary Update a financing table
+ */
+export const UpdateFinanciamentoParams = zod.object({
+  financiamentoId: zod.coerce.string().uuid(),
+});
+
+export const UpdateFinanciamentoBody = zod.object({
+  banco: zod.string().optional(),
+  modalidade: zod.enum(["CDC", "consorcio", "leasing"]).optional(),
+  taxa_mensal: zod.number().optional(),
+  parcelas_min: zod.number().optional(),
+  parcelas_max: zod.number().optional(),
+  entrada_min_pct: zod.number().optional(),
+  ativo: zod.boolean().optional(),
+});
+
+export const UpdateFinanciamentoResponse = zod.object({
+  id: zod.string().uuid(),
+  banco: zod.string(),
+  modalidade: zod.enum(["CDC", "consorcio", "leasing"]),
+  taxa_mensal: zod.number(),
+  parcelas_min: zod.number().nullish(),
+  parcelas_max: zod.number().nullish(),
+  entrada_min_pct: zod.number().nullish(),
+  ativo: zod.boolean().nullish(),
+});
+
+/**
+ * @summary Simulate financing installments (public, validated by slug)
+ */
+export const simularFinanciamentoBodyEntradaPctDefault = 20;
+export const simularFinanciamentoBodyNParcelasDefault = 48;
+
+export const SimularFinanciamentoBody = zod.object({
+  veiculo_id: zod.string().uuid(),
+  slug: zod.string(),
+  entrada_pct: zod.number().default(simularFinanciamentoBodyEntradaPctDefault),
+  n_parcelas: zod.number().default(simularFinanciamentoBodyNParcelasDefault),
+  financiamento_id: zod.string().uuid().nullish(),
+});
+
+export const SimularFinanciamentoResponse = zod.object({
+  preco_venda: zod.number(),
+  entrada_pct: zod.number(),
+  valor_entrada: zod.number(),
+  valor_financiado: zod.number(),
+  n_parcelas: zod.number(),
+  taxa_mensal: zod.number(),
+  valor_parcela: zod.number(),
+  banco: zod.string().nullish(),
+  modalidade: zod
+    .union([
+      zod.literal("CDC"),
+      zod.literal("consorcio"),
+      zod.literal("leasing"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  descricao: zod.string(),
+});
+
+/**
  * @summary Public vehicle page data (no auth, increments scan counter)
  */
 export const GetVeiculoPublicoParams = zod.object({

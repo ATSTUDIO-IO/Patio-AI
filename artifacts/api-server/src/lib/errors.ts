@@ -1,4 +1,18 @@
-import type { ZodError } from "zod";
+type ZodIssue = {
+  code: string;
+  path: PropertyKey[];
+  message: string;
+  received?: unknown;
+  minimum?: number | bigint;
+  maximum?: number | bigint;
+  type?: string;
+  validation?: unknown;
+  options?: unknown[];
+};
+
+type ZodErrorLike = {
+  issues: ZodIssue[];
+};
 
 const FIELD_LABELS: Record<string, string> = {
   razao_social: "Razão social",
@@ -13,13 +27,13 @@ const FIELD_LABELS: Record<string, string> = {
   lojaId: "ID da loja",
 };
 
-function fieldLabel(path: (string | number)[]): string {
+function fieldLabel(path: PropertyKey[]): string {
   if (path.length === 0) return "Campo";
   const key = String(path[path.length - 1]);
   return FIELD_LABELS[key] ?? key;
 }
 
-export function formatZodError(err: ZodError): string {
+export function formatZodError(err: ZodErrorLike): string {
   const issue = err.issues[0];
   if (!issue) return "Dados inválidos";
 

@@ -396,6 +396,367 @@ export interface EncerrarSessaoResponse {
   resumo: string;
 }
 
+export type LeadListItemInteresse =
+  (typeof LeadListItemInteresse)[keyof typeof LeadListItemInteresse];
+
+export const LeadListItemInteresse = {
+  alto: "alto",
+  medio: "medio",
+  baixo: "baixo",
+} as const;
+
+export type LeadListItemStatusCrm =
+  (typeof LeadListItemStatusCrm)[keyof typeof LeadListItemStatusCrm];
+
+export const LeadListItemStatusCrm = {
+  novo: "novo",
+  em_contato: "em_contato",
+  perdido: "perdido",
+  ganho: "ganho",
+} as const;
+
+export type LeadListItemVeiculo = {
+  marca: string;
+  modelo: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+} | null;
+
+export interface LeadListItem {
+  id: string;
+  /** @nullable */
+  nome?: string | null;
+  /** @nullable */
+  telefone?: string | null;
+  /** @nullable */
+  email?: string | null;
+  interesse: LeadListItemInteresse;
+  /** @nullable */
+  pediu_financiamento?: boolean | null;
+  /** @nullable */
+  pediu_test_drive?: boolean | null;
+  status_crm: LeadListItemStatusCrm;
+  /** @nullable */
+  origem?: string | null;
+  /** @nullable */
+  criado_em?: string | null;
+  veiculo?: LeadListItemVeiculo;
+}
+
+export type LeadDetailInteresse =
+  (typeof LeadDetailInteresse)[keyof typeof LeadDetailInteresse];
+
+export const LeadDetailInteresse = {
+  alto: "alto",
+  medio: "medio",
+  baixo: "baixo",
+} as const;
+
+export type LeadDetailStatusCrm =
+  (typeof LeadDetailStatusCrm)[keyof typeof LeadDetailStatusCrm];
+
+export const LeadDetailStatusCrm = {
+  novo: "novo",
+  em_contato: "em_contato",
+  perdido: "perdido",
+  ganho: "ganho",
+} as const;
+
+export type LeadDetailVeiculo = {
+  id: string;
+  marca: string;
+  modelo: string;
+  placa: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+  preco_venda: string;
+} | null;
+
+export type MensagemItemPapel =
+  (typeof MensagemItemPapel)[keyof typeof MensagemItemPapel];
+
+export const MensagemItemPapel = {
+  user: "user",
+  agente: "agente",
+} as const;
+
+export interface MensagemItem {
+  id: string;
+  papel: MensagemItemPapel;
+  conteudo: string;
+  /** @nullable */
+  criado_em?: string | null;
+}
+
+export type LeadDetailConversasItem = {
+  id: string;
+  iniciada_em: string;
+  /** @nullable */
+  encerrada_em?: string | null;
+  /** @nullable */
+  duracao_segundos?: number | null;
+  /** @nullable */
+  resumo_ia?: string | null;
+  /** @nullable */
+  transcricao?: string | null;
+  /** @nullable */
+  simulacao_realizada?: boolean | null;
+  mensagens?: MensagemItem[];
+};
+
+export interface LeadDetail {
+  id: string;
+  /** @nullable */
+  nome?: string | null;
+  /** @nullable */
+  telefone?: string | null;
+  /** @nullable */
+  email?: string | null;
+  interesse: LeadDetailInteresse;
+  /** @nullable */
+  pediu_financiamento?: boolean | null;
+  /** @nullable */
+  pediu_test_drive?: boolean | null;
+  status_crm: LeadDetailStatusCrm;
+  /** @nullable */
+  origem?: string | null;
+  /** @nullable */
+  criado_em?: string | null;
+  veiculo?: LeadDetailVeiculo;
+  conversas?: LeadDetailConversasItem[];
+}
+
+export type PatchLeadStatusRequestStatus =
+  (typeof PatchLeadStatusRequestStatus)[keyof typeof PatchLeadStatusRequestStatus];
+
+export const PatchLeadStatusRequestStatus = {
+  novo: "novo",
+  em_contato: "em_contato",
+  perdido: "perdido",
+  ganho: "ganho",
+} as const;
+
+export interface PatchLeadStatusRequest {
+  status: PatchLeadStatusRequestStatus;
+}
+
+export type PatchLeadStatusResponseStatusCrm =
+  (typeof PatchLeadStatusResponseStatusCrm)[keyof typeof PatchLeadStatusResponseStatusCrm];
+
+export const PatchLeadStatusResponseStatusCrm = {
+  novo: "novo",
+  em_contato: "em_contato",
+  perdido: "perdido",
+  ganho: "ganho",
+} as const;
+
+export interface PatchLeadStatusResponse {
+  id: string;
+  status_crm: PatchLeadStatusResponseStatusCrm;
+}
+
+export type ConversaListItemVeiculo = {
+  id: string;
+  marca: string;
+  modelo: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+};
+
+export type ConversaListItemLead = {
+  id: string;
+  /** @nullable */
+  nome?: string | null;
+  interesse: "alto" | "medio" | "baixo";
+} | null;
+
+export interface ConversaListItem {
+  id: string;
+  iniciada_em: string;
+  /** @nullable */
+  encerrada_em?: string | null;
+  /** @nullable */
+  duracao_segundos?: number | null;
+  /** @nullable */
+  resumo_ia?: string | null;
+  /** @nullable */
+  simulacao_realizada?: boolean | null;
+  consentimento_lgpd: boolean;
+  veiculo: ConversaListItemVeiculo;
+  lead?: ConversaListItemLead;
+}
+
+export type ConversaDetailVeiculo = {
+  id: string;
+  marca: string;
+  modelo: string;
+  placa: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+  preco_venda: string;
+};
+
+export type ConversaDetailLead = {
+  id: string;
+  /** @nullable */
+  nome?: string | null;
+  /** @nullable */
+  telefone?: string | null;
+  /** @nullable */
+  email?: string | null;
+  interesse: "alto" | "medio" | "baixo";
+  /** @nullable */
+  pediu_financiamento?: boolean | null;
+  /** @nullable */
+  pediu_test_drive?: boolean | null;
+  status_crm: "novo" | "em_contato" | "perdido" | "ganho";
+} | null;
+
+export interface ConversaDetail {
+  id: string;
+  iniciada_em: string;
+  /** @nullable */
+  encerrada_em?: string | null;
+  /** @nullable */
+  duracao_segundos?: number | null;
+  /** @nullable */
+  transcricao?: string | null;
+  /** @nullable */
+  resumo_ia?: string | null;
+  /** @nullable */
+  simulacao_realizada?: boolean | null;
+  consentimento_lgpd: boolean;
+  veiculo: ConversaDetailVeiculo;
+  lead?: ConversaDetailLead;
+  mensagens?: MensagemItem[];
+}
+
+export type AlertaTipo = (typeof AlertaTipo)[keyof typeof AlertaTipo];
+
+export const AlertaTipo = {
+  lead_quente_sem_contato: "lead_quente_sem_contato",
+  veiculo_sem_scans: "veiculo_sem_scans",
+  scans_sem_lead: "scans_sem_lead",
+  lead_financiamento_pendente: "lead_financiamento_pendente",
+} as const;
+
+export type AlertaPrioridade =
+  (typeof AlertaPrioridade)[keyof typeof AlertaPrioridade];
+
+export const AlertaPrioridade = {
+  alta: "alta",
+  media: "media",
+} as const;
+
+export type AlertaContexto = { [key: string]: unknown };
+
+export interface Alerta {
+  tipo: AlertaTipo;
+  prioridade: AlertaPrioridade;
+  titulo: string;
+  descricao: string;
+  contexto: AlertaContexto;
+}
+
+export type FinanciamentoResponseModalidade =
+  (typeof FinanciamentoResponseModalidade)[keyof typeof FinanciamentoResponseModalidade];
+
+export const FinanciamentoResponseModalidade = {
+  CDC: "CDC",
+  consorcio: "consorcio",
+  leasing: "leasing",
+} as const;
+
+export interface FinanciamentoResponse {
+  id: string;
+  banco: string;
+  modalidade: FinanciamentoResponseModalidade;
+  taxa_mensal: number;
+  /** @nullable */
+  parcelas_min?: number | null;
+  /** @nullable */
+  parcelas_max?: number | null;
+  /** @nullable */
+  entrada_min_pct?: number | null;
+  /** @nullable */
+  ativo?: boolean | null;
+}
+
+export type CreateFinanciamentoRequestModalidade =
+  (typeof CreateFinanciamentoRequestModalidade)[keyof typeof CreateFinanciamentoRequestModalidade];
+
+export const CreateFinanciamentoRequestModalidade = {
+  CDC: "CDC",
+  consorcio: "consorcio",
+  leasing: "leasing",
+} as const;
+
+export interface CreateFinanciamentoRequest {
+  banco: string;
+  modalidade: CreateFinanciamentoRequestModalidade;
+  taxa_mensal: number;
+  parcelas_min?: number;
+  parcelas_max?: number;
+  entrada_min_pct?: number;
+  ativo?: boolean;
+}
+
+export type UpdateFinanciamentoRequestModalidade =
+  (typeof UpdateFinanciamentoRequestModalidade)[keyof typeof UpdateFinanciamentoRequestModalidade];
+
+export const UpdateFinanciamentoRequestModalidade = {
+  CDC: "CDC",
+  consorcio: "consorcio",
+  leasing: "leasing",
+} as const;
+
+export interface UpdateFinanciamentoRequest {
+  banco?: string;
+  modalidade?: UpdateFinanciamentoRequestModalidade;
+  taxa_mensal?: number;
+  parcelas_min?: number;
+  parcelas_max?: number;
+  entrada_min_pct?: number;
+  ativo?: boolean;
+}
+
+export interface SimularFinanciamentoRequest {
+  veiculo_id: string;
+  slug: string;
+  entrada_pct?: number;
+  n_parcelas?: number;
+  /** @nullable */
+  financiamento_id?: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type SimularFinanciamentoResponseModalidade =
+  | (typeof SimularFinanciamentoResponseModalidade)[keyof typeof SimularFinanciamentoResponseModalidade]
+  | null;
+
+export const SimularFinanciamentoResponseModalidade = {
+  CDC: "CDC",
+  consorcio: "consorcio",
+  leasing: "leasing",
+} as const;
+
+export interface SimularFinanciamentoResponse {
+  preco_venda: number;
+  entrada_pct: number;
+  valor_entrada: number;
+  valor_financiado: number;
+  n_parcelas: number;
+  taxa_mensal: number;
+  valor_parcela: number;
+  /** @nullable */
+  banco?: string | null;
+  /** @nullable */
+  modalidade?: SimularFinanciamentoResponseModalidade;
+  descricao: string;
+}
+
 export type ListVeiculosParams = {
   status?: ListVeiculosStatus;
 };
@@ -408,3 +769,53 @@ export const ListVeiculosStatus = {
   vendido: "vendido",
   pausado: "pausado",
 } as const;
+
+export type ListLeadsParams = {
+  status?: ListLeadsStatus;
+  interesse?: ListLeadsInteresse;
+  veiculo_id?: string;
+  desde?: string;
+  ate?: string;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};
+
+export type ListLeadsStatus =
+  (typeof ListLeadsStatus)[keyof typeof ListLeadsStatus];
+
+export const ListLeadsStatus = {
+  novo: "novo",
+  em_contato: "em_contato",
+  perdido: "perdido",
+  ganho: "ganho",
+} as const;
+
+export type ListLeadsInteresse =
+  (typeof ListLeadsInteresse)[keyof typeof ListLeadsInteresse];
+
+export const ListLeadsInteresse = {
+  alto: "alto",
+  medio: "medio",
+  baixo: "baixo",
+} as const;
+
+export type ListConversasParams = {
+  veiculo_id?: string;
+  lead_id?: string;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};

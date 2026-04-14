@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import {
   db,
   qrcodes,
@@ -8,6 +8,7 @@ import {
   conversas,
   mensagens,
   leads,
+  financiamentos,
   type Veiculo,
   type Loja,
   type Conversa,
@@ -92,6 +93,92 @@ function gerarSaudacaoTexto(
 ): string {
   return `Olá! Bem-vindo ao Pátio AI, o assistente virtual da ${loja.nomeFantasia}! Vi que você se interessou pelo ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}. Fico feliz em apresentar esse veículo incrível pra você! Pode fazer suas perguntas, estou aqui pra ajudar.`;
 }
+
+const KEYWORDS_FINANCIAMENTO = [
+  "financ",
+  "parcel",
+  "entrada",
+  "prestação",
+  "meses",
+  "cdc",
+  "consórcio",
+  "leasing",
+  "crédito",
+  "banco",
+  "simul",
+  "pagar por mês",
+  "pagaria",
+  "taxa",
+];
+
+function detectarPedidoFinanciamento(texto: string): boolean {
+  const lower = texto.toLowerCase();
+  return KEYWORDS_FINANCIAMENTO.some((kw) => lower.includes(kw));
+}
+
+function extrairEntradaEParcelas(texto: string): {
+  entrada_pct: number;
+  n_parcelas: number;
+} {
+  const lower = texto.toLowerCase();
+
+  let entrada_pct = 20;
+  let n_parcelas = 48;
+
+  const entradaPctMatch = lower.match(/(\d+)\s*%\s*de\s*entrada/);
+  if (entradaPctMatch) {
+    entrada_pct = parseInt(entradaPctMatch[1], 10);
+  }
+
+  const nParcelasMatch = lower.match(/(\d+)\s*(?:parcelas|meses|vezes|prestações)/);
+  if (nParcelasMatch) {
+    const n = parseInt(nParcelasMatch[1], 10);
+    if (n >= 1 && n <= 360) n_parcelas = n;
+  }
+
+  return { entrada_pct, n_parcelas };
+}
+
+function calcularParcelaPrice(
+  precoVenda: number,
+  entradaPct: number,
+  nParcelas: number,
+  taxaMensal: number,
+): number {
+  const valorFinanciado = precoVenda * (1 - entradaPct / 100);
+  const taxa = taxaMensal / 100;
+  if (taxa === 0) return valorFinanciado / nParcelas;
+  const fator = Math.pow(1 + taxa, nParcelas);
+  return (valorFinanciado * (taxa * fator)) / (fator - 1);
+}
+
+async function simularFinanciamento(
+  veiculoId: string,
+  lojaId: string,
+  entradaPct: number,
+  nParcelas: number,
+  precoVenda: number,
+): Promise<string | null> {
+  const [financiamento] = await db
+    .select()
+    .from(financiamentos)
+    .where(and(eq(financiamentos.lojaId, lojaId), eq(financiamentos.ativo, true)))
+    .limit(1);
+
+  const taxaMensal = financiamento ? Number(financiamento.taxaMensal) : 1.5;
+  const entradaMinPct = financiamento ? Number(financiamento.entradaMinPct) : 20;
+  const entradaEfetiva = Math.max(entradaPct, entradaMinPct);
+
+  const valorParcela = calcularParcelaPrice(precoVenda, entradaEfetiva, nParcelas, taxaMensal);
+  const valorEntrada = precoVenda * (entradaEfetiva / 100);
+
+  const fmtBRL = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const banco = financiamento?.banco ? ` pelo ${financiamento.banco}` : "";
+  return `[SIMULAÇÃO DE FINANCIAMENTO] Com ${entradaEfetiva}% de entrada (${fmtBRL(valorEntrada)}), em ${nParcelas} parcelas${banco}, a parcela estimada seria de ${fmtBRL(valorParcela)} por mês (taxa ${taxaMensal}% a.m.).`;
+}
+
 
 async function gerarAudioBase64(texto: string): Promise<string> {
   try {
@@ -298,7 +385,27 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     .where(eq(mensagens.conversaId, conversa.id))
     .orderBy(asc(mensagens.criadoEm));
 
-  const systemPrompt = buildSystemPrompt(veiculo, loja);
+  let systemPrompt = buildSystemPrompt(veiculo, loja);
+  let simulacaoInjetada = false;
+
+  if (detectarPedidoFinanciamento(transcricao)) {
+    const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
+    const resultadoSimulacao = await simularFinanciamento(
+      veiculo.id,
+      veiculo.lojaId,
+      entrada_pct,
+      n_parcelas,
+      Number(veiculo.precoVenda),
+    ).catch((err) => {
+      logger.warn({ err }, "Falha ao simular financiamento");
+      return null;
+    });
+
+    if (resultadoSimulacao) {
+      systemPrompt += `\n\n${resultadoSimulacao}\nUse estes valores calculados ao responder sobre financiamento.`;
+      simulacaoInjetada = true;
+    }
+  }
 
   const claudeMsgs = historico.map((m) => ({
     role: m.papel === "user" ? ("user" as const) : ("assistant" as const),
@@ -322,6 +429,13 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     papel: "agente",
     conteudo: textoAgente,
   });
+
+  if (simulacaoInjetada) {
+    await db
+      .update(conversas)
+      .set({ simulacaoRealizada: true })
+      .where(eq(conversas.id, conversa.id));
+  }
 
   const audioAgente = await gerarAudioBase64(textoAgente);
 

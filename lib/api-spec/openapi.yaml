@@ -20,6 +20,14 @@ tags:
     description: Public endpoints (no auth required)
   - name: agente
     description: AI voice agent endpoints (public, no auth)
+  - name: leads
+    description: CRM lead management
+  - name: conversas
+    description: Conversation history and transcripts
+  - name: alertas
+    description: Automated CRM alerts
+  - name: financiamentos
+    description: Financing tables and simulator
 paths:
   /healthz:
     get:
@@ -551,6 +559,394 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      summary: List CRM leads for the store
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [novo, em_contato, perdido, ganho]
+        - name: interesse
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [alto, medio, baixo]
+        - name: veiculo_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: desde
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: ate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeadListItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /leads/{leadId}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Get lead detail with conversation history
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: leadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Lead detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /leads/{leadId}/status:
+    patch:
+      operationId: patchLeadStatus
+      tags: [leads]
+      summary: Update lead CRM status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: leadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchLeadStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatchLeadStatusResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /conversas:
+    get:
+      operationId: listConversas
+      tags: [conversas]
+      summary: List conversations for the store
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: veiculo_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: lead_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConversaListItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /conversas/{conversaId}:
+    get:
+      operationId: getConversa
+      tags: [conversas]
+      summary: Get conversation with full transcript and messages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conversaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Conversation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversaDetail"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /alertas:
+    get:
+      operationId: listAlertas
+      tags: [alertas]
+      summary: Get active automated CRM alerts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of active alerts ordered by priority
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alerta"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /financiamentos:
+    get:
+      operationId: listFinanciamentos
+      tags: [financiamentos]
+      summary: List financing tables for the store
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of financing tables
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinanciamentoResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createFinanciamento
+      tags: [financiamentos]
+      summary: Create a financing table
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFinanciamentoRequest"
+      responses:
+        "201":
+          description: Financing table created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanciamentoResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /financiamentos/{financiamentoId}:
+    put:
+      operationId: updateFinanciamento
+      tags: [financiamentos]
+      summary: Update a financing table
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: financiamentoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFinanciamentoRequest"
+      responses:
+        "200":
+          description: Financing table updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanciamentoResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Financing table not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /financiamentos/simular:
+    post:
+      operationId: simularFinanciamento
+      tags: [financiamentos]
+      summary: Simulate financing installments (public, validated by slug)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimularFinanciamentoRequest"
+      responses:
+        "200":
+          description: Simulation result with Price formula
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimularFinanciamentoResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Vehicle or slug not found
           content:
             application/json:
               schema:
@@ -1116,3 +1512,456 @@ components:
       required:
         - duracao_segundos
         - resumo
+
+    LeadListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: ["string", "null"]
+        telefone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        interesse:
+          type: string
+          enum: [alto, medio, baixo]
+        pediu_financiamento:
+          type: ["boolean", "null"]
+        pediu_test_drive:
+          type: ["boolean", "null"]
+        status_crm:
+          type: string
+          enum: [novo, em_contato, perdido, ganho]
+        origem:
+          type: ["string", "null"]
+        criado_em:
+          type: ["string", "null"]
+          format: date-time
+        veiculo:
+          oneOf:
+            - type: object
+              properties:
+                marca:
+                  type: string
+                modelo:
+                  type: string
+                ano_fabricacao:
+                  type: integer
+                ano_modelo:
+                  type: integer
+              required: [marca, modelo, ano_fabricacao, ano_modelo]
+            - type: "null"
+      required:
+        - id
+        - interesse
+        - status_crm
+
+    LeadDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: ["string", "null"]
+        telefone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        interesse:
+          type: string
+          enum: [alto, medio, baixo]
+        pediu_financiamento:
+          type: ["boolean", "null"]
+        pediu_test_drive:
+          type: ["boolean", "null"]
+        status_crm:
+          type: string
+          enum: [novo, em_contato, perdido, ganho]
+        origem:
+          type: ["string", "null"]
+        criado_em:
+          type: ["string", "null"]
+          format: date-time
+        veiculo:
+          oneOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                marca:
+                  type: string
+                modelo:
+                  type: string
+                placa:
+                  type: string
+                ano_fabricacao:
+                  type: integer
+                ano_modelo:
+                  type: integer
+                preco_venda:
+                  type: string
+              required: [id, marca, modelo, placa, ano_fabricacao, ano_modelo, preco_venda]
+            - type: "null"
+        conversas:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              iniciada_em:
+                type: string
+                format: date-time
+              encerrada_em:
+                type: ["string", "null"]
+                format: date-time
+              duracao_segundos:
+                type: ["integer", "null"]
+              resumo_ia:
+                type: ["string", "null"]
+              transcricao:
+                type: ["string", "null"]
+              simulacao_realizada:
+                type: ["boolean", "null"]
+              mensagens:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MensagemItem"
+            required: [id, iniciada_em]
+      required:
+        - id
+        - interesse
+        - status_crm
+
+    PatchLeadStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [novo, em_contato, perdido, ganho]
+      required:
+        - status
+
+    PatchLeadStatusResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status_crm:
+          type: string
+          enum: [novo, em_contato, perdido, ganho]
+      required:
+        - id
+        - status_crm
+
+    MensagemItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        papel:
+          type: string
+          enum: [user, agente]
+        conteudo:
+          type: string
+        criado_em:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - id
+        - papel
+        - conteudo
+
+    ConversaListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        iniciada_em:
+          type: string
+          format: date-time
+        encerrada_em:
+          type: ["string", "null"]
+          format: date-time
+        duracao_segundos:
+          type: ["integer", "null"]
+        resumo_ia:
+          type: ["string", "null"]
+        simulacao_realizada:
+          type: ["boolean", "null"]
+        consentimento_lgpd:
+          type: boolean
+        veiculo:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            marca:
+              type: string
+            modelo:
+              type: string
+            ano_fabricacao:
+              type: integer
+            ano_modelo:
+              type: integer
+          required: [id, marca, modelo, ano_fabricacao, ano_modelo]
+        lead:
+          oneOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                nome:
+                  type: ["string", "null"]
+                interesse:
+                  type: string
+                  enum: [alto, medio, baixo]
+              required: [id, interesse]
+            - type: "null"
+      required:
+        - id
+        - iniciada_em
+        - consentimento_lgpd
+        - veiculo
+
+    ConversaDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        iniciada_em:
+          type: string
+          format: date-time
+        encerrada_em:
+          type: ["string", "null"]
+          format: date-time
+        duracao_segundos:
+          type: ["integer", "null"]
+        transcricao:
+          type: ["string", "null"]
+        resumo_ia:
+          type: ["string", "null"]
+        simulacao_realizada:
+          type: ["boolean", "null"]
+        consentimento_lgpd:
+          type: boolean
+        veiculo:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            marca:
+              type: string
+            modelo:
+              type: string
+            placa:
+              type: string
+            ano_fabricacao:
+              type: integer
+            ano_modelo:
+              type: integer
+            preco_venda:
+              type: string
+          required: [id, marca, modelo, placa, ano_fabricacao, ano_modelo, preco_venda]
+        lead:
+          oneOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                nome:
+                  type: ["string", "null"]
+                telefone:
+                  type: ["string", "null"]
+                email:
+                  type: ["string", "null"]
+                interesse:
+                  type: string
+                  enum: [alto, medio, baixo]
+                pediu_financiamento:
+                  type: ["boolean", "null"]
+                pediu_test_drive:
+                  type: ["boolean", "null"]
+                status_crm:
+                  type: string
+                  enum: [novo, em_contato, perdido, ganho]
+              required: [id, interesse, status_crm]
+            - type: "null"
+        mensagens:
+          type: array
+          items:
+            $ref: "#/components/schemas/MensagemItem"
+      required:
+        - id
+        - iniciada_em
+        - consentimento_lgpd
+        - veiculo
+
+    Alerta:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum:
+            - lead_quente_sem_contato
+            - veiculo_sem_scans
+            - scans_sem_lead
+            - lead_financiamento_pendente
+        prioridade:
+          type: string
+          enum: [alta, media]
+        titulo:
+          type: string
+        descricao:
+          type: string
+        contexto:
+          type: object
+          additionalProperties: true
+      required:
+        - tipo
+        - prioridade
+        - titulo
+        - descricao
+        - contexto
+
+    FinanciamentoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        banco:
+          type: string
+        modalidade:
+          type: string
+          enum: [CDC, consorcio, leasing]
+        taxa_mensal:
+          type: number
+        parcelas_min:
+          type: ["integer", "null"]
+        parcelas_max:
+          type: ["integer", "null"]
+        entrada_min_pct:
+          type: ["number", "null"]
+        ativo:
+          type: ["boolean", "null"]
+      required:
+        - id
+        - banco
+        - modalidade
+        - taxa_mensal
+
+    CreateFinanciamentoRequest:
+      type: object
+      properties:
+        banco:
+          type: string
+        modalidade:
+          type: string
+          enum: [CDC, consorcio, leasing]
+        taxa_mensal:
+          type: number
+        parcelas_min:
+          type: integer
+          default: 12
+        parcelas_max:
+          type: integer
+          default: 60
+        entrada_min_pct:
+          type: number
+          default: 20
+        ativo:
+          type: boolean
+          default: true
+      required:
+        - banco
+        - modalidade
+        - taxa_mensal
+
+    UpdateFinanciamentoRequest:
+      type: object
+      properties:
+        banco:
+          type: string
+        modalidade:
+          type: string
+          enum: [CDC, consorcio, leasing]
+        taxa_mensal:
+          type: number
+        parcelas_min:
+          type: integer
+        parcelas_max:
+          type: integer
+        entrada_min_pct:
+          type: number
+        ativo:
+          type: boolean
+
+    SimularFinanciamentoRequest:
+      type: object
+      properties:
+        veiculo_id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        entrada_pct:
+          type: number
+          default: 20
+        n_parcelas:
+          type: integer
+          default: 48
+        financiamento_id:
+          type: ["string", "null"]
+          format: uuid
+      required:
+        - veiculo_id
+        - slug
+
+    SimularFinanciamentoResponse:
+      type: object
+      properties:
+        preco_venda:
+          type: number
+        entrada_pct:
+          type: number
+        valor_entrada:
+          type: number
+        valor_financiado:
+          type: number
+        n_parcelas:
+          type: integer
+        taxa_mensal:
+          type: number
+        valor_parcela:
+          type: number
+        banco:
+          type: ["string", "null"]
+        modalidade:
+          type: ["string", "null"]
+          enum: [CDC, consorcio, leasing, null]
+        descricao:
+          type: string
+      required:
+        - preco_venda
+        - entrada_pct
+        - valor_entrada
+        - valor_financiado
+        - n_parcelas
+        - taxa_mensal
+        - valor_parcela
+        - descricao

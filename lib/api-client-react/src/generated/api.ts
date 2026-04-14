@@ -17,15 +17,24 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  Alerta,
   AuthResponse,
+  ConversaDetail,
+  ConversaListItem,
+  CreateFinanciamentoRequest,
   CreateVeiculoRequest,
   CreateVendedorRequest,
   EncerrarSessaoRequest,
   EncerrarSessaoResponse,
   ErrorResponse,
+  FinanciamentoResponse,
   HealthStatus,
   IniciarSessaoRequest,
   IniciarSessaoResponse,
+  LeadDetail,
+  LeadListItem,
+  ListConversasParams,
+  ListLeadsParams,
   ListVeiculosParams,
   LoginRequest,
   LojaPublic,
@@ -33,8 +42,13 @@ import type {
   MensagemAgenteRequest,
   MensagemAgenteResponse,
   MessageResponse,
+  PatchLeadStatusRequest,
+  PatchLeadStatusResponse,
   PatchStatusRequest,
   RegisterRequest,
+  SimularFinanciamentoRequest,
+  SimularFinanciamentoResponse,
+  UpdateFinanciamentoRequest,
   UpdateLojaRequest,
   UpdateVeiculoRequest,
   UsuarioPublic,
@@ -1401,6 +1415,861 @@ export const useEncerrarSessaoAgente = <
   TContext
 > => {
   return useMutation(getEncerrarSessaoAgenteMutationOptions(options));
+};
+
+/**
+ * @summary List CRM leads for the store
+ */
+export const getListLeadsUrl = (params?: ListLeadsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/leads?${stringifiedParams}`
+    : `/api/leads`;
+};
+
+export const listLeads = async (
+  params?: ListLeadsParams,
+  options?: RequestInit,
+): Promise<LeadListItem[]> => {
+  return customFetch<LeadListItem[]>(getListLeadsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLeadsQueryKey = (params?: ListLeadsParams) => {
+  return [`/api/leads`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLeadsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLeads>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListLeadsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLeads>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLeadsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLeads>>> = ({
+    signal,
+  }) => listLeads(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLeads>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLeadsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLeads>>
+>;
+export type ListLeadsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List CRM leads for the store
+ */
+
+export function useListLeads<
+  TData = Awaited<ReturnType<typeof listLeads>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListLeadsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLeads>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLeadsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get lead detail with conversation history
+ */
+export const getGetLeadUrl = (leadId: string) => {
+  return `/api/leads/${leadId}`;
+};
+
+export const getLead = async (
+  leadId: string,
+  options?: RequestInit,
+): Promise<LeadDetail> => {
+  return customFetch<LeadDetail>(getGetLeadUrl(leadId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLeadQueryKey = (leadId: string) => {
+  return [`/api/leads/${leadId}`] as const;
+};
+
+export const getGetLeadQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLead>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  leadId: string,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getLead>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLeadQueryKey(leadId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLead>>> = ({
+    signal,
+  }) => getLead(leadId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!leadId,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getLead>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetLeadQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLead>>
+>;
+export type GetLeadQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get lead detail with conversation history
+ */
+
+export function useGetLead<
+  TData = Awaited<ReturnType<typeof getLead>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  leadId: string,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getLead>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLeadQueryOptions(leadId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update lead CRM status
+ */
+export const getPatchLeadStatusUrl = (leadId: string) => {
+  return `/api/leads/${leadId}/status`;
+};
+
+export const patchLeadStatus = async (
+  leadId: string,
+  patchLeadStatusRequest: PatchLeadStatusRequest,
+  options?: RequestInit,
+): Promise<PatchLeadStatusResponse> => {
+  return customFetch<PatchLeadStatusResponse>(getPatchLeadStatusUrl(leadId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(patchLeadStatusRequest),
+  });
+};
+
+export const getPatchLeadStatusMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchLeadStatus>>,
+    TError,
+    { leadId: string; data: BodyType<PatchLeadStatusRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof patchLeadStatus>>,
+  TError,
+  { leadId: string; data: BodyType<PatchLeadStatusRequest> },
+  TContext
+> => {
+  const mutationKey = ["patchLeadStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof patchLeadStatus>>,
+    { leadId: string; data: BodyType<PatchLeadStatusRequest> }
+  > = (props) => {
+    const { leadId, data } = props ?? {};
+
+    return patchLeadStatus(leadId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PatchLeadStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchLeadStatus>>
+>;
+export type PatchLeadStatusMutationBody = BodyType<PatchLeadStatusRequest>;
+export type PatchLeadStatusMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update lead CRM status
+ */
+export const usePatchLeadStatus = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchLeadStatus>>,
+    TError,
+    { leadId: string; data: BodyType<PatchLeadStatusRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof patchLeadStatus>>,
+  TError,
+  { leadId: string; data: BodyType<PatchLeadStatusRequest> },
+  TContext
+> => {
+  return useMutation(getPatchLeadStatusMutationOptions(options));
+};
+
+/**
+ * @summary List conversations for the store
+ */
+export const getListConversasUrl = (params?: ListConversasParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/conversas?${stringifiedParams}`
+    : `/api/conversas`;
+};
+
+export const listConversas = async (
+  params?: ListConversasParams,
+  options?: RequestInit,
+): Promise<ConversaListItem[]> => {
+  return customFetch<ConversaListItem[]>(getListConversasUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListConversasQueryKey = (params?: ListConversasParams) => {
+  return [`/api/conversas`, ...(params ? [params] : [])] as const;
+};
+
+export const getListConversasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listConversas>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListConversasParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listConversas>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListConversasQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listConversas>>> = ({
+    signal,
+  }) => listConversas(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listConversas>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListConversasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listConversas>>
+>;
+export type ListConversasQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List conversations for the store
+ */
+
+export function useListConversas<
+  TData = Awaited<ReturnType<typeof listConversas>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListConversasParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listConversas>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListConversasQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get conversation with full transcript and messages
+ */
+export const getGetConversaUrl = (conversaId: string) => {
+  return `/api/conversas/${conversaId}`;
+};
+
+export const getConversa = async (
+  conversaId: string,
+  options?: RequestInit,
+): Promise<ConversaDetail> => {
+  return customFetch<ConversaDetail>(getGetConversaUrl(conversaId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetConversaQueryKey = (conversaId: string) => {
+  return [`/api/conversas/${conversaId}`] as const;
+};
+
+export const getGetConversaQueryOptions = <
+  TData = Awaited<ReturnType<typeof getConversa>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  conversaId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getConversa>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetConversaQueryKey(conversaId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getConversa>>> = ({
+    signal,
+  }) => getConversa(conversaId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!conversaId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getConversa>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetConversaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getConversa>>
+>;
+export type GetConversaQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get conversation with full transcript and messages
+ */
+
+export function useGetConversa<
+  TData = Awaited<ReturnType<typeof getConversa>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  conversaId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getConversa>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetConversaQueryOptions(conversaId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get active automated CRM alerts
+ */
+export const getListAlertasUrl = () => {
+  return `/api/alertas`;
+};
+
+export const listAlertas = async (options?: RequestInit): Promise<Alerta[]> => {
+  return customFetch<Alerta[]>(getListAlertasUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAlertasQueryKey = () => {
+  return [`/api/alertas`] as const;
+};
+
+export const getListAlertasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAlertas>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAlertas>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAlertasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAlertas>>> = ({
+    signal,
+  }) => listAlertas({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAlertas>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAlertasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAlertas>>
+>;
+export type ListAlertasQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get active automated CRM alerts
+ */
+
+export function useListAlertas<
+  TData = Awaited<ReturnType<typeof listAlertas>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAlertas>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAlertasQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List financing tables for the store
+ */
+export const getListFinanciamentosUrl = () => {
+  return `/api/financiamentos`;
+};
+
+export const listFinanciamentos = async (
+  options?: RequestInit,
+): Promise<FinanciamentoResponse[]> => {
+  return customFetch<FinanciamentoResponse[]>(getListFinanciamentosUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFinanciamentosQueryKey = () => {
+  return [`/api/financiamentos`] as const;
+};
+
+export const getListFinanciamentosQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFinanciamentos>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFinanciamentos>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListFinanciamentosQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFinanciamentos>>
+  > = ({ signal }) => listFinanciamentos({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFinanciamentos>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFinanciamentosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFinanciamentos>>
+>;
+export type ListFinanciamentosQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List financing tables for the store
+ */
+
+export function useListFinanciamentos<
+  TData = Awaited<ReturnType<typeof listFinanciamentos>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFinanciamentos>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFinanciamentosQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a financing table
+ */
+export const getCreateFinanciamentoUrl = () => {
+  return `/api/financiamentos`;
+};
+
+export const createFinanciamento = async (
+  createFinanciamentoRequest: CreateFinanciamentoRequest,
+  options?: RequestInit,
+): Promise<FinanciamentoResponse> => {
+  return customFetch<FinanciamentoResponse>(getCreateFinanciamentoUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createFinanciamentoRequest),
+  });
+};
+
+export const getCreateFinanciamentoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFinanciamento>>,
+    TError,
+    { data: BodyType<CreateFinanciamentoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFinanciamento>>,
+  TError,
+  { data: BodyType<CreateFinanciamentoRequest> },
+  TContext
+> => {
+  const mutationKey = ["createFinanciamento"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFinanciamento>>,
+    { data: BodyType<CreateFinanciamentoRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createFinanciamento(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFinanciamentoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFinanciamento>>
+>;
+export type CreateFinanciamentoMutationBody =
+  BodyType<CreateFinanciamentoRequest>;
+export type CreateFinanciamentoMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a financing table
+ */
+export const useCreateFinanciamento = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFinanciamento>>,
+    TError,
+    { data: BodyType<CreateFinanciamentoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createFinanciamento>>,
+  TError,
+  { data: BodyType<CreateFinanciamentoRequest> },
+  TContext
+> => {
+  return useMutation(getCreateFinanciamentoMutationOptions(options));
+};
+
+/**
+ * @summary Update a financing table
+ */
+export const getUpdateFinanciamentoUrl = (financiamentoId: string) => {
+  return `/api/financiamentos/${financiamentoId}`;
+};
+
+export const updateFinanciamento = async (
+  financiamentoId: string,
+  updateFinanciamentoRequest: UpdateFinanciamentoRequest,
+  options?: RequestInit,
+): Promise<FinanciamentoResponse> => {
+  return customFetch<FinanciamentoResponse>(
+    getUpdateFinanciamentoUrl(financiamentoId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateFinanciamentoRequest),
+    },
+  );
+};
+
+export const getUpdateFinanciamentoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFinanciamento>>,
+    TError,
+    { financiamentoId: string; data: BodyType<UpdateFinanciamentoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateFinanciamento>>,
+  TError,
+  { financiamentoId: string; data: BodyType<UpdateFinanciamentoRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateFinanciamento"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateFinanciamento>>,
+    { financiamentoId: string; data: BodyType<UpdateFinanciamentoRequest> }
+  > = (props) => {
+    const { financiamentoId, data } = props ?? {};
+
+    return updateFinanciamento(financiamentoId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateFinanciamentoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateFinanciamento>>
+>;
+export type UpdateFinanciamentoMutationBody =
+  BodyType<UpdateFinanciamentoRequest>;
+export type UpdateFinanciamentoMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a financing table
+ */
+export const useUpdateFinanciamento = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFinanciamento>>,
+    TError,
+    { financiamentoId: string; data: BodyType<UpdateFinanciamentoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateFinanciamento>>,
+  TError,
+  { financiamentoId: string; data: BodyType<UpdateFinanciamentoRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateFinanciamentoMutationOptions(options));
+};
+
+/**
+ * @summary Simulate financing installments (public, validated by slug)
+ */
+export const getSimularFinanciamentoUrl = () => {
+  return `/api/financiamentos/simular`;
+};
+
+export const simularFinanciamento = async (
+  simularFinanciamentoRequest: SimularFinanciamentoRequest,
+  options?: RequestInit,
+): Promise<SimularFinanciamentoResponse> => {
+  return customFetch<SimularFinanciamentoResponse>(
+    getSimularFinanciamentoUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(simularFinanciamentoRequest),
+    },
+  );
+};
+
+export const getSimularFinanciamentoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof simularFinanciamento>>,
+    TError,
+    { data: BodyType<SimularFinanciamentoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof simularFinanciamento>>,
+  TError,
+  { data: BodyType<SimularFinanciamentoRequest> },
+  TContext
+> => {
+  const mutationKey = ["simularFinanciamento"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof simularFinanciamento>>,
+    { data: BodyType<SimularFinanciamentoRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return simularFinanciamento(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SimularFinanciamentoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof simularFinanciamento>>
+>;
+export type SimularFinanciamentoMutationBody =
+  BodyType<SimularFinanciamentoRequest>;
+export type SimularFinanciamentoMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Simulate financing installments (public, validated by slug)
+ */
+export const useSimularFinanciamento = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof simularFinanciamento>>,
+    TError,
+    { data: BodyType<SimularFinanciamentoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof simularFinanciamento>>,
+  TError,
+  { data: BodyType<SimularFinanciamentoRequest> },
+  TContext
+> => {
+  return useMutation(getSimularFinanciamentoMutationOptions(options));
 };
 
 /**
