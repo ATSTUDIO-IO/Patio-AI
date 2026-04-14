@@ -71,13 +71,8 @@ router.get("/v/:slug", async (req, res): Promise<void> => {
     return;
   }
 
-  if (veiculo.status === "pausado" || !qr.ativo) {
-    res.json({
-      disponivel: false,
-      veiculo: null,
-      loja: loja ?? null,
-      mensagem: "Este veículo não está disponível no momento.",
-    });
+  if (!qr.ativo || veiculo.status === "pausado") {
+    res.status(404).json({ error: "QR code inativo" });
     return;
   }
 

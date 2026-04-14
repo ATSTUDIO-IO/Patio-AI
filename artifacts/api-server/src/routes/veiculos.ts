@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, veiculos, qrcodes, lojas, eventosBilling } from "@workspace/db";
+import { db, veiculos, qrcodes, eventosBilling } from "@workspace/db";
 import {
   ListVeiculosQueryParams,
   CreateVeiculoBody,
@@ -22,7 +22,10 @@ import {
 
 const router: IRouter = Router();
 
-function mapVeiculo(v: typeof veiculos.$inferSelect, qr?: typeof qrcodes.$inferSelect | null) {
+function mapVeiculo(
+  v: typeof veiculos.$inferSelect,
+  qr?: typeof qrcodes.$inferSelect | null,
+) {
   return {
     id: v.id,
     loja_id: v.lojaId,
@@ -55,6 +58,18 @@ function mapVeiculo(v: typeof veiculos.$inferSelect, qr?: typeof qrcodes.$inferS
   };
 }
 
+function requireLojaId(
+  req: Parameters<Parameters<typeof router.get>[1]>[0],
+  res: Parameters<Parameters<typeof router.get>[1]>[1],
+): string | null {
+  const lojaId = req.user?.loja_id ?? null;
+  if (!lojaId) {
+    res.status(403).json({ error: "Usuário sem loja associada" });
+    return null;
+  }
+  return lojaId;
+}
+
 router.get("/veiculos", requireAuth, async (req, res): Promise<void> => {
   const query = ListVeiculosQueryParams.safeParse(req.query);
   if (!query.success) {
@@ -62,16 +77,16 @@ router.get("/veiculos", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const lojaId = req.user!.loja_id;
-  if (!lojaId) {
-    res.status(403).json({ error: "Usuário sem loja associada" });
-    return;
-  }
+  const lojaId = requireLojaId(req, res);
+  if (!lojaId) return;
 
   const conditions = [eq(veiculos.lojaId, lojaId)];
   if (query.data.status) {
     conditions.push(
-      eq(veiculos.status, query.data.status as "ativo" | "vendido" | "pausado"),
+      eq(
+        veiculos.status,
+        query.data.status as "ativo" | "vendido" | "pausado",
+      ),
     );
   }
 
@@ -84,13 +99,18 @@ router.get("/veiculos", requireAuth, async (req, res): Promise<void> => {
   const ids = rows.map((v) => v.id);
   const qrRows =
     ids.length > 0
-      ? await db.select().from(qrcodes).where(
-          sql`${qrcodes.veiculoId} = ANY(ARRAY[${sql.join(ids.map((id) => sql`${id}::uuid`), sql`, `)}])`,
-        )
+      ? await db
+          .select()
+          .from(qrcodes)
+          .where(
+            sql`${qrcodes.veiculoId} = ANY(ARRAY[${sql.join(
+              ids.map((id) => sql`${id}::uuid`),
+              sql`, `,
+            )}])`,
+          )
       : [];
 
   const qrByVeiculo = Object.fromEntries(qrRows.map((q) => [q.veiculoId, q]));
-
   res.json(rows.map((v) => mapVeiculo(v, qrByVeiculo[v.id])));
 });
 
@@ -101,18 +121,19 @@ router.post("/veiculos", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const lojaId = req.user!.loja_id;
-  if (!lojaId) {
-    res.status(403).json({ error: "Usuário sem loja associada" });
-    return;
-  }
+  const lojaId = requireLojaId(req, res);
+  if (!lojaId) return;
 
-  const placaNormalizada = parsed.data.placa.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const placaNormalizada = parsed.data.placa
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 
   const [placaExistente] = await db
     .select({ id: veiculos.id })
     .from(veiculos)
-    .where(and(eq(veiculos.lojaId, lojaId), eq(veiculos.placa, placaNormalizada)))
+    .where(
+      and(eq(veiculos.lojaId, lojaId), eq(veiculos.placa, placaNormalizada)),
+    )
     .limit(1);
 
   if (placaExistente) {
@@ -133,8 +154,17 @@ router.post("/veiculos", requireAuth, async (req, res): Promise<void> => {
         quilometragem: parsed.data.quilometragem,
         precoVenda: parsed.data.preco_venda,
         cor: parsed.data.cor ?? null,
-        cambio: (parsed.data.cambio ?? null) as "manual" | "automatico" | "cvt" | null,
-        combustivel: (parsed.data.combustivel ?? null) as "flex" | "gasolina" | "diesel" | "eletrico" | null,
+        cambio: (parsed.data.cambio ?? null) as
+          | "manual"
+          | "automatico"
+          | "cvt"
+          | null,
+        combustivel: (parsed.data.combustivel ?? null) as
+          | "flex"
+          | "gasolina"
+          | "diesel"
+          | "eletrico"
+          | null,
         opcionais: parsed.data.opcionais ?? null,
         descricaoAgente: parsed.data.descricao_agente ?? null,
         status: "ativo",
@@ -148,13 +178,7 @@ router.post("/veiculos", requireAuth, async (req, res): Promise<void> => {
 
     const [qr] = await tx
       .insert(qrcodes)
-      .values({
-        veiculoId: veiculo.id,
-        slug,
-        urlPublica,
-        imagemQr,
-        ativo: true,
-      })
+      .values({ veiculoId: veiculo.id, slug, urlPublica, imagemQr, ativo: true })
       .returning();
 
     await tx.insert(eventosBilling).values({
@@ -181,11 +205,19 @@ router.get(
       return;
     }
 
-    const lojaId = req.user!.loja_id;
-    const conditions = [eq(veiculos.id, params.data.veiculoId)];
-    if (lojaId) conditions.push(eq(veiculos.lojaId, lojaId));
+    const lojaId = requireLojaId(req, res);
+    if (!lojaId) return;
 
-    const [veiculo] = await db.select().from(veiculos).where(and(...conditions)).limit(1);
+    const [veiculo] = await db
+      .select()
+      .from(veiculos)
+      .where(
+        and(
+          eq(veiculos.id, params.data.veiculoId),
+          eq(veiculos.lojaId, lojaId),
+        ),
+      )
+      .limit(1);
 
     if (!veiculo) {
       res.status(404).json({ error: "Veículo não encontrado" });
@@ -218,14 +250,18 @@ router.put(
       return;
     }
 
-    const lojaId = req.user!.loja_id;
-    const conditions = [eq(veiculos.id, params.data.veiculoId)];
-    if (lojaId) conditions.push(eq(veiculos.lojaId, lojaId));
+    const lojaId = requireLojaId(req, res);
+    if (!lojaId) return;
 
     const [veiculoExistente] = await db
       .select()
       .from(veiculos)
-      .where(and(...conditions))
+      .where(
+        and(
+          eq(veiculos.id, params.data.veiculoId),
+          eq(veiculos.lojaId, lojaId),
+        ),
+      )
       .limit(1);
 
     if (!veiculoExistente) {
@@ -235,7 +271,8 @@ router.put(
 
     const updateData: Record<string, unknown> = {};
     const d = body.data;
-    if (d.placa !== undefined) updateData.placa = d.placa.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (d.placa !== undefined)
+      updateData.placa = d.placa.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (d.marca !== undefined) updateData.marca = d.marca;
     if (d.modelo !== undefined) updateData.modelo = d.modelo;
     if (d.ano_fabricacao !== undefined) updateData.anoFabricacao = d.ano_fabricacao;
@@ -246,7 +283,8 @@ router.put(
     if (d.cambio !== undefined) updateData.cambio = d.cambio;
     if (d.combustivel !== undefined) updateData.combustivel = d.combustivel;
     if (d.opcionais !== undefined) updateData.opcionais = d.opcionais;
-    if (d.descricao_agente !== undefined) updateData.descricaoAgente = d.descricao_agente;
+    if (d.descricao_agente !== undefined)
+      updateData.descricaoAgente = d.descricao_agente;
     if (d.ativo_agente !== undefined) updateData.ativoAgente = d.ativo_agente;
 
     if (Object.keys(updateData).length === 0) {
@@ -287,14 +325,18 @@ router.patch(
       return;
     }
 
-    const lojaId = req.user!.loja_id;
-    const conditions = [eq(veiculos.id, params.data.veiculoId)];
-    if (lojaId) conditions.push(eq(veiculos.lojaId, lojaId));
+    const lojaId = requireLojaId(req, res);
+    if (!lojaId) return;
 
     const [veiculoExistente] = await db
       .select()
       .from(veiculos)
-      .where(and(...conditions))
+      .where(
+        and(
+          eq(veiculos.id, params.data.veiculoId),
+          eq(veiculos.lojaId, lojaId),
+        ),
+      )
       .limit(1);
 
     if (!veiculoExistente) {
@@ -305,72 +347,58 @@ router.patch(
     const novoStatus = body.data.status as "ativo" | "vendido" | "pausado";
     const motivo = body.data.motivo ?? null;
 
-    const { veiculoAtualizado, qrAtualizado } = await db.transaction(async (tx) => {
-      const veiculoUpdate: Record<string, unknown> = { status: novoStatus };
+    const { veiculoAtualizado, qrAtualizado } = await db.transaction(
+      async (tx) => {
+        const veiculoUpdate: Record<string, unknown> = { status: novoStatus };
 
-      if (novoStatus === "vendido") {
-        veiculoUpdate.ativoAgente = false;
-        veiculoUpdate.vendidoEm = new Date();
-      } else if (novoStatus === "pausado") {
-        veiculoUpdate.ativoAgente = false;
-      } else if (novoStatus === "ativo") {
-        veiculoUpdate.ativoAgente = true;
-        veiculoUpdate.vendidoEm = null;
-      }
-
-      const [veiculoAtualizado] = await tx
-        .update(veiculos)
-        .set(veiculoUpdate)
-        .where(eq(veiculos.id, params.data.veiculoId))
-        .returning();
-
-      let qrAtualizado: typeof qrcodes.$inferSelect | null = null;
-
-      if (novoStatus === "pausado" || novoStatus === "vendido") {
-        const tipoBilling = novoStatus === "vendido" ? "baixa" : "pausa";
-
-        await tx.insert(eventosBilling).values({
-          lojaId: veiculoAtualizado.lojaId,
-          veiculoId: veiculoAtualizado.id,
-          tipo: tipoBilling as "baixa" | "pausa",
-          motivo,
-        });
-
-        if (novoStatus === "pausado") {
-          const [qr] = await tx
-            .update(qrcodes)
-            .set({ ativo: false })
-            .where(eq(qrcodes.veiculoId, veiculoAtualizado.id))
-            .returning();
-          qrAtualizado = qr ?? null;
+        if (novoStatus === "vendido") {
+          veiculoUpdate.ativoAgente = false;
+          veiculoUpdate.vendidoEm = new Date();
+        } else if (novoStatus === "pausado") {
+          veiculoUpdate.ativoAgente = false;
+        } else if (novoStatus === "ativo") {
+          veiculoUpdate.ativoAgente = true;
+          veiculoUpdate.vendidoEm = null;
         }
-      } else if (novoStatus === "ativo") {
-        await tx.insert(eventosBilling).values({
-          lojaId: veiculoAtualizado.lojaId,
-          veiculoId: veiculoAtualizado.id,
-          tipo: "ativacao",
-          motivo: motivo ?? "Veículo reativado",
-        });
 
-        const [qr] = await tx
+        const [veiculoAtualizado] = await tx
+          .update(veiculos)
+          .set(veiculoUpdate)
+          .where(eq(veiculos.id, params.data.veiculoId))
+          .returning();
+
+        let tipoBilling: "ativacao" | "baixa" | "pausa" | null = null;
+        let qrAtivo: boolean | null = null;
+
+        if (novoStatus === "vendido") {
+          tipoBilling = "baixa";
+          qrAtivo = true;
+        } else if (novoStatus === "pausado") {
+          tipoBilling = "pausa";
+          qrAtivo = false;
+        } else if (novoStatus === "ativo") {
+          tipoBilling = "ativacao";
+          qrAtivo = true;
+        }
+
+        if (tipoBilling) {
+          await tx.insert(eventosBilling).values({
+            lojaId: veiculoAtualizado.lojaId,
+            veiculoId: veiculoAtualizado.id,
+            tipo: tipoBilling,
+            motivo: motivo ?? undefined,
+          });
+        }
+
+        const [qrAtualizado] = await tx
           .update(qrcodes)
-          .set({ ativo: true })
+          .set({ ativo: qrAtivo! })
           .where(eq(qrcodes.veiculoId, veiculoAtualizado.id))
           .returning();
-        qrAtualizado = qr ?? null;
-      }
 
-      if (!qrAtualizado) {
-        const [qr] = await tx
-          .select()
-          .from(qrcodes)
-          .where(eq(qrcodes.veiculoId, veiculoAtualizado.id))
-          .limit(1);
-        qrAtualizado = qr ?? null;
-      }
-
-      return { veiculoAtualizado, qrAtualizado };
-    });
+        return { veiculoAtualizado, qrAtualizado: qrAtualizado ?? null };
+      },
+    );
 
     req.log.info(
       { veiculoId: veiculoAtualizado.id, status: novoStatus },
@@ -390,14 +418,18 @@ router.get(
       return;
     }
 
-    const lojaId = req.user!.loja_id;
-    const conditions = [eq(veiculos.id, params.data.veiculoId)];
-    if (lojaId) conditions.push(eq(veiculos.lojaId, lojaId));
+    const lojaId = requireLojaId(req, res);
+    if (!lojaId) return;
 
     const [veiculo] = await db
       .select({ id: veiculos.id })
       .from(veiculos)
-      .where(and(...conditions))
+      .where(
+        and(
+          eq(veiculos.id, params.data.veiculoId),
+          eq(veiculos.lojaId, lojaId),
+        ),
+      )
       .limit(1);
 
     if (!veiculo) {
