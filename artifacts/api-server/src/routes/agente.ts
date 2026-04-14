@@ -444,6 +444,17 @@ router.post("/agente/encerrar", async (req, res): Promise<void> => {
 
   const { conversa, veiculo } = resolved;
 
+  if (conversa.encerradaEm) {
+    const leadExistente = conversa.leadId
+      ? await db.select().from(leads).where(eq(leads.id, conversa.leadId)).limit(1).then((r) => r[0] ?? null)
+      : null;
+    res.json({
+      lead_id: leadExistente?.id ?? null,
+      encerrada_em: conversa.encerradaEm.toISOString(),
+    });
+    return;
+  }
+
   const encerradaEm = new Date();
   const duracaoSegundos = Math.floor(
     (encerradaEm.getTime() - conversa.iniciadaEm.getTime()) / 1000,
