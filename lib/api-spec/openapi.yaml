@@ -14,6 +14,10 @@ tags:
     description: Authentication and session management
   - name: lojas
     description: Store management
+  - name: veiculos
+    description: Vehicle management
+  - name: public
+    description: Public endpoints (no auth required)
 paths:
   /healthz:
     get:
@@ -231,6 +235,257 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /veiculos:
+    get:
+      operationId: listVeiculos
+      tags: [veiculos]
+      summary: List all vehicles for the authenticated user's store
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ativo, vendido, pausado]
+      responses:
+        "200":
+          description: List of vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VeiculoResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createVeiculo
+      tags: [veiculos]
+      summary: Create a new vehicle and auto-generate QR code
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVeiculoRequest"
+      responses:
+        "201":
+          description: Vehicle created with QR code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VeiculoResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: License plate already registered for this store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /veiculos/{veiculoId}:
+    get:
+      operationId: getVeiculo
+      tags: [veiculos]
+      summary: Get a single vehicle with QR code data
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: veiculoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Vehicle data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VeiculoResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateVeiculo
+      tags: [veiculos]
+      summary: Update vehicle details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: veiculoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVeiculoRequest"
+      responses:
+        "200":
+          description: Vehicle updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VeiculoResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /veiculos/{veiculoId}/status:
+    patch:
+      operationId: patchVeiculoStatus
+      tags: [veiculos]
+      summary: Change vehicle status (ativo, vendido, pausado)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: veiculoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VeiculoResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /veiculos/{veiculoId}/qr:
+    get:
+      operationId: getVeiculoQr
+      tags: [veiculos]
+      summary: Get QR code PNG image for download
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: veiculoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: QR code PNG image
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: QR code not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v/{slug}:
+    get:
+      operationId: getVeiculoPublico
+      tags: [public]
+      summary: Public vehicle page data (no auth, increments scan counter)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public vehicle data or unavailable message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VeiculoPublicoResponse"
+        "404":
+          description: Slug not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -411,3 +666,248 @@ components:
         - nome
         - email
         - senha
+
+    QRCodeData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        url_publica:
+          type: string
+        imagem_qr:
+          type: ["string", "null"]
+        ativo:
+          type: boolean
+        total_scans:
+          type: integer
+      required:
+        - id
+        - slug
+        - url_publica
+        - ativo
+        - total_scans
+
+    VeiculoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        loja_id:
+          type: string
+          format: uuid
+        placa:
+          type: string
+        marca:
+          type: string
+        modelo:
+          type: string
+        ano_fabricacao:
+          type: integer
+        ano_modelo:
+          type: integer
+        quilometragem:
+          type: integer
+        preco_venda:
+          type: string
+        cor:
+          type: ["string", "null"]
+        cambio:
+          type: ["string", "null"]
+          enum: [manual, automatico, cvt, null]
+        combustivel:
+          type: ["string", "null"]
+          enum: [flex, gasolina, diesel, eletrico, null]
+        opcionais:
+          type: ["array", "null"]
+          items:
+            type: string
+        descricao_agente:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [ativo, vendido, pausado]
+        ativo_agente:
+          type: boolean
+        criado_em:
+          type: ["string", "null"]
+          format: date-time
+        vendido_em:
+          type: ["string", "null"]
+          format: date-time
+        qr_code:
+          oneOf:
+            - $ref: "#/components/schemas/QRCodeData"
+            - type: "null"
+      required:
+        - id
+        - loja_id
+        - placa
+        - marca
+        - modelo
+        - ano_fabricacao
+        - ano_modelo
+        - quilometragem
+        - preco_venda
+        - status
+        - ativo_agente
+
+    CreateVeiculoRequest:
+      type: object
+      properties:
+        placa:
+          type: string
+        marca:
+          type: string
+        modelo:
+          type: string
+        ano_fabricacao:
+          type: integer
+        ano_modelo:
+          type: integer
+        quilometragem:
+          type: integer
+          minimum: 0
+        preco_venda:
+          type: string
+        cor:
+          type: ["string", "null"]
+        cambio:
+          type: ["string", "null"]
+          enum: [manual, automatico, cvt, null]
+        combustivel:
+          type: ["string", "null"]
+          enum: [flex, gasolina, diesel, eletrico, null]
+        opcionais:
+          type: ["array", "null"]
+          items:
+            type: string
+        descricao_agente:
+          type: ["string", "null"]
+      required:
+        - placa
+        - marca
+        - modelo
+        - ano_fabricacao
+        - ano_modelo
+        - quilometragem
+        - preco_venda
+
+    UpdateVeiculoRequest:
+      type: object
+      properties:
+        placa:
+          type: string
+        marca:
+          type: string
+        modelo:
+          type: string
+        ano_fabricacao:
+          type: integer
+        ano_modelo:
+          type: integer
+        quilometragem:
+          type: integer
+          minimum: 0
+        preco_venda:
+          type: string
+        cor:
+          type: ["string", "null"]
+        cambio:
+          type: ["string", "null"]
+          enum: [manual, automatico, cvt, null]
+        combustivel:
+          type: ["string", "null"]
+          enum: [flex, gasolina, diesel, eletrico, null]
+        opcionais:
+          type: ["array", "null"]
+          items:
+            type: string
+        descricao_agente:
+          type: ["string", "null"]
+        ativo_agente:
+          type: boolean
+
+    PatchStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ativo, vendido, pausado]
+        motivo:
+          type: ["string", "null"]
+      required:
+        - status
+
+    VeiculoPublicoResponse:
+      type: object
+      properties:
+        disponivel:
+          type: boolean
+        veiculo:
+          oneOf:
+            - $ref: "#/components/schemas/VeiculoPublicoData"
+            - type: "null"
+        loja:
+          oneOf:
+            - $ref: "#/components/schemas/LojaPublicaMinima"
+            - type: "null"
+        mensagem:
+          type: ["string", "null"]
+      required:
+        - disponivel
+
+    VeiculoPublicoData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        marca:
+          type: string
+        modelo:
+          type: string
+        ano_fabricacao:
+          type: integer
+        ano_modelo:
+          type: integer
+        quilometragem:
+          type: integer
+        preco_venda:
+          type: string
+        cor:
+          type: ["string", "null"]
+        cambio:
+          type: ["string", "null"]
+        combustivel:
+          type: ["string", "null"]
+        opcionais:
+          type: ["array", "null"]
+          items:
+            type: string
+        slug:
+          type: string
+      required:
+        - id
+        - marca
+        - modelo
+        - ano_fabricacao
+        - ano_modelo
+        - quilometragem
+        - preco_venda
+        - slug
+
+    LojaPublicaMinima:
+      type: object
+      properties:
+        nome_fantasia:
+          type: string
+        cidade:
+          type: ["string", "null"]
+        telefone:
+          type: ["string", "null"]
+      required:
+        - nome_fantasia

@@ -128,3 +128,349 @@ export const CreateVendedorBody = zod.object({
   email: zod.string().email(),
   senha: zod.string().min(createVendedorBodySenhaMin),
 });
+
+/**
+ * @summary List all vehicles for the authenticated user's store
+ */
+export const ListVeiculosQueryParams = zod.object({
+  status: zod.enum(["ativo", "vendido", "pausado"]).optional(),
+});
+
+export const ListVeiculosResponseItem = zod.object({
+  id: zod.string().uuid(),
+  loja_id: zod.string().uuid(),
+  placa: zod.string(),
+  marca: zod.string(),
+  modelo: zod.string(),
+  ano_fabricacao: zod.number(),
+  ano_modelo: zod.number(),
+  quilometragem: zod.number(),
+  preco_venda: zod.string(),
+  cor: zod.string().nullish(),
+  cambio: zod
+    .union([
+      zod.literal("manual"),
+      zod.literal("automatico"),
+      zod.literal("cvt"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  combustivel: zod
+    .union([
+      zod.literal("flex"),
+      zod.literal("gasolina"),
+      zod.literal("diesel"),
+      zod.literal("eletrico"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  opcionais: zod.array(zod.string()).nullish(),
+  descricao_agente: zod.string().nullish(),
+  status: zod.enum(["ativo", "vendido", "pausado"]),
+  ativo_agente: zod.boolean(),
+  criado_em: zod.coerce.date().nullish(),
+  vendido_em: zod.coerce.date().nullish(),
+  qr_code: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        slug: zod.string(),
+        url_publica: zod.string(),
+        imagem_qr: zod.string().nullish(),
+        ativo: zod.boolean(),
+        total_scans: zod.number(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+export const ListVeiculosResponse = zod.array(ListVeiculosResponseItem);
+
+/**
+ * @summary Create a new vehicle and auto-generate QR code
+ */
+export const createVeiculoBodyQuilometragemMin = 0;
+
+export const CreateVeiculoBody = zod.object({
+  placa: zod.string(),
+  marca: zod.string(),
+  modelo: zod.string(),
+  ano_fabricacao: zod.number(),
+  ano_modelo: zod.number(),
+  quilometragem: zod.number().min(createVeiculoBodyQuilometragemMin),
+  preco_venda: zod.string(),
+  cor: zod.string().nullish(),
+  cambio: zod
+    .union([
+      zod.literal("manual"),
+      zod.literal("automatico"),
+      zod.literal("cvt"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  combustivel: zod
+    .union([
+      zod.literal("flex"),
+      zod.literal("gasolina"),
+      zod.literal("diesel"),
+      zod.literal("eletrico"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  opcionais: zod.array(zod.string()).nullish(),
+  descricao_agente: zod.string().nullish(),
+});
+
+/**
+ * @summary Get a single vehicle with QR code data
+ */
+export const GetVeiculoParams = zod.object({
+  veiculoId: zod.coerce.string().uuid(),
+});
+
+export const GetVeiculoResponse = zod.object({
+  id: zod.string().uuid(),
+  loja_id: zod.string().uuid(),
+  placa: zod.string(),
+  marca: zod.string(),
+  modelo: zod.string(),
+  ano_fabricacao: zod.number(),
+  ano_modelo: zod.number(),
+  quilometragem: zod.number(),
+  preco_venda: zod.string(),
+  cor: zod.string().nullish(),
+  cambio: zod
+    .union([
+      zod.literal("manual"),
+      zod.literal("automatico"),
+      zod.literal("cvt"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  combustivel: zod
+    .union([
+      zod.literal("flex"),
+      zod.literal("gasolina"),
+      zod.literal("diesel"),
+      zod.literal("eletrico"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  opcionais: zod.array(zod.string()).nullish(),
+  descricao_agente: zod.string().nullish(),
+  status: zod.enum(["ativo", "vendido", "pausado"]),
+  ativo_agente: zod.boolean(),
+  criado_em: zod.coerce.date().nullish(),
+  vendido_em: zod.coerce.date().nullish(),
+  qr_code: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        slug: zod.string(),
+        url_publica: zod.string(),
+        imagem_qr: zod.string().nullish(),
+        ativo: zod.boolean(),
+        total_scans: zod.number(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+/**
+ * @summary Update vehicle details
+ */
+export const UpdateVeiculoParams = zod.object({
+  veiculoId: zod.coerce.string().uuid(),
+});
+
+export const updateVeiculoBodyQuilometragemMin = 0;
+
+export const UpdateVeiculoBody = zod.object({
+  placa: zod.string().optional(),
+  marca: zod.string().optional(),
+  modelo: zod.string().optional(),
+  ano_fabricacao: zod.number().optional(),
+  ano_modelo: zod.number().optional(),
+  quilometragem: zod.number().min(updateVeiculoBodyQuilometragemMin).optional(),
+  preco_venda: zod.string().optional(),
+  cor: zod.string().nullish(),
+  cambio: zod
+    .union([
+      zod.literal("manual"),
+      zod.literal("automatico"),
+      zod.literal("cvt"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  combustivel: zod
+    .union([
+      zod.literal("flex"),
+      zod.literal("gasolina"),
+      zod.literal("diesel"),
+      zod.literal("eletrico"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  opcionais: zod.array(zod.string()).nullish(),
+  descricao_agente: zod.string().nullish(),
+  ativo_agente: zod.boolean().optional(),
+});
+
+export const UpdateVeiculoResponse = zod.object({
+  id: zod.string().uuid(),
+  loja_id: zod.string().uuid(),
+  placa: zod.string(),
+  marca: zod.string(),
+  modelo: zod.string(),
+  ano_fabricacao: zod.number(),
+  ano_modelo: zod.number(),
+  quilometragem: zod.number(),
+  preco_venda: zod.string(),
+  cor: zod.string().nullish(),
+  cambio: zod
+    .union([
+      zod.literal("manual"),
+      zod.literal("automatico"),
+      zod.literal("cvt"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  combustivel: zod
+    .union([
+      zod.literal("flex"),
+      zod.literal("gasolina"),
+      zod.literal("diesel"),
+      zod.literal("eletrico"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  opcionais: zod.array(zod.string()).nullish(),
+  descricao_agente: zod.string().nullish(),
+  status: zod.enum(["ativo", "vendido", "pausado"]),
+  ativo_agente: zod.boolean(),
+  criado_em: zod.coerce.date().nullish(),
+  vendido_em: zod.coerce.date().nullish(),
+  qr_code: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        slug: zod.string(),
+        url_publica: zod.string(),
+        imagem_qr: zod.string().nullish(),
+        ativo: zod.boolean(),
+        total_scans: zod.number(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+/**
+ * @summary Change vehicle status (ativo, vendido, pausado)
+ */
+export const PatchVeiculoStatusParams = zod.object({
+  veiculoId: zod.coerce.string().uuid(),
+});
+
+export const PatchVeiculoStatusBody = zod.object({
+  status: zod.enum(["ativo", "vendido", "pausado"]),
+  motivo: zod.string().nullish(),
+});
+
+export const PatchVeiculoStatusResponse = zod.object({
+  id: zod.string().uuid(),
+  loja_id: zod.string().uuid(),
+  placa: zod.string(),
+  marca: zod.string(),
+  modelo: zod.string(),
+  ano_fabricacao: zod.number(),
+  ano_modelo: zod.number(),
+  quilometragem: zod.number(),
+  preco_venda: zod.string(),
+  cor: zod.string().nullish(),
+  cambio: zod
+    .union([
+      zod.literal("manual"),
+      zod.literal("automatico"),
+      zod.literal("cvt"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  combustivel: zod
+    .union([
+      zod.literal("flex"),
+      zod.literal("gasolina"),
+      zod.literal("diesel"),
+      zod.literal("eletrico"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  opcionais: zod.array(zod.string()).nullish(),
+  descricao_agente: zod.string().nullish(),
+  status: zod.enum(["ativo", "vendido", "pausado"]),
+  ativo_agente: zod.boolean(),
+  criado_em: zod.coerce.date().nullish(),
+  vendido_em: zod.coerce.date().nullish(),
+  qr_code: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        slug: zod.string(),
+        url_publica: zod.string(),
+        imagem_qr: zod.string().nullish(),
+        ativo: zod.boolean(),
+        total_scans: zod.number(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+/**
+ * @summary Get QR code PNG image for download
+ */
+export const GetVeiculoQrParams = zod.object({
+  veiculoId: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Public vehicle page data (no auth, increments scan counter)
+ */
+export const GetVeiculoPublicoParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetVeiculoPublicoResponse = zod.object({
+  disponivel: zod.boolean(),
+  veiculo: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        marca: zod.string(),
+        modelo: zod.string(),
+        ano_fabricacao: zod.number(),
+        ano_modelo: zod.number(),
+        quilometragem: zod.number(),
+        preco_venda: zod.string(),
+        cor: zod.string().nullish(),
+        cambio: zod.string().nullish(),
+        combustivel: zod.string().nullish(),
+        opcionais: zod.array(zod.string()).nullish(),
+        slug: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  loja: zod
+    .union([
+      zod.object({
+        nome_fantasia: zod.string(),
+        cidade: zod.string().nullish(),
+        telefone: zod.string().nullish(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  mensagem: zod.string().nullish(),
+});

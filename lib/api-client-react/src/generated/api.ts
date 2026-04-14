@@ -18,16 +18,22 @@ import type {
 
 import type {
   AuthResponse,
+  CreateVeiculoRequest,
   CreateVendedorRequest,
   ErrorResponse,
   HealthStatus,
+  ListVeiculosParams,
   LoginRequest,
   LojaPublic,
   MeResponse,
   MessageResponse,
+  PatchStatusRequest,
   RegisterRequest,
   UpdateLojaRequest,
+  UpdateVeiculoRequest,
   UsuarioPublic,
+  VeiculoPublicoResponse,
+  VeiculoResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -604,3 +610,618 @@ export const useCreateVendedor = <
 > => {
   return useMutation(getCreateVendedorMutationOptions(options));
 };
+
+/**
+ * @summary List all vehicles for the authenticated user's store
+ */
+export const getListVeiculosUrl = (params?: ListVeiculosParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/veiculos?${stringifiedParams}`
+    : `/api/veiculos`;
+};
+
+export const listVeiculos = async (
+  params?: ListVeiculosParams,
+  options?: RequestInit,
+): Promise<VeiculoResponse[]> => {
+  return customFetch<VeiculoResponse[]>(getListVeiculosUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListVeiculosQueryKey = (params?: ListVeiculosParams) => {
+  return [`/api/veiculos`, ...(params ? [params] : [])] as const;
+};
+
+export const getListVeiculosQueryOptions = <
+  TData = Awaited<ReturnType<typeof listVeiculos>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListVeiculosParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVeiculos>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListVeiculosQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listVeiculos>>> = ({
+    signal,
+  }) => listVeiculos(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listVeiculos>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListVeiculosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listVeiculos>>
+>;
+export type ListVeiculosQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List all vehicles for the authenticated user's store
+ */
+
+export function useListVeiculos<
+  TData = Awaited<ReturnType<typeof listVeiculos>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListVeiculosParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVeiculos>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListVeiculosQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new vehicle and auto-generate QR code
+ */
+export const getCreateVeiculoUrl = () => {
+  return `/api/veiculos`;
+};
+
+export const createVeiculo = async (
+  createVeiculoRequest: CreateVeiculoRequest,
+  options?: RequestInit,
+): Promise<VeiculoResponse> => {
+  return customFetch<VeiculoResponse>(getCreateVeiculoUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createVeiculoRequest),
+  });
+};
+
+export const getCreateVeiculoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createVeiculo>>,
+    TError,
+    { data: BodyType<CreateVeiculoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createVeiculo>>,
+  TError,
+  { data: BodyType<CreateVeiculoRequest> },
+  TContext
+> => {
+  const mutationKey = ["createVeiculo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createVeiculo>>,
+    { data: BodyType<CreateVeiculoRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createVeiculo(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateVeiculoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createVeiculo>>
+>;
+export type CreateVeiculoMutationBody = BodyType<CreateVeiculoRequest>;
+export type CreateVeiculoMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a new vehicle and auto-generate QR code
+ */
+export const useCreateVeiculo = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createVeiculo>>,
+    TError,
+    { data: BodyType<CreateVeiculoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createVeiculo>>,
+  TError,
+  { data: BodyType<CreateVeiculoRequest> },
+  TContext
+> => {
+  return useMutation(getCreateVeiculoMutationOptions(options));
+};
+
+/**
+ * @summary Get a single vehicle with QR code data
+ */
+export const getGetVeiculoUrl = (veiculoId: string) => {
+  return `/api/veiculos/${veiculoId}`;
+};
+
+export const getVeiculo = async (
+  veiculoId: string,
+  options?: RequestInit,
+): Promise<VeiculoResponse> => {
+  return customFetch<VeiculoResponse>(getGetVeiculoUrl(veiculoId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetVeiculoQueryKey = (veiculoId: string) => {
+  return [`/api/veiculos/${veiculoId}`] as const;
+};
+
+export const getGetVeiculoQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVeiculo>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  veiculoId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVeiculo>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetVeiculoQueryKey(veiculoId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getVeiculo>>> = ({
+    signal,
+  }) => getVeiculo(veiculoId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!veiculoId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getVeiculo>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetVeiculoQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVeiculo>>
+>;
+export type GetVeiculoQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a single vehicle with QR code data
+ */
+
+export function useGetVeiculo<
+  TData = Awaited<ReturnType<typeof getVeiculo>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  veiculoId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVeiculo>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetVeiculoQueryOptions(veiculoId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update vehicle details
+ */
+export const getUpdateVeiculoUrl = (veiculoId: string) => {
+  return `/api/veiculos/${veiculoId}`;
+};
+
+export const updateVeiculo = async (
+  veiculoId: string,
+  updateVeiculoRequest: UpdateVeiculoRequest,
+  options?: RequestInit,
+): Promise<VeiculoResponse> => {
+  return customFetch<VeiculoResponse>(getUpdateVeiculoUrl(veiculoId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateVeiculoRequest),
+  });
+};
+
+export const getUpdateVeiculoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateVeiculo>>,
+    TError,
+    { veiculoId: string; data: BodyType<UpdateVeiculoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateVeiculo>>,
+  TError,
+  { veiculoId: string; data: BodyType<UpdateVeiculoRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateVeiculo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateVeiculo>>,
+    { veiculoId: string; data: BodyType<UpdateVeiculoRequest> }
+  > = (props) => {
+    const { veiculoId, data } = props ?? {};
+
+    return updateVeiculo(veiculoId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateVeiculoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateVeiculo>>
+>;
+export type UpdateVeiculoMutationBody = BodyType<UpdateVeiculoRequest>;
+export type UpdateVeiculoMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update vehicle details
+ */
+export const useUpdateVeiculo = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateVeiculo>>,
+    TError,
+    { veiculoId: string; data: BodyType<UpdateVeiculoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateVeiculo>>,
+  TError,
+  { veiculoId: string; data: BodyType<UpdateVeiculoRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateVeiculoMutationOptions(options));
+};
+
+/**
+ * @summary Change vehicle status (ativo, vendido, pausado)
+ */
+export const getPatchVeiculoStatusUrl = (veiculoId: string) => {
+  return `/api/veiculos/${veiculoId}/status`;
+};
+
+export const patchVeiculoStatus = async (
+  veiculoId: string,
+  patchStatusRequest: PatchStatusRequest,
+  options?: RequestInit,
+): Promise<VeiculoResponse> => {
+  return customFetch<VeiculoResponse>(getPatchVeiculoStatusUrl(veiculoId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(patchStatusRequest),
+  });
+};
+
+export const getPatchVeiculoStatusMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchVeiculoStatus>>,
+    TError,
+    { veiculoId: string; data: BodyType<PatchStatusRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof patchVeiculoStatus>>,
+  TError,
+  { veiculoId: string; data: BodyType<PatchStatusRequest> },
+  TContext
+> => {
+  const mutationKey = ["patchVeiculoStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof patchVeiculoStatus>>,
+    { veiculoId: string; data: BodyType<PatchStatusRequest> }
+  > = (props) => {
+    const { veiculoId, data } = props ?? {};
+
+    return patchVeiculoStatus(veiculoId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PatchVeiculoStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchVeiculoStatus>>
+>;
+export type PatchVeiculoStatusMutationBody = BodyType<PatchStatusRequest>;
+export type PatchVeiculoStatusMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Change vehicle status (ativo, vendido, pausado)
+ */
+export const usePatchVeiculoStatus = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchVeiculoStatus>>,
+    TError,
+    { veiculoId: string; data: BodyType<PatchStatusRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof patchVeiculoStatus>>,
+  TError,
+  { veiculoId: string; data: BodyType<PatchStatusRequest> },
+  TContext
+> => {
+  return useMutation(getPatchVeiculoStatusMutationOptions(options));
+};
+
+/**
+ * @summary Get QR code PNG image for download
+ */
+export const getGetVeiculoQrUrl = (veiculoId: string) => {
+  return `/api/veiculos/${veiculoId}/qr`;
+};
+
+export const getVeiculoQr = async (
+  veiculoId: string,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetVeiculoQrUrl(veiculoId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetVeiculoQrQueryKey = (veiculoId: string) => {
+  return [`/api/veiculos/${veiculoId}/qr`] as const;
+};
+
+export const getGetVeiculoQrQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVeiculoQr>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  veiculoId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVeiculoQr>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetVeiculoQrQueryKey(veiculoId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getVeiculoQr>>> = ({
+    signal,
+  }) => getVeiculoQr(veiculoId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!veiculoId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getVeiculoQr>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetVeiculoQrQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVeiculoQr>>
+>;
+export type GetVeiculoQrQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get QR code PNG image for download
+ */
+
+export function useGetVeiculoQr<
+  TData = Awaited<ReturnType<typeof getVeiculoQr>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  veiculoId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVeiculoQr>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetVeiculoQrQueryOptions(veiculoId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Public vehicle page data (no auth, increments scan counter)
+ */
+export const getGetVeiculoPublicoUrl = (slug: string) => {
+  return `/api/v/${slug}`;
+};
+
+export const getVeiculoPublico = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<VeiculoPublicoResponse> => {
+  return customFetch<VeiculoPublicoResponse>(getGetVeiculoPublicoUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetVeiculoPublicoQueryKey = (slug: string) => {
+  return [`/api/v/${slug}`] as const;
+};
+
+export const getGetVeiculoPublicoQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVeiculoPublico>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVeiculoPublico>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetVeiculoPublicoQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getVeiculoPublico>>
+  > = ({ signal }) => getVeiculoPublico(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getVeiculoPublico>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetVeiculoPublicoQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVeiculoPublico>>
+>;
+export type GetVeiculoPublicoQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Public vehicle page data (no auth, increments scan counter)
+ */
+
+export function useGetVeiculoPublico<
+  TData = Awaited<ReturnType<typeof getVeiculoPublico>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVeiculoPublico>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetVeiculoPublicoQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

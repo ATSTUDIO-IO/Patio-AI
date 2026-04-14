@@ -104,3 +104,238 @@ export interface CreateVendedorRequest {
   /** @minLength 6 */
   senha: string;
 }
+
+export interface QRCodeData {
+  id: string;
+  slug: string;
+  url_publica: string;
+  /** @nullable */
+  imagem_qr?: string | null;
+  ativo: boolean;
+  total_scans: number;
+}
+
+/**
+ * @nullable
+ */
+export type VeiculoResponseCambio =
+  | (typeof VeiculoResponseCambio)[keyof typeof VeiculoResponseCambio]
+  | null;
+
+export const VeiculoResponseCambio = {
+  manual: "manual",
+  automatico: "automatico",
+  cvt: "cvt",
+} as const;
+
+/**
+ * @nullable
+ */
+export type VeiculoResponseCombustivel =
+  | (typeof VeiculoResponseCombustivel)[keyof typeof VeiculoResponseCombustivel]
+  | null;
+
+export const VeiculoResponseCombustivel = {
+  flex: "flex",
+  gasolina: "gasolina",
+  diesel: "diesel",
+  eletrico: "eletrico",
+} as const;
+
+export type VeiculoResponseStatus =
+  (typeof VeiculoResponseStatus)[keyof typeof VeiculoResponseStatus];
+
+export const VeiculoResponseStatus = {
+  ativo: "ativo",
+  vendido: "vendido",
+  pausado: "pausado",
+} as const;
+
+export interface VeiculoResponse {
+  id: string;
+  loja_id: string;
+  placa: string;
+  marca: string;
+  modelo: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+  quilometragem: number;
+  preco_venda: string;
+  /** @nullable */
+  cor?: string | null;
+  /** @nullable */
+  cambio?: VeiculoResponseCambio;
+  /** @nullable */
+  combustivel?: VeiculoResponseCombustivel;
+  /** @nullable */
+  opcionais?: string[] | null;
+  /** @nullable */
+  descricao_agente?: string | null;
+  status: VeiculoResponseStatus;
+  ativo_agente: boolean;
+  /** @nullable */
+  criado_em?: string | null;
+  /** @nullable */
+  vendido_em?: string | null;
+  qr_code?: QRCodeData | null;
+}
+
+/**
+ * @nullable
+ */
+export type CreateVeiculoRequestCambio =
+  | (typeof CreateVeiculoRequestCambio)[keyof typeof CreateVeiculoRequestCambio]
+  | null;
+
+export const CreateVeiculoRequestCambio = {
+  manual: "manual",
+  automatico: "automatico",
+  cvt: "cvt",
+} as const;
+
+/**
+ * @nullable
+ */
+export type CreateVeiculoRequestCombustivel =
+  | (typeof CreateVeiculoRequestCombustivel)[keyof typeof CreateVeiculoRequestCombustivel]
+  | null;
+
+export const CreateVeiculoRequestCombustivel = {
+  flex: "flex",
+  gasolina: "gasolina",
+  diesel: "diesel",
+  eletrico: "eletrico",
+} as const;
+
+export interface CreateVeiculoRequest {
+  placa: string;
+  marca: string;
+  modelo: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+  /** @minimum 0 */
+  quilometragem: number;
+  preco_venda: string;
+  /** @nullable */
+  cor?: string | null;
+  /** @nullable */
+  cambio?: CreateVeiculoRequestCambio;
+  /** @nullable */
+  combustivel?: CreateVeiculoRequestCombustivel;
+  /** @nullable */
+  opcionais?: string[] | null;
+  /** @nullable */
+  descricao_agente?: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type UpdateVeiculoRequestCambio =
+  | (typeof UpdateVeiculoRequestCambio)[keyof typeof UpdateVeiculoRequestCambio]
+  | null;
+
+export const UpdateVeiculoRequestCambio = {
+  manual: "manual",
+  automatico: "automatico",
+  cvt: "cvt",
+} as const;
+
+/**
+ * @nullable
+ */
+export type UpdateVeiculoRequestCombustivel =
+  | (typeof UpdateVeiculoRequestCombustivel)[keyof typeof UpdateVeiculoRequestCombustivel]
+  | null;
+
+export const UpdateVeiculoRequestCombustivel = {
+  flex: "flex",
+  gasolina: "gasolina",
+  diesel: "diesel",
+  eletrico: "eletrico",
+} as const;
+
+export interface UpdateVeiculoRequest {
+  placa?: string;
+  marca?: string;
+  modelo?: string;
+  ano_fabricacao?: number;
+  ano_modelo?: number;
+  /** @minimum 0 */
+  quilometragem?: number;
+  preco_venda?: string;
+  /** @nullable */
+  cor?: string | null;
+  /** @nullable */
+  cambio?: UpdateVeiculoRequestCambio;
+  /** @nullable */
+  combustivel?: UpdateVeiculoRequestCombustivel;
+  /** @nullable */
+  opcionais?: string[] | null;
+  /** @nullable */
+  descricao_agente?: string | null;
+  ativo_agente?: boolean;
+}
+
+export type PatchStatusRequestStatus =
+  (typeof PatchStatusRequestStatus)[keyof typeof PatchStatusRequestStatus];
+
+export const PatchStatusRequestStatus = {
+  ativo: "ativo",
+  vendido: "vendido",
+  pausado: "pausado",
+} as const;
+
+export interface PatchStatusRequest {
+  status: PatchStatusRequestStatus;
+  /** @nullable */
+  motivo?: string | null;
+}
+
+export interface VeiculoPublicoData {
+  id: string;
+  marca: string;
+  modelo: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+  quilometragem: number;
+  preco_venda: string;
+  /** @nullable */
+  cor?: string | null;
+  /** @nullable */
+  cambio?: string | null;
+  /** @nullable */
+  combustivel?: string | null;
+  /** @nullable */
+  opcionais?: string[] | null;
+  slug: string;
+}
+
+export interface LojaPublicaMinima {
+  nome_fantasia: string;
+  /** @nullable */
+  cidade?: string | null;
+  /** @nullable */
+  telefone?: string | null;
+}
+
+export interface VeiculoPublicoResponse {
+  disponivel: boolean;
+  veiculo?: VeiculoPublicoData | null;
+  loja?: LojaPublicaMinima | null;
+  /** @nullable */
+  mensagem?: string | null;
+}
+
+export type ListVeiculosParams = {
+  status?: ListVeiculosStatus;
+};
+
+export type ListVeiculosStatus =
+  (typeof ListVeiculosStatus)[keyof typeof ListVeiculosStatus];
+
+export const ListVeiculosStatus = {
+  ativo: "ativo",
+  vendido: "vendido",
+  pausado: "pausado",
+} as const;
