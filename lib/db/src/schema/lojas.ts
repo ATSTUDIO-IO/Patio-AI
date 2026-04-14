@@ -31,6 +31,7 @@ export const lojas = pgTable("lojas", {
 
 export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
+  // admin_patioai has null loja_id (transversal super-user per PRD rule 14)
   lojaId: uuid("loja_id").references(() => lojas.id, { onDelete: "cascade" }),
   nome: text("nome").notNull(),
   email: text("email").unique().notNull(),
@@ -50,6 +51,7 @@ export const sessoes = pgTable("sessoes", {
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
 });
 
+// ─── Lojas ───────────────────────────────────────────────────────────────────
 export const insertLojaSchema = createInsertSchema(lojas).omit({
   id: true,
   criadoEm: true,
@@ -58,6 +60,7 @@ export const selectLojaSchema = createSelectSchema(lojas);
 export type InsertLoja = z.infer<typeof insertLojaSchema>;
 export type Loja = typeof lojas.$inferSelect;
 
+// ─── Usuários ─────────────────────────────────────────────────────────────────
 export const insertUsuarioSchema = createInsertSchema(usuarios).omit({
   id: true,
   criadoEm: true,
@@ -67,9 +70,11 @@ export const selectUsuarioSchema = createSelectSchema(usuarios);
 export type InsertUsuario = z.infer<typeof insertUsuarioSchema>;
 export type Usuario = typeof usuarios.$inferSelect;
 
+// ─── Sessões ──────────────────────────────────────────────────────────────────
 export const insertSessaoSchema = createInsertSchema(sessoes).omit({
   id: true,
   criadoEm: true,
 });
+export const selectSessaoSchema = createSelectSchema(sessoes);
 export type InsertSessao = z.infer<typeof insertSessaoSchema>;
 export type Sessao = typeof sessoes.$inferSelect;

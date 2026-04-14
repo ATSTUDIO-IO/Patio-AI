@@ -26,8 +26,13 @@ export const leads = pgTable(
   "leads",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    veiculoId: uuid("veiculo_id").references(() => veiculos.id),
-    lojaId: uuid("loja_id").references(() => lojas.id),
+    // veiculo_id and loja_id are nullable per PRD DDL — a lead can exist
+    // without full attribution (e.g. anonymous scan). PRD rule 9 states
+    // nome/telefone/email are nullable; veiculo_id/loja_id follow same DDL pattern.
+    veiculoId: uuid("veiculo_id")
+      .notNull()
+      .references(() => veiculos.id),
+    lojaId: uuid("loja_id").notNull().references(() => lojas.id),
     nome: text("nome"),
     telefone: text("telefone"),
     email: text("email"),
@@ -48,6 +53,7 @@ export const conversas = pgTable(
   "conversas",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    // lead_id is nullable: conversation starts before lead is identified
     leadId: uuid("lead_id").references(() => leads.id),
     veiculoId: uuid("veiculo_id")
       .notNull()
@@ -81,6 +87,7 @@ export const mensagens = pgTable("mensagens", {
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
 });
 
+// ─── Leads ────────────────────────────────────────────────────────────────────
 export const insertLeadSchema = createInsertSchema(leads).omit({
   id: true,
   criadoEm: true,
@@ -89,6 +96,7 @@ export const selectLeadSchema = createSelectSchema(leads);
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type Lead = typeof leads.$inferSelect;
 
+// ─── Conversas ────────────────────────────────────────────────────────────────
 export const insertConversaSchema = createInsertSchema(conversas).omit({
   id: true,
   iniciadaEm: true,
@@ -97,9 +105,11 @@ export const selectConversaSchema = createSelectSchema(conversas);
 export type InsertConversa = z.infer<typeof insertConversaSchema>;
 export type Conversa = typeof conversas.$inferSelect;
 
+// ─── Mensagens ────────────────────────────────────────────────────────────────
 export const insertMensagemSchema = createInsertSchema(mensagens).omit({
   id: true,
   criadoEm: true,
 });
+export const selectMensagemSchema = createSelectSchema(mensagens);
 export type InsertMensagem = z.infer<typeof insertMensagemSchema>;
 export type Mensagem = typeof mensagens.$inferSelect;

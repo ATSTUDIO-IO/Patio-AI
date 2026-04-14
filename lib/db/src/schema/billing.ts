@@ -63,6 +63,7 @@ export const eventosBilling = pgTable("eventos_billing", {
   motivo: text("motivo"),
 });
 
+// ─── Ciclos de Billing ────────────────────────────────────────────────────────
 export const insertCicloBillingSchema = createInsertSchema(ciclosBilling).omit(
   { id: true, geradoEm: true, pagoEm: true },
 );
@@ -70,8 +71,10 @@ export const selectCicloBillingSchema = createSelectSchema(ciclosBilling);
 export type InsertCicloBilling = z.infer<typeof insertCicloBillingSchema>;
 export type CicloBilling = typeof ciclosBilling.$inferSelect;
 
+// ─── Eventos de Billing ───────────────────────────────────────────────────────
 export const insertEventoBillingSchema = createInsertSchema(
   eventosBilling,
 ).omit({ id: true, ocorridoEm: true });
+export const selectEventoBillingSchema = createSelectSchema(eventosBilling);
 export type InsertEventoBilling = z.infer<typeof insertEventoBillingSchema>;
 export type EventoBilling = typeof eventosBilling.$inferSelect;

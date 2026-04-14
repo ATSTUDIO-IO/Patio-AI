@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { lojas, usuarios } from "./lojas";
 
@@ -15,9 +15,11 @@ export const notasAdmin = pgTable("notas_admin", {
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
 });
 
+// ─── Notas Admin ──────────────────────────────────────────────────────────────
 export const insertNotaAdminSchema = createInsertSchema(notasAdmin).omit({
   id: true,
   criadoEm: true,
 });
+export const selectNotaAdminSchema = createSelectSchema(notasAdmin);
 export type InsertNotaAdmin = z.infer<typeof insertNotaAdminSchema>;
 export type NotaAdmin = typeof notasAdmin.$inferSelect;
