@@ -450,7 +450,8 @@ router.post("/agente/encerrar", async (req, res): Promise<void> => {
       : null;
     res.json({
       lead_id: leadExistente?.id ?? null,
-      encerrada_em: conversa.encerradaEm.toISOString(),
+      duracao_segundos: conversa.duracaoSegundos ?? 0,
+      resumo: conversa.resumoIa ?? "Conversa encerrada.",
     });
     return;
   }
@@ -487,33 +488,28 @@ router.post("/agente/encerrar", async (req, res): Promise<void> => {
   const telefoneF = telefoneManual ?? leadExtraido.telefone;
   const emailF = emailManual ?? leadExtraido.email;
 
-  let leadId: string | null = null;
-  const temDados = nomeF || telefoneF || emailF;
+  const [lead] = await db
+    .insert(leads)
+    .values({
+      veiculoId: conversa.veiculoId,
+      lojaId: veiculo.lojaId,
+      nome: nomeF ?? null,
+      telefone: telefoneF ?? null,
+      email: emailF ?? null,
+      interesse: leadExtraido.interesse,
+      pediuFinanciamento: leadExtraido.pediu_financiamento,
+      pediuTestDrive: leadExtraido.pediu_test_drive,
+      statusCrm: "novo",
+      origem: "qr_patio",
+    })
+    .returning();
 
-  if (temDados) {
-    const [lead] = await db
-      .insert(leads)
-      .values({
-        veiculoId: conversa.veiculoId,
-        lojaId: veiculo.lojaId,
-        nome: nomeF ?? null,
-        telefone: telefoneF ?? null,
-        email: emailF ?? null,
-        interesse: leadExtraido.interesse,
-        pediuFinanciamento: leadExtraido.pediu_financiamento,
-        pediuTestDrive: leadExtraido.pediu_test_drive,
-        statusCrm: "novo",
-        origem: "qr_patio",
-      })
-      .returning();
+  const leadId = lead.id;
 
-    leadId = lead.id;
-
-    await db
-      .update(conversas)
-      .set({ leadId: lead.id })
-      .where(eq(conversas.id, conversa.id));
-  }
+  await db
+    .update(conversas)
+    .set({ leadId: lead.id })
+    .where(eq(conversas.id, conversa.id));
 
   await db
     .update(conversas)
