@@ -110,6 +110,11 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
 
   const { slug, consentimento_lgpd } = body.data;
 
+  if (!consentimento_lgpd) {
+    res.status(403).json({ error: "Consentimento LGPD obrigatório para iniciar a sessão" });
+    return;
+  }
+
   const [qr] = await db
     .select()
     .from(qrcodes)

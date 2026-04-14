@@ -156,8 +156,8 @@ export default function AgenteVoz() {
         playAudio(sessao.saudacao_audio);
       }
       setEstado("pronto");
-    } catch (err: any) {
-      setErro(err.message ?? "Falha ao iniciar sessão");
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Falha ao iniciar sessão");
       setEstado("erro");
     }
   }, [slug, consentimento, playAudio]);
@@ -169,8 +169,22 @@ export default function AgenteVoz() {
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      const audioConstraints: MediaTrackConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+        sampleRate: 16000,
+      };
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : "audio/mp4";
+
+      const mr = new MediaRecorder(stream, { mimeType });
       chunksRef.current = [];
       mr.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
@@ -195,7 +209,9 @@ export default function AgenteVoz() {
       mr.stop();
     });
 
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    const actualMime = mr.mimeType || "audio/webm";
+    const formato = actualMime.includes("mp4") ? "mp4" : "webm";
+    const blob = new Blob(chunksRef.current, { type: actualMime });
     const arrayBuffer = await blob.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     let bin = "";
@@ -203,7 +219,7 @@ export default function AgenteVoz() {
     const base64 = btoa(bin);
 
     try {
-      const resp = await enviarMensagem(slug!, conversaId!, base64, "webm");
+      const resp = await enviarMensagem(slug!, conversaId!, base64, formato);
       setMensagens((prev) => [
         ...prev,
         { papel: "user", texto: resp.texto_usuario },
