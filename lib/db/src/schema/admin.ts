@@ -15,7 +15,6 @@ export const notasAdmin = pgTable("notas_admin", {
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
 });
 
-// ─── Notas Admin ──────────────────────────────────────────────────────────────
 export const insertNotaAdminSchema = createInsertSchema(notasAdmin).omit({
   id: true,
   criadoEm: true,

@@ -10,8 +10,6 @@ import {
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-// pgEnum enforces domain check constraints at the PostgreSQL type level,
-// equivalent to CHECK (col IN (...)) in the PRD DDL.
 export const planoEnum = pgEnum("plano", ["starter", "pro", "full"]);
 export const perfilEnum = pgEnum("perfil", [
   "dono",

@@ -98,7 +98,6 @@ export const financiamentos = pgTable("financiamentos", {
   ativo: boolean("ativo").default(true),
 });
 
-// ─── Veículos ─────────────────────────────────────────────────────────────────
 export const insertVeiculoSchema = createInsertSchema(veiculos).omit({
   id: true,
   criadoEm: true,
@@ -108,7 +107,6 @@ export const selectVeiculoSchema = createSelectSchema(veiculos);
 export type InsertVeiculo = z.infer<typeof insertVeiculoSchema>;
 export type Veiculo = typeof veiculos.$inferSelect;
 
-// ─── QR Codes ─────────────────────────────────────────────────────────────────
 export const insertQrcodeSchema = createInsertSchema(qrcodes).omit({
   id: true,
   criadoEm: true,
@@ -118,7 +116,6 @@ export const selectQrcodeSchema = createSelectSchema(qrcodes);
 export type InsertQrcode = z.infer<typeof insertQrcodeSchema>;
 export type Qrcode = typeof qrcodes.$inferSelect;
 
-// ─── Financiamentos ───────────────────────────────────────────────────────────
 export const insertFinanciamentoSchema = createInsertSchema(
   financiamentos,
 ).omit({ id: true });
