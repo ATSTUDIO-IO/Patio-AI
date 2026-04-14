@@ -592,7 +592,7 @@ router.post("/agente/encerrar", async (req, res): Promise<void> => {
       duracaoSegundos,
       transcricao,
       resumoIa: leadExtraido.resumo,
-      simulacaoRealizada: leadExtraido.pediu_financiamento,
+      simulacaoRealizada: conversa.simulacaoRealizada || leadExtraido.pediu_financiamento,
     })
     .where(eq(conversas.id, conversa.id));
 
