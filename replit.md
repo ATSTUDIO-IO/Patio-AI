@@ -58,12 +58,31 @@ Todas as tabelas estão em `lib/db/src/schema/` organizadas por domínio:
 | # | Tarefa | Status |
 |---|--------|--------|
 | 1 | Schema do banco de dados | ✅ Concluído |
-| 2 | Auth e Gestão de Lojas (M1) | 🔜 Próximo |
+| 2 | Auth e Gestão de Lojas (M1) | ✅ Concluído |
 | 3 | Veículos e QR Code (M2) | ⏳ Pendente |
 | 4 | Agente de Voz IA (M3) | ⏳ Pendente |
 | 5 | CRM e Financiamento (M4+M5) | ⏳ Pendente |
 | 6 | Billing e Painel do Lojista (React) | ⏳ Pendente |
 | 7 | Painel Admin | ⏳ Pendente |
+
+## Autenticação (M1 — Implementado)
+
+- **JWT + bcrypt**: Tokens assinados com `jsonwebtoken`, senhas com `bcrypt` (12 rounds)
+- **Middleware `requireAuth`**: Valida JWT **e** verifica sessão ativa no banco (invalidação real no logout)
+- **Middleware `requirePerfil`**: Restrição por perfil (`dono`, `vendedor`, `admin_patioai`)
+- **Sessões**: Tabela `sessoes` — inserida no login, deletada no logout (expiração: 7 dias)
+- **JWT_SECRET**: Configurado como env var no ambiente compartilhado
+
+### Endpoints implementados
+
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| POST | `/api/auth/register` | Público | Cria loja + usuário dono, retorna JWT |
+| POST | `/api/auth/login` | Público | Login com email/senha, retorna JWT |
+| POST | `/api/auth/logout` | JWT | Invalida sessão no banco |
+| GET | `/api/auth/me` | JWT | Retorna usuário + dados da loja |
+| PUT | `/api/lojas/{id}` | JWT (dono) | Atualiza dados da loja |
+| POST | `/api/lojas/{id}/usuarios` | JWT (dono) | Cria vendedor na loja |
 
 ## Estrutura de Rotas Planejada
 

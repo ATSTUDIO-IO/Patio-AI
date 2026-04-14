@@ -8,3 +8,99 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface MessageResponse {
+  message: string;
+}
+
+export interface RegisterRequest {
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  email: string;
+  /** @minLength 6 */
+  senha: string;
+  /** @nullable */
+  telefone?: string | null;
+  /** @nullable */
+  cidade?: string | null;
+}
+
+export interface LoginRequest {
+  email: string;
+  senha: string;
+}
+
+export type UsuarioPublicPerfil =
+  (typeof UsuarioPublicPerfil)[keyof typeof UsuarioPublicPerfil];
+
+export const UsuarioPublicPerfil = {
+  dono: "dono",
+  vendedor: "vendedor",
+  admin_patioai: "admin_patioai",
+} as const;
+
+export interface UsuarioPublic {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: UsuarioPublicPerfil;
+  /** @nullable */
+  loja_id: string | null;
+}
+
+export type LojaPublicPlano =
+  (typeof LojaPublicPlano)[keyof typeof LojaPublicPlano];
+
+export const LojaPublicPlano = {
+  starter: "starter",
+  pro: "pro",
+  full: "full",
+} as const;
+
+export interface LojaPublic {
+  id: string;
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  /** @nullable */
+  telefone?: string | null;
+  email_contato: string;
+  /** @nullable */
+  cidade?: string | null;
+  plano: LojaPublicPlano;
+  ativo: boolean;
+  /** @nullable */
+  criado_em?: string | null;
+}
+
+export interface AuthResponse {
+  token: string;
+  usuario: UsuarioPublic;
+}
+
+export interface MeResponse {
+  usuario: UsuarioPublic;
+  loja?: LojaPublic | null;
+}
+
+export interface UpdateLojaRequest {
+  razao_social?: string;
+  nome_fantasia?: string;
+  /** @nullable */
+  telefone?: string | null;
+  email_contato?: string;
+  /** @nullable */
+  cidade?: string | null;
+}
+
+export interface CreateVendedorRequest {
+  nome: string;
+  email: string;
+  /** @minLength 6 */
+  senha: string;
+}

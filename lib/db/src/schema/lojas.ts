@@ -41,6 +41,7 @@ export const usuarios = pgTable(
     email: text("email").unique().notNull(),
     senhaHash: text("senha_hash").notNull(),
     perfil: perfilEnum("perfil").notNull().default("vendedor"),
+    ativo: boolean("ativo").notNull().default(true),
     ultimoAcesso: timestamp("ultimo_acesso", { withTimezone: true }),
     criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
   },

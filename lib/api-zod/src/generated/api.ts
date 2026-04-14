@@ -14,3 +14,117 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary Register a new store and owner user
+ */
+export const registerLojaBodySenhaMin = 6;
+
+export const RegisterLojaBody = zod.object({
+  razao_social: zod.string(),
+  nome_fantasia: zod.string(),
+  cnpj: zod.string(),
+  email: zod.string().email(),
+  senha: zod.string().min(registerLojaBodySenhaMin),
+  telefone: zod.string().nullish(),
+  cidade: zod.string().nullish(),
+});
+
+/**
+ * @summary Login with email and password
+ */
+export const LoginBody = zod.object({
+  email: zod.string().email(),
+  senha: zod.string(),
+});
+
+export const LoginResponse = zod.object({
+  token: zod.string(),
+  usuario: zod.object({
+    id: zod.string().uuid(),
+    nome: zod.string(),
+    email: zod.string(),
+    perfil: zod.enum(["dono", "vendedor", "admin_patioai"]),
+    loja_id: zod.string().uuid().nullable(),
+  }),
+});
+
+/**
+ * @summary Logout and invalidate session
+ */
+export const LogoutResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Get current authenticated user with store info
+ */
+export const GetMeResponse = zod.object({
+  usuario: zod.object({
+    id: zod.string().uuid(),
+    nome: zod.string(),
+    email: zod.string(),
+    perfil: zod.enum(["dono", "vendedor", "admin_patioai"]),
+    loja_id: zod.string().uuid().nullable(),
+  }),
+  loja: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        razao_social: zod.string(),
+        nome_fantasia: zod.string(),
+        cnpj: zod.string(),
+        telefone: zod.string().nullish(),
+        email_contato: zod.string(),
+        cidade: zod.string().nullish(),
+        plano: zod.enum(["starter", "pro", "full"]),
+        ativo: zod.boolean(),
+        criado_em: zod.coerce.date().nullish(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+/**
+ * @summary Update store data (owner only)
+ */
+export const UpdateLojaParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+});
+
+export const UpdateLojaBody = zod.object({
+  razao_social: zod.string().optional(),
+  nome_fantasia: zod.string().optional(),
+  telefone: zod.string().nullish(),
+  email_contato: zod.string().optional(),
+  cidade: zod.string().nullish(),
+});
+
+export const UpdateLojaResponse = zod.object({
+  id: zod.string().uuid(),
+  razao_social: zod.string(),
+  nome_fantasia: zod.string(),
+  cnpj: zod.string(),
+  telefone: zod.string().nullish(),
+  email_contato: zod.string(),
+  cidade: zod.string().nullish(),
+  plano: zod.enum(["starter", "pro", "full"]),
+  ativo: zod.boolean(),
+  criado_em: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Create a vendor user in the store (owner only)
+ */
+export const CreateVendedorParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+});
+
+export const createVendedorBodySenhaMin = 6;
+
+export const CreateVendedorBody = zod.object({
+  nome: zod.string(),
+  email: zod.string().email(),
+  senha: zod.string().min(createVendedorBodySenhaMin),
+});

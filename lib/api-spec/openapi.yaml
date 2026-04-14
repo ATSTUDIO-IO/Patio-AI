@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and session management
+  - name: lojas
+    description: Store management
 paths:
   /healthz:
     get:
@@ -24,7 +28,216 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: registerLoja
+      tags: [auth]
+      summary: Register a new store and owner user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Store registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: CNPJ or email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout and invalidate session
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user with store info
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /lojas/{lojaId}:
+    put:
+      operationId: updateLoja
+      tags: [lojas]
+      summary: Update store data (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lojaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLojaRequest"
+      responses:
+        "200":
+          description: Store updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LojaPublic"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Store not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /lojas/{lojaId}/usuarios:
+    post:
+      operationId: createVendedor
+      tags: [lojas]
+      summary: Create a vendor user in the store (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lojaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVendedorRequest"
+      responses:
+        "201":
+          description: Vendor user created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioPublic"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +247,167 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    RegisterRequest:
+      type: object
+      properties:
+        razao_social:
+          type: string
+        nome_fantasia:
+          type: string
+        cnpj:
+          type: string
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+          minLength: 6
+        telefone:
+          type: ["string", "null"]
+        cidade:
+          type: ["string", "null"]
+      required:
+        - razao_social
+        - nome_fantasia
+        - cnpj
+        - email
+        - senha
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+      required:
+        - email
+        - senha
+
+    UsuarioPublic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        email:
+          type: string
+        perfil:
+          type: string
+          enum: [dono, vendedor, admin_patioai]
+        loja_id:
+          type: ["string", "null"]
+          format: uuid
+      required:
+        - id
+        - nome
+        - email
+        - perfil
+        - loja_id
+
+    LojaPublic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        razao_social:
+          type: string
+        nome_fantasia:
+          type: string
+        cnpj:
+          type: string
+        telefone:
+          type: ["string", "null"]
+        email_contato:
+          type: string
+        cidade:
+          type: ["string", "null"]
+        plano:
+          type: string
+          enum: [starter, pro, full]
+        ativo:
+          type: boolean
+        criado_em:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - id
+        - razao_social
+        - nome_fantasia
+        - cnpj
+        - email_contato
+        - plano
+        - ativo
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        usuario:
+          $ref: "#/components/schemas/UsuarioPublic"
+      required:
+        - token
+        - usuario
+
+    MeResponse:
+      type: object
+      properties:
+        usuario:
+          $ref: "#/components/schemas/UsuarioPublic"
+        loja:
+          oneOf:
+            - $ref: "#/components/schemas/LojaPublic"
+            - type: "null"
+      required:
+        - usuario
+
+    UpdateLojaRequest:
+      type: object
+      properties:
+        razao_social:
+          type: string
+        nome_fantasia:
+          type: string
+        telefone:
+          type: ["string", "null"]
+        email_contato:
+          type: string
+        cidade:
+          type: ["string", "null"]
+
+    CreateVendedorRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+          minLength: 6
+      required:
+        - nome
+        - email
+        - senha

@@ -6,4 +6,16 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./authResponse";
+export * from "./createVendedorRequest";
+export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./loginRequest";
+export * from "./lojaPublic";
+export * from "./lojaPublicPlano";
+export * from "./meResponse";
+export * from "./messageResponse";
+export * from "./registerRequest";
+export * from "./updateLojaRequest";
+export * from "./usuarioPublic";
+export * from "./usuarioPublicPerfil";
