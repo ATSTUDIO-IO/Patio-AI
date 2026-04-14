@@ -17,6 +17,7 @@ type Mensagem = {
 
 type EstadoSessao =
   | "carregando"
+  | "landing"
   | "lgpd"
   | "iniciando"
   | "pronto"
@@ -105,6 +106,9 @@ export default function AgenteVoz() {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mensagensEndRef = useRef<HTMLDivElement>(null);
 
@@ -123,7 +127,7 @@ export default function AgenteVoz() {
         }
         setVeiculo(data.veiculo);
         setLoja(data.loja);
-        setEstado("lgpd");
+        setEstado("landing");
       })
       .catch((err) => {
         setErro(err.message ?? "Erro ao carregar veículo");
@@ -177,6 +181,23 @@ export default function AgenteVoz() {
         sampleRate: 16000,
       };
       const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+      streamRef.current = stream;
+
+      if (typeof AudioContext !== "undefined" && typeof AudioWorkletNode !== "undefined") {
+        try {
+          const ctx = new AudioContext({ sampleRate: 16000 });
+          audioContextRef.current = ctx;
+          await ctx.audioWorklet.addModule("/audio-processor.js");
+          const source = ctx.createMediaStreamSource(stream);
+          const workletNode = new AudioWorkletNode(ctx, "audio-capture-processor");
+          workletNodeRef.current = workletNode;
+          source.connect(workletNode);
+          workletNode.connect(ctx.destination);
+          setEstado("gravando");
+          return;
+        } catch {
+        }
+      }
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
@@ -197,26 +218,80 @@ export default function AgenteVoz() {
     }
   }, [estado]);
 
-  const handleGravarFim = useCallback(async () => {
-    if (estado !== "gravando" || !mediaRecorderRef.current) return;
-    setEstado("processando");
-
-    const mr = mediaRecorderRef.current;
-    mr.stream.getTracks().forEach((t) => t.stop());
-
-    await new Promise<void>((resolve) => {
-      mr.onstop = () => resolve();
-      mr.stop();
-    });
-
-    const actualMime = mr.mimeType || "audio/webm";
-    const formato = actualMime.includes("mp4") ? "mp4" : "webm";
-    const blob = new Blob(chunksRef.current, { type: actualMime });
-    const arrayBuffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
+  const float32ToWavBase64 = useCallback((samples: Float32Array, sampleRate: number): string => {
+    const numSamples = samples.length;
+    const buffer = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buffer);
+    const writeStr = (offset: number, str: string) => {
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    };
+    writeStr(0, "RIFF");
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeStr(8, "WAVE");
+    writeStr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, "data");
+    view.setUint32(40, numSamples * 2, true);
+    for (let i = 0; i < numSamples; i++) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    }
+    const bytes = new Uint8Array(buffer);
     let bin = "";
     for (const b of bytes) bin += String.fromCharCode(b);
-    const base64 = btoa(bin);
+    return btoa(bin);
+  }, []);
+
+  const handleGravarFim = useCallback(async () => {
+    if (estado !== "gravando") return;
+    setEstado("processando");
+
+    let base64: string;
+    let formato: "wav" | "webm" | "mp4" = "webm";
+
+    if (workletNodeRef.current && audioContextRef.current) {
+      const ctx = audioContextRef.current;
+      const sampleRate = ctx.sampleRate;
+      const pcmData = await new Promise<Float32Array>((resolve) => {
+        workletNodeRef.current!.port.onmessage = (e: MessageEvent<{ type: string; buffer: Float32Array }>) => {
+          if (e.data.type === "done") resolve(e.data.buffer);
+        };
+        workletNodeRef.current!.port.postMessage("stop");
+      });
+      workletNodeRef.current.disconnect();
+      workletNodeRef.current = null;
+      await ctx.close();
+      audioContextRef.current = null;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      base64 = float32ToWavBase64(pcmData, sampleRate);
+      formato = "wav";
+    } else if (mediaRecorderRef.current) {
+      const mr = mediaRecorderRef.current;
+      mr.stream.getTracks().forEach((t) => t.stop());
+      await new Promise<void>((resolve) => {
+        mr.onstop = () => resolve();
+        mr.stop();
+      });
+      const actualMime = mr.mimeType || "audio/webm";
+      formato = actualMime.includes("mp4") ? "mp4" : "webm";
+      const blob = new Blob(chunksRef.current, { type: actualMime });
+      const arrayBuffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let bin = "";
+      for (const b of bytes) bin += String.fromCharCode(b);
+      base64 = btoa(bin);
+      mediaRecorderRef.current = null;
+    } else {
+      setEstado("pronto");
+      return;
+    }
 
     try {
       const resp = await enviarMensagem(slug!, conversaId!, base64, formato);
@@ -239,7 +314,7 @@ export default function AgenteVoz() {
       setErro(msg);
       setEstado("pronto");
     }
-  }, [estado, slug, conversaId, playAudio]);
+  }, [estado, slug, conversaId, playAudio, float32ToWavBase64]);
 
   const sessaoEncerradaRef = useRef(false);
 
@@ -301,7 +376,7 @@ export default function AgenteVoz() {
     );
   }
 
-  if (estado === "lgpd" && veiculo && loja) {
+  if (estado === "landing" && veiculo && loja) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-5">
@@ -312,16 +387,33 @@ export default function AgenteVoz() {
             <h1 className="text-white text-2xl font-bold">Pátio AI</h1>
             <p className="text-white/60 text-sm mt-1">Agente de Voz Inteligente</p>
           </div>
-
           <VeiculoCard veiculo={veiculo} loja={loja} />
+          <button
+            onClick={() => setEstado("lgpd")}
+            className="w-full py-4 rounded-2xl font-bold text-white text-lg transition-all
+              bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-400 hover:to-emerald-400
+              active:scale-95"
+          >
+            🎙️ Falar com assistente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <h3 className="text-white font-medium text-sm mb-2">Antes de começar</h3>
+  if (estado === "lgpd" && veiculo && loja) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-4">
+          <VeiculoCard veiculo={veiculo} loja={loja} />
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+            <h3 className="text-white font-semibold text-base mb-2">Antes de começar</h3>
             <p className="text-white/60 text-xs leading-relaxed">
               Esta conversa será gravada e processada por inteligência artificial. Seus dados serão usados
-              exclusivamente para atendimento desta loja, conforme a <span className="text-blue-400">LGPD</span>.
+              exclusivamente para atendimento desta loja, conforme a{" "}
+              <span className="text-blue-400">LGPD</span>.
             </p>
-            <label className="flex items-center gap-3 mt-3 cursor-pointer">
+            <label className="flex items-center gap-3 mt-4 cursor-pointer">
               <input
                 type="checkbox"
                 checked={consentimento}
@@ -331,7 +423,6 @@ export default function AgenteVoz() {
               <span className="text-white/80 text-xs">Aceito os termos e autorizo a gravação</span>
             </label>
           </div>
-
           <button
             onClick={handleIniciarSessao}
             disabled={!consentimento}
@@ -339,7 +430,13 @@ export default function AgenteVoz() {
               bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-400 hover:to-emerald-400
               disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
           >
-            🎙️ Iniciar Conversa
+            Iniciar conversa
+          </button>
+          <button
+            onClick={() => setEstado("landing")}
+            className="w-full py-2 text-white/40 text-sm"
+          >
+            Voltar
           </button>
         </div>
       </div>

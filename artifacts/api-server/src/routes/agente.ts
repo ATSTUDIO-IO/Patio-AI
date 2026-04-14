@@ -45,7 +45,7 @@ function buildSystemPrompt(
     | "opcionais"
     | "descricaoAgente"
   >,
-  loja: Pick<Loja, "nomeFantasia" | "cidade">,
+  loja: Pick<Loja, "nomeFantasia" | "cidade" | "telefone">,
 ): string {
   const km = veiculo.quilometragem.toLocaleString("pt-BR");
   const preco = Number(veiculo.precoVenda).toLocaleString("pt-BR", {
@@ -62,7 +62,9 @@ function buildSystemPrompt(
   if (veiculo.descricaoAgente)
     linhasOpcional.push(`\nInformações adicionais: ${veiculo.descricaoAgente}`);
 
-  return `Você é o Pátio AI, agente de voz especialista em vendas de veículos seminovos para a loja "${loja.nomeFantasia}"${loja.cidade ? ` em ${loja.cidade}` : ""}.
+  const telefoneLoja = loja.telefone ? `\n- Telefone da loja: ${loja.telefone}` : "";
+
+  return `Você é o Pátio AI, agente de voz especialista em vendas de veículos seminovos para a loja "${loja.nomeFantasia}"${loja.cidade ? ` em ${loja.cidade}` : ""}.${telefoneLoja}
 
 Veículo em destaque:
 - Modelo: ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}/${veiculo.anoModelo}
@@ -81,7 +83,7 @@ Regras:
 - Respostas curtas e conversacionais (máx 3 frases por turno)
 - Se o lead quiser encerrar, agradeça e despede-se profissionalmente
 - NUNCA invente especificações não fornecidas
-- Se não souber responder, diga que vai verificar com a equipe`;
+- Se não souber responder, diga que vai verificar com a equipe${loja.telefone ? ` ou ligar para ${loja.telefone}` : ""}`;
 }
 
 function gerarSaudacaoTexto(
