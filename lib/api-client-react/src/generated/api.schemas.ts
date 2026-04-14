@@ -356,9 +356,17 @@ export interface MensagemAgenteRequest {
   /** Vehicle QR slug to validate session ownership */
   slug: string;
   conversa_id: string;
-  /** Base64-encoded audio from user microphone */
-  audio_base64: string;
+  /**
+   * Base64-encoded audio from user microphone (optional if texto provided)
+   * @nullable
+   */
+  audio_base64?: string | null;
   formato?: MensagemAgenteRequestFormato;
+  /**
+   * Text message from user (alternative to audio_base64)
+   * @nullable
+   */
+  texto?: string | null;
 }
 
 export interface MensagemAgenteResponse {

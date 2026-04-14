@@ -452,10 +452,17 @@ export const EnviarMensagemAgenteBody = zod.object({
   conversa_id: zod.string().uuid(),
   audio_base64: zod
     .string()
-    .describe("Base64-encoded audio from user microphone"),
+    .nullish()
+    .describe(
+      "Base64-encoded audio from user microphone (optional if texto provided)",
+    ),
   formato: zod
     .enum(["webm", "mp3", "wav", "mp4", "ogg"])
     .default(enviarMensagemAgenteBodyFormatoDefault),
+  texto: zod
+    .string()
+    .nullish()
+    .describe("Text message from user (alternative to audio_base64)"),
 });
 
 export const EnviarMensagemAgenteResponse = zod.object({

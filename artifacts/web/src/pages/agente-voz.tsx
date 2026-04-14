@@ -225,24 +225,40 @@ export default function AgenteVoz() {
     }
   }, [estado, slug, conversaId, playAudio]);
 
+  const sessaoEncerradaRef = useRef(false);
+
+  const encerrarSessaoServidor = useCallback(
+    async (dados?: { nome?: string; telefone?: string }) => {
+      if (sessaoEncerradaRef.current || !conversaId || !slug) return;
+      sessaoEncerradaRef.current = true;
+      try {
+        await encerrarSessao(slug, conversaId, dados);
+      } catch {
+      }
+    },
+    [slug, conversaId],
+  );
+
   const handleEncerrar = useCallback(() => {
     if (!conversaId) return;
+    if (audioRef.current) audioRef.current.pause();
     setMostrarFormulario(true);
     setEstado("encerrado");
-    if (audioRef.current) audioRef.current.pause();
-  }, [conversaId]);
+    encerrarSessaoServidor();
+  }, [conversaId, encerrarSessaoServidor]);
 
   const handleEnviarLead = useCallback(async () => {
-    if (!conversaId || !slug) return;
-    try {
-      await encerrarSessao(slug, conversaId, {
-        nome: nomeLead || undefined,
-        telefone: telefoneLead || undefined,
-      });
-    } catch {
-    }
     setMostrarFormulario(false);
-  }, [slug, conversaId, nomeLead, telefoneLead]);
+    await encerrarSessaoServidor({
+      nome: nomeLead || undefined,
+      telefone: telefoneLead || undefined,
+    });
+  }, [encerrarSessaoServidor, nomeLead, telefoneLead]);
+
+  const handlePularFormulario = useCallback(() => {
+    setMostrarFormulario(false);
+    encerrarSessaoServidor();
+  }, [encerrarSessaoServidor]);
 
   if (estado === "carregando") {
     return (
@@ -405,7 +421,7 @@ export default function AgenteVoz() {
               Enviar e finalizar
             </button>
             <button
-              onClick={() => setMostrarFormulario(false)}
+              onClick={handlePularFormulario}
               className="w-full mt-2 py-2 text-white/40 text-xs"
             >
               Pular

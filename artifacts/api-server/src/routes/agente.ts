@@ -244,7 +244,12 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     return;
   }
 
-  const { slug, conversa_id, audio_base64, formato } = body.data;
+  const { slug, conversa_id, audio_base64, formato, texto } = body.data;
+
+  if (!audio_base64 && !texto) {
+    res.status(400).json({ error: "Informe audio_base64 ou texto" });
+    return;
+  }
 
   const resolved = await resolveConversaComSlug(conversa_id, slug);
   if ("error" in resolved) {
@@ -259,15 +264,19 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     return;
   }
 
-  const inputBuf = Buffer.from(audio_base64, "base64");
-  const audioFmt = (formato ?? "webm") as "webm" | "mp3" | "wav" | "mp4" | "ogg";
-
   let transcricao: string;
-  if (audioFmt === "wav" || audioFmt === "mp3") {
-    transcricao = await speechToText(inputBuf, audioFmt);
+  if (texto) {
+    transcricao = texto;
   } else {
-    const { buffer: compatBuffer, format: compatFormat } = await ensureCompatibleFormat(inputBuf);
-    transcricao = await speechToText(compatBuffer, compatFormat);
+    const inputBuf = Buffer.from(audio_base64!, "base64");
+    const audioFmt = (formato ?? "webm") as "webm" | "mp3" | "wav" | "mp4" | "ogg";
+
+    if (audioFmt === "wav" || audioFmt === "mp3") {
+      transcricao = await speechToText(inputBuf, audioFmt);
+    } else {
+      const { buffer: compatBuffer, format: compatFormat } = await ensureCompatibleFormat(inputBuf);
+      transcricao = await speechToText(compatBuffer, compatFormat);
+    }
   }
 
   await db.insert(mensagens).values({

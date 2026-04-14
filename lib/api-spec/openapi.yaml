@@ -1050,16 +1050,18 @@ components:
           type: string
           format: uuid
         audio_base64:
-          type: string
-          description: Base64-encoded audio from user microphone
+          type: ["string", "null"]
+          description: Base64-encoded audio from user microphone (optional if texto provided)
         formato:
           type: string
           enum: [webm, mp3, wav, mp4, ogg]
           default: webm
+        texto:
+          type: ["string", "null"]
+          description: Text message from user (alternative to audio_base64)
       required:
         - slug
         - conversa_id
-        - audio_base64
 
     MensagemAgenteResponse:
       type: object
