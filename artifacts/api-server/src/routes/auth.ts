@@ -50,42 +50,46 @@ router.post("/auth/register", async (req, res): Promise<void> => {
 
   const senhaHash = await bcrypt.hash(senha, 12);
 
-  const [loja] = await db
-    .insert(lojas)
-    .values({
-      razaoSocial: razao_social,
-      nomeFantasia: nome_fantasia,
-      cnpj: cnpjNormalizado,
-      emailContato: email.toLowerCase(),
-      telefone: telefone ?? null,
-      cidade: cidade ?? null,
-      plano: "starter",
-      ativo: true,
-    })
-    .returning();
+  const { loja, usuario, token } = await db.transaction(async (tx) => {
+    const [loja] = await tx
+      .insert(lojas)
+      .values({
+        razaoSocial: razao_social,
+        nomeFantasia: nome_fantasia,
+        cnpj: cnpjNormalizado,
+        emailContato: email.toLowerCase(),
+        telefone: telefone ?? null,
+        cidade: cidade ?? null,
+        plano: "starter",
+        ativo: true,
+      })
+      .returning();
 
-  const [usuario] = await db
-    .insert(usuarios)
-    .values({
-      lojaId: loja.id,
-      nome: nome_fantasia,
-      email: email.toLowerCase(),
-      senhaHash,
-      perfil: "dono",
-      ativo: true,
-    })
-    .returning();
+    const [usuario] = await tx
+      .insert(usuarios)
+      .values({
+        lojaId: loja.id,
+        nome: nome_fantasia,
+        email: email.toLowerCase(),
+        senhaHash,
+        perfil: "dono",
+        ativo: true,
+      })
+      .returning();
 
-  const token = signToken({
-    id: usuario.id,
-    loja_id: loja.id,
-    perfil: usuario.perfil,
-  });
+    const token = signToken({
+      id: usuario.id,
+      loja_id: loja.id,
+      perfil: usuario.perfil,
+    });
 
-  await db.insert(sessoes).values({
-    usuarioId: usuario.id,
-    token,
-    expiraEm: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    await tx.insert(sessoes).values({
+      usuarioId: usuario.id,
+      token,
+      expiraEm: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    return { loja, usuario, token };
   });
 
   const responseData = LoginResponse.parse({
