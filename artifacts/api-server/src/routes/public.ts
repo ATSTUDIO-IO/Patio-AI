@@ -67,6 +67,13 @@ router.get("/v/:slug", async (req, res): Promise<void> => {
       return;
     }
 
+    if (qr.ativo) {
+      await db
+        .update(qrcodes)
+        .set({ ativo: false })
+        .where(eq(qrcodes.id, qr.id));
+    }
+
     res.status(404).json({ error: "QR code inativo" });
     return;
   }

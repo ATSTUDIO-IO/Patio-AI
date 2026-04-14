@@ -23,6 +23,16 @@ export function gerarSlug(modelo: string, anoFabricacao: number): string {
   return `VT-${modeloSanitizado}${anoFabricacao}-${hash}`;
 }
 
+export function gerarSlugCandidatos(
+  modelo: string,
+  anoFabricacao: number,
+  quantidade: number,
+): string[] {
+  return Array.from({ length: quantidade }, () =>
+    gerarSlug(modelo, anoFabricacao),
+  );
+}
+
 export function gerarUrlPublica(slug: string): string {
   return `${getPublicBase()}/v/${slug}`;
 }

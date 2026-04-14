@@ -14,7 +14,7 @@ import {
 import { requireAuth } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
 import {
-  gerarSlug,
+  gerarSlugCandidatos,
   gerarUrlPublica,
   gerarImagemQr,
   gerarQrPng,
@@ -172,14 +172,32 @@ router.post("/veiculos", requireAuth, async (req, res): Promise<void> => {
       })
       .returning();
 
-    const slug = gerarSlug(veiculo.modelo, veiculo.anoFabricacao);
-    const urlPublica = gerarUrlPublica(slug);
-    const imagemQr = await gerarImagemQr(urlPublica);
-
-    const [qr] = await tx
-      .insert(qrcodes)
-      .values({ veiculoId: veiculo.id, slug, urlPublica, imagemQr, ativo: true })
-      .returning();
+    const MAX_SLUG_TENTATIVAS = 5;
+    let qr: typeof qrcodes.$inferSelect | undefined;
+    for (let i = 0; i < MAX_SLUG_TENTATIVAS; i++) {
+      const slug = gerarSlugCandidatos(
+        veiculo.modelo,
+        veiculo.anoFabricacao,
+        1,
+      )[0];
+      const urlPublica = gerarUrlPublica(slug);
+      const imagemQr = await gerarImagemQr(urlPublica);
+      try {
+        const [inserted] = await tx
+          .insert(qrcodes)
+          .values({ veiculoId: veiculo.id, slug, urlPublica, imagemQr, ativo: true })
+          .returning();
+        qr = inserted;
+        break;
+      } catch (err: unknown) {
+        const pgErr = err as { code?: string };
+        if (pgErr?.code === "23505" && i < MAX_SLUG_TENTATIVAS - 1) {
+          continue;
+        }
+        throw err;
+      }
+    }
+    if (!qr) throw new Error("Falha ao gerar slug único para o QR code");
 
     await tx.insert(eventosBilling).values({
       lojaId,
@@ -271,8 +289,27 @@ router.put(
 
     const updateData: Record<string, unknown> = {};
     const d = body.data;
-    if (d.placa !== undefined)
-      updateData.placa = d.placa.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+    if (d.placa !== undefined) {
+      const placaNova = d.placa.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (placaNova !== veiculoExistente.placa) {
+        const [placaConflito] = await db
+          .select({ id: veiculos.id })
+          .from(veiculos)
+          .where(
+            and(
+              eq(veiculos.lojaId, lojaId),
+              eq(veiculos.placa, placaNova),
+            ),
+          )
+          .limit(1);
+        if (placaConflito) {
+          res.status(409).json({ error: "Placa já cadastrada nesta loja" });
+          return;
+        }
+      }
+      updateData.placa = placaNova;
+    }
     if (d.marca !== undefined) updateData.marca = d.marca;
     if (d.modelo !== undefined) updateData.modelo = d.modelo;
     if (d.ano_fabricacao !== undefined) updateData.anoFabricacao = d.ano_fabricacao;
