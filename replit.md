@@ -11,7 +11,8 @@ PátioAI é uma plataforma SaaS B2B para lojas de veículos seminovos. Cada veí
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **API framework**: Express 5 (`artifacts/api-server`)
-- **Frontend**: React + Vite (`artifacts/painel` — a criar na Tarefa #6)
+- **Frontend público (agente)**: React + Vite (`artifacts/web`, porta 22333, preview `/web`)
+- **Frontend painel lojista**: a criar (Tarefas #6+)
 - **Database**: PostgreSQL + Drizzle ORM (`lib/db`)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec em `lib/api-spec/openapi.yaml`)

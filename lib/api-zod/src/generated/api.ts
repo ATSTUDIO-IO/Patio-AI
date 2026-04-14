@@ -435,6 +435,56 @@ export const GetVeiculoQrParams = zod.object({
 });
 
 /**
+ * @summary Start a voice agent session for a vehicle (public)
+ */
+export const IniciarSessaoAgenteBody = zod.object({
+  slug: zod.string(),
+  consentimento_lgpd: zod.boolean(),
+});
+
+/**
+ * @summary Send audio message to AI agent (STT -> Claude -> TTS)
+ */
+export const enviarMensagemAgenteBodyFormatoDefault = `webm`;
+
+export const EnviarMensagemAgenteBody = zod.object({
+  conversa_id: zod.string().uuid(),
+  audio_base64: zod
+    .string()
+    .describe("Base64-encoded audio from user microphone"),
+  formato: zod
+    .enum(["webm", "mp3", "wav", "mp4", "ogg"])
+    .default(enviarMensagemAgenteBodyFormatoDefault),
+});
+
+export const EnviarMensagemAgenteResponse = zod.object({
+  texto_usuario: zod.string().describe("Transcribed user speech"),
+  texto_agente: zod.string().describe("Agent response text"),
+  audio_agente: zod
+    .string()
+    .describe("Base64-encoded MP3 audio of agent response"),
+  encerrar: zod
+    .boolean()
+    .describe("Whether the agent suggests ending the session"),
+});
+
+/**
+ * @summary End voice session, extract lead and save transcript
+ */
+export const EncerrarSessaoAgenteBody = zod.object({
+  conversa_id: zod.string().uuid(),
+  nome: zod.string().optional(),
+  telefone: zod.string().optional(),
+  email: zod.string().optional(),
+});
+
+export const EncerrarSessaoAgenteResponse = zod.object({
+  lead_id: zod.string().uuid().nullish(),
+  duracao_segundos: zod.number(),
+  resumo: zod.string(),
+});
+
+/**
  * @summary Public vehicle page data (no auth, increments scan counter)
  */
 export const GetVeiculoPublicoParams = zod.object({

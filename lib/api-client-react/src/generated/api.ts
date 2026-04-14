@@ -20,12 +20,18 @@ import type {
   AuthResponse,
   CreateVeiculoRequest,
   CreateVendedorRequest,
+  EncerrarSessaoRequest,
+  EncerrarSessaoResponse,
   ErrorResponse,
   HealthStatus,
+  IniciarSessaoRequest,
+  IniciarSessaoResponse,
   ListVeiculosParams,
   LoginRequest,
   LojaPublic,
   MeResponse,
+  MensagemAgenteRequest,
+  MensagemAgenteResponse,
   MessageResponse,
   PatchStatusRequest,
   RegisterRequest,
@@ -1138,6 +1144,264 @@ export function useGetVeiculoQr<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Start a voice agent session for a vehicle (public)
+ */
+export const getIniciarSessaoAgenteUrl = () => {
+  return `/api/agente/sessao`;
+};
+
+export const iniciarSessaoAgente = async (
+  iniciarSessaoRequest: IniciarSessaoRequest,
+  options?: RequestInit,
+): Promise<IniciarSessaoResponse> => {
+  return customFetch<IniciarSessaoResponse>(getIniciarSessaoAgenteUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(iniciarSessaoRequest),
+  });
+};
+
+export const getIniciarSessaoAgenteMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof iniciarSessaoAgente>>,
+    TError,
+    { data: BodyType<IniciarSessaoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof iniciarSessaoAgente>>,
+  TError,
+  { data: BodyType<IniciarSessaoRequest> },
+  TContext
+> => {
+  const mutationKey = ["iniciarSessaoAgente"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof iniciarSessaoAgente>>,
+    { data: BodyType<IniciarSessaoRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return iniciarSessaoAgente(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type IniciarSessaoAgenteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof iniciarSessaoAgente>>
+>;
+export type IniciarSessaoAgenteMutationBody = BodyType<IniciarSessaoRequest>;
+export type IniciarSessaoAgenteMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Start a voice agent session for a vehicle (public)
+ */
+export const useIniciarSessaoAgente = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof iniciarSessaoAgente>>,
+    TError,
+    { data: BodyType<IniciarSessaoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof iniciarSessaoAgente>>,
+  TError,
+  { data: BodyType<IniciarSessaoRequest> },
+  TContext
+> => {
+  return useMutation(getIniciarSessaoAgenteMutationOptions(options));
+};
+
+/**
+ * @summary Send audio message to AI agent (STT -> Claude -> TTS)
+ */
+export const getEnviarMensagemAgenteUrl = () => {
+  return `/api/agente/mensagem`;
+};
+
+export const enviarMensagemAgente = async (
+  mensagemAgenteRequest: MensagemAgenteRequest,
+  options?: RequestInit,
+): Promise<MensagemAgenteResponse> => {
+  return customFetch<MensagemAgenteResponse>(getEnviarMensagemAgenteUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(mensagemAgenteRequest),
+  });
+};
+
+export const getEnviarMensagemAgenteMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof enviarMensagemAgente>>,
+    TError,
+    { data: BodyType<MensagemAgenteRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof enviarMensagemAgente>>,
+  TError,
+  { data: BodyType<MensagemAgenteRequest> },
+  TContext
+> => {
+  const mutationKey = ["enviarMensagemAgente"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof enviarMensagemAgente>>,
+    { data: BodyType<MensagemAgenteRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return enviarMensagemAgente(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EnviarMensagemAgenteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof enviarMensagemAgente>>
+>;
+export type EnviarMensagemAgenteMutationBody = BodyType<MensagemAgenteRequest>;
+export type EnviarMensagemAgenteMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Send audio message to AI agent (STT -> Claude -> TTS)
+ */
+export const useEnviarMensagemAgente = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof enviarMensagemAgente>>,
+    TError,
+    { data: BodyType<MensagemAgenteRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof enviarMensagemAgente>>,
+  TError,
+  { data: BodyType<MensagemAgenteRequest> },
+  TContext
+> => {
+  return useMutation(getEnviarMensagemAgenteMutationOptions(options));
+};
+
+/**
+ * @summary End voice session, extract lead and save transcript
+ */
+export const getEncerrarSessaoAgenteUrl = () => {
+  return `/api/agente/encerrar`;
+};
+
+export const encerrarSessaoAgente = async (
+  encerrarSessaoRequest: EncerrarSessaoRequest,
+  options?: RequestInit,
+): Promise<EncerrarSessaoResponse> => {
+  return customFetch<EncerrarSessaoResponse>(getEncerrarSessaoAgenteUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(encerrarSessaoRequest),
+  });
+};
+
+export const getEncerrarSessaoAgenteMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof encerrarSessaoAgente>>,
+    TError,
+    { data: BodyType<EncerrarSessaoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof encerrarSessaoAgente>>,
+  TError,
+  { data: BodyType<EncerrarSessaoRequest> },
+  TContext
+> => {
+  const mutationKey = ["encerrarSessaoAgente"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof encerrarSessaoAgente>>,
+    { data: BodyType<EncerrarSessaoRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return encerrarSessaoAgente(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EncerrarSessaoAgenteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof encerrarSessaoAgente>>
+>;
+export type EncerrarSessaoAgenteMutationBody = BodyType<EncerrarSessaoRequest>;
+export type EncerrarSessaoAgenteMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary End voice session, extract lead and save transcript
+ */
+export const useEncerrarSessaoAgente = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof encerrarSessaoAgente>>,
+    TError,
+    { data: BodyType<EncerrarSessaoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof encerrarSessaoAgente>>,
+  TError,
+  { data: BodyType<EncerrarSessaoRequest> },
+  TContext
+> => {
+  return useMutation(getEncerrarSessaoAgenteMutationOptions(options));
+};
 
 /**
  * @summary Public vehicle page data (no auth, increments scan counter)

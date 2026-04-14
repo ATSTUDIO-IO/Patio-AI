@@ -18,6 +18,8 @@ tags:
     description: Vehicle management
   - name: public
     description: Public endpoints (no auth required)
+  - name: agente
+    description: AI voice agent endpoints (public, no auth)
 paths:
   /healthz:
     get:
@@ -456,6 +458,99 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: QR code not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /agente/sessao:
+    post:
+      operationId: iniciarSessaoAgente
+      tags: [agente]
+      summary: Start a voice agent session for a vehicle (public)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IniciarSessaoRequest"
+      responses:
+        "201":
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IniciarSessaoResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Vehicle or QR code not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /agente/mensagem:
+    post:
+      operationId: enviarMensagemAgente
+      tags: [agente]
+      summary: Send audio message to AI agent (STT -> Claude -> TTS)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MensagemAgenteRequest"
+      responses:
+        "200":
+          description: Agent response with audio and text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MensagemAgenteResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /agente/encerrar:
+    post:
+      operationId: encerrarSessaoAgente
+      tags: [agente]
+      summary: End voice session, extract lead and save transcript
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EncerrarSessaoRequest"
+      responses:
+        "200":
+          description: Session ended, lead extracted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EncerrarSessaoResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
           content:
             application/json:
               schema:
@@ -911,3 +1006,103 @@ components:
           type: ["string", "null"]
       required:
         - nome_fantasia
+
+    IniciarSessaoRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+        consentimento_lgpd:
+          type: boolean
+      required:
+        - slug
+        - consentimento_lgpd
+
+    IniciarSessaoResponse:
+      type: object
+      properties:
+        conversa_id:
+          type: string
+          format: uuid
+        veiculo:
+          $ref: "#/components/schemas/VeiculoPublicoData"
+        loja:
+          $ref: "#/components/schemas/LojaPublicaMinima"
+        saudacao_audio:
+          type: string
+          description: Base64-encoded MP3 audio of the greeting
+        saudacao_texto:
+          type: string
+      required:
+        - conversa_id
+        - veiculo
+        - loja
+        - saudacao_audio
+        - saudacao_texto
+
+    MensagemAgenteRequest:
+      type: object
+      properties:
+        conversa_id:
+          type: string
+          format: uuid
+        audio_base64:
+          type: string
+          description: Base64-encoded audio from user microphone
+        formato:
+          type: string
+          enum: [webm, mp3, wav, mp4, ogg]
+          default: webm
+      required:
+        - conversa_id
+        - audio_base64
+
+    MensagemAgenteResponse:
+      type: object
+      properties:
+        texto_usuario:
+          type: string
+          description: Transcribed user speech
+        texto_agente:
+          type: string
+          description: Agent response text
+        audio_agente:
+          type: string
+          description: Base64-encoded MP3 audio of agent response
+        encerrar:
+          type: boolean
+          description: Whether the agent suggests ending the session
+      required:
+        - texto_usuario
+        - texto_agente
+        - audio_agente
+        - encerrar
+
+    EncerrarSessaoRequest:
+      type: object
+      properties:
+        conversa_id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        telefone:
+          type: string
+        email:
+          type: string
+      required:
+        - conversa_id
+
+    EncerrarSessaoResponse:
+      type: object
+      properties:
+        lead_id:
+          type: ["string", "null"]
+          format: uuid
+        duracao_segundos:
+          type: integer
+        resumo:
+          type: string
+      required:
+        - duracao_segundos
+        - resumo

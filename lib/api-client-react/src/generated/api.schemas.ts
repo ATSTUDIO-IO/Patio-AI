@@ -327,6 +327,63 @@ export interface VeiculoPublicoResponse {
   mensagem?: string | null;
 }
 
+export interface IniciarSessaoRequest {
+  slug: string;
+  consentimento_lgpd: boolean;
+}
+
+export interface IniciarSessaoResponse {
+  conversa_id: string;
+  veiculo: VeiculoPublicoData;
+  loja: LojaPublicaMinima;
+  /** Base64-encoded MP3 audio of the greeting */
+  saudacao_audio: string;
+  saudacao_texto: string;
+}
+
+export type MensagemAgenteRequestFormato =
+  (typeof MensagemAgenteRequestFormato)[keyof typeof MensagemAgenteRequestFormato];
+
+export const MensagemAgenteRequestFormato = {
+  webm: "webm",
+  mp3: "mp3",
+  wav: "wav",
+  mp4: "mp4",
+  ogg: "ogg",
+} as const;
+
+export interface MensagemAgenteRequest {
+  conversa_id: string;
+  /** Base64-encoded audio from user microphone */
+  audio_base64: string;
+  formato?: MensagemAgenteRequestFormato;
+}
+
+export interface MensagemAgenteResponse {
+  /** Transcribed user speech */
+  texto_usuario: string;
+  /** Agent response text */
+  texto_agente: string;
+  /** Base64-encoded MP3 audio of agent response */
+  audio_agente: string;
+  /** Whether the agent suggests ending the session */
+  encerrar: boolean;
+}
+
+export interface EncerrarSessaoRequest {
+  conversa_id: string;
+  nome?: string;
+  telefone?: string;
+  email?: string;
+}
+
+export interface EncerrarSessaoResponse {
+  /** @nullable */
+  lead_id?: string | null;
+  duracao_segundos: number;
+  resumo: string;
+}
+
 export type ListVeiculosParams = {
   status?: ListVeiculosStatus;
 };

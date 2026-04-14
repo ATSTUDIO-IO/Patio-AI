@@ -34,7 +34,7 @@ export function gerarSlugCandidatos(
 }
 
 export function gerarUrlPublica(slug: string): string {
-  return `${getPublicBase()}/v/${slug}`;
+  return `${getPublicBase()}/web/v/${slug}`;
 }
 
 export async function gerarImagemQr(url: string): Promise<string> {
