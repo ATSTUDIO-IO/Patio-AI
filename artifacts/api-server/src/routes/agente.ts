@@ -29,7 +29,7 @@ import { simular, formatarSimulacaoParaAgente } from "../lib/simulator";
 
 const router: IRouter = Router();
 
-const CLAUDE_MODEL = "claude-haiku-3-5";
+const CLAUDE_MODEL = "claude-3-5-haiku-20241022";
 
 function buildSystemPrompt(
   veiculo: Pick<
