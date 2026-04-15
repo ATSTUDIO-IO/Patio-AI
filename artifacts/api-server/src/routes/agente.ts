@@ -866,16 +866,14 @@ router.post("/agente/encerrar", async (req, res): Promise<void> => {
 
   const leadId = lead.id;
 
-  await Promise.all([
-    db.update(conversas).set({ leadId: lead.id }).where(eq(conversas.id, conversa.id)),
-    db.update(conversas).set({
-      encerradaEm,
-      duracaoSegundos,
-      transcricao,
-      resumoIa: leadExtraido.resumo,
-      simulacaoRealizada: conversa.simulacaoRealizada || leadExtraido.pediu_financiamento,
-    }).where(eq(conversas.id, conversa.id)),
-  ]);
+  await db.update(conversas).set({
+    leadId: lead.id,
+    encerradaEm,
+    duracaoSegundos,
+    transcricao,
+    resumoIa: leadExtraido.resumo,
+    simulacaoRealizada: conversa.simulacaoRealizada || leadExtraido.pediu_financiamento,
+  }).where(eq(conversas.id, conversa.id));
 
   res.json({
     lead_id: leadId,

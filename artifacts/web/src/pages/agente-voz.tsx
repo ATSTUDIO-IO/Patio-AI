@@ -423,8 +423,7 @@ export default function AgenteVoz() {
     resetAudioQueue();
     setMostrarFormulario(true);
     setEstado("encerrado");
-    encerrarSessaoServidor();
-  }, [conversaId, encerrarSessaoServidor, resetAudioQueue]);
+  }, [conversaId, resetAudioQueue]);
 
   const handleEnviarLead = useCallback(async () => {
     setMostrarFormulario(false);
