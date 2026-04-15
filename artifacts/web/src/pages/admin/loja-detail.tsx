@@ -14,8 +14,11 @@ type Usuario = {
 type Fatura = {
   id: string;
   mes_ref: string;
-  veiculos_ativos: number;
-  preco_unitario: number;
+  conversas_incluidas: number;
+  conversas_usadas: number;
+  conversas_excedentes: number;
+  valor_base: number;
+  valor_excedente: number;
   valor_total: number;
   status: string;
   gerado_em: string;
@@ -350,7 +353,7 @@ export default function AdminLojaDetail() {
                 <thead>
                   <tr className="border-b border-gray-800 text-gray-400 text-xs">
                     <th className="px-4 py-2 text-left">Mês</th>
-                    <th className="px-4 py-2 text-right">Veíc.</th>
+                    <th className="px-4 py-2 text-right">Conversas</th>
                     <th className="px-4 py-2 text-right">Valor</th>
                     <th className="px-4 py-2 text-center">Status</th>
                     <th className="px-4 py-2"></th>
@@ -360,7 +363,10 @@ export default function AdminLojaDetail() {
                   {loja.faturas.map((f) => (
                     <tr key={f.id} className="border-b border-gray-800/50">
                       <td className="px-4 py-2.5 text-white">{f.mes_ref.slice(0, 7)}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-300">{f.veiculos_ativos}</td>
+                      <td className="px-4 py-2.5 text-right text-gray-300">
+                        {f.conversas_usadas}/{f.conversas_incluidas}
+                        {f.conversas_excedentes > 0 && <span className="text-red-400 ml-1">+{f.conversas_excedentes}</span>}
+                      </td>
                       <td className="px-4 py-2.5 text-right font-medium text-white">R$ {f.valor_total.toLocaleString("pt-BR")}</td>
                       <td className="px-4 py-2.5 text-center">
                         <span className={`text-xs font-medium ${statusFaturaColors[f.status] ?? "text-gray-400"}`}>

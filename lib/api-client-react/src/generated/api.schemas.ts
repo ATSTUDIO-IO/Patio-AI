@@ -920,6 +920,8 @@ export const AlertaTipo = {
   veiculo_sem_scans: "veiculo_sem_scans",
   scans_sem_lead: "scans_sem_lead",
   lead_financiamento_pendente: "lead_financiamento_pendente",
+  cota_80pct: "cota_80pct",
+  cota_esgotada: "cota_esgotada",
 } as const;
 
 export type AlertaPrioridade =
