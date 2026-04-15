@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, lojas, usuarios } from "@workspace/db";
 import {
@@ -170,23 +170,6 @@ router.post(
       return;
     }
 
-    if (req.user!.perfil !== "admin_patioai") {
-      const cfg = getPlanoConfig(lojaExistente.plano);
-      const [{ total }] = await db
-        .select({ total: count() })
-        .from(usuarios)
-        .where(and(eq(usuarios.lojaId, lojaId), eq(usuarios.ativo, true), eq(usuarios.perfil, "vendedor")));
-
-      if (total >= cfg.vendedoresMax) {
-        res.status(403).json({
-          error: `Limite de ${cfg.vendedoresMax} vendedor(es) atingido para o plano ${lojaExistente.plano}. Faça upgrade para adicionar mais vendedores.`,
-          codigo: "LIMITE_VENDEDORES_ATINGIDO",
-          atual: total,
-          limite: cfg.vendedoresMax,
-        });
-        return;
-      }
-    }
 
     const emailNormalizado = body.data.email.toLowerCase();
     const [emailExistente] = await db

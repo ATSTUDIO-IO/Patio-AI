@@ -341,8 +341,9 @@ export interface AuthResponse {
 
 export interface PlanoConfigResponse {
   preco_unitario: number;
-  veiculos_max: number;
-  vendedores_max: number;
+  conversas_incluidas: number;
+  buffer_excedente: number;
+  preco_excedente: number;
   personalizacao_avancada: boolean;
   assistente_financiamento: boolean;
   consulta_documental: boolean;
@@ -1050,8 +1051,11 @@ export const CicloBillingStatus = {
 export interface CicloBilling {
   id: string;
   mes_ref: string;
-  veiculos_ativos: number;
-  preco_unitario: number;
+  conversas_incluidas: number;
+  conversas_usadas: number;
+  conversas_excedentes: number;
+  valor_base: number;
+  valor_excedente: number;
   valor_total: number;
   status: CicloBillingStatus;
   /** @nullable */
@@ -1081,8 +1085,13 @@ export const FaturaAtualStatus = {
 export interface FaturaAtual {
   mes_ref: string;
   plano: FaturaAtualPlano;
-  veiculos_ativos: number;
-  preco_unitario: number;
+  conversas_incluidas: number;
+  conversas_usadas: number;
+  conversas_excedentes: number;
+  buffer_excedente: number;
+  preco_excedente: number;
+  valor_base: number;
+  valor_excedente: number;
   valor_total: number;
   status: FaturaAtualStatus;
   vencimento: string;

@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
-import { eq, and, lt, sql, gte, inArray } from "drizzle-orm";
-import { db, leads, veiculos, qrcodes, conversas } from "@workspace/db";
+import { eq, and, lt, sql, gte, inArray, count } from "drizzle-orm";
+import { db, leads, veiculos, qrcodes, conversas, lojas } from "@workspace/db";
 import { requireAuth, requireLojaId } from "../middlewares/auth";
+import { getPlanoConfig, getInicioMesAtual } from "../lib/planos";
 
 const router: IRouter = Router();
 
@@ -10,7 +11,9 @@ type Alerta = {
     | "lead_quente_sem_contato"
     | "veiculo_sem_scans"
     | "scans_sem_lead"
-    | "lead_financiamento_pendente";
+    | "lead_financiamento_pendente"
+    | "cota_conversas_80"
+    | "cota_conversas_limite";
   prioridade: "alta" | "media";
   titulo: string;
   descricao: string;
@@ -169,6 +172,65 @@ router.get("/alertas", requireAuth, async (req, res): Promise<void> => {
             marca: veiculo.marca,
             modelo: veiculo.modelo,
             scans_semana: scansNaSemana,
+          },
+        });
+      }
+    }
+  }
+
+  const [lojaData] = await db
+    .select({ plano: lojas.plano })
+    .from(lojas)
+    .where(eq(lojas.id, lojaId))
+    .limit(1);
+
+  if (lojaData) {
+    const planoConfig = getPlanoConfig(lojaData.plano);
+    const inicioMes = getInicioMesAtual();
+
+    const idsVeiculos = await db
+      .select({ id: veiculos.id })
+      .from(veiculos)
+      .where(eq(veiculos.lojaId, lojaId));
+
+    const ids = idsVeiculos.map((v) => v.id);
+
+    if (ids.length > 0) {
+      const veiculoFilter = ids.length === 1
+        ? eq(conversas.veiculoId, ids[0])
+        : inArray(conversas.veiculoId, ids);
+
+      const [{ totalConv }] = await db
+        .select({ totalConv: sql<number>`count(*)::int` })
+        .from(conversas)
+        .where(and(veiculoFilter, gte(conversas.iniciadaEm, inicioMes)));
+
+      const cota = planoConfig.conversasIncluidas;
+      const pct = (totalConv / cota) * 100;
+
+      if (totalConv >= cota) {
+        alertas.push({
+          tipo: "cota_conversas_limite",
+          prioridade: "alta",
+          titulo: "Cota de conversas atingida",
+          descricao: `Você usou ${totalConv} de ${cota} conversas incluídas no plano ${lojaData.plano}. O agente pode ser bloqueado em até ${planoConfig.bufferExcedente} conversas adicionais.`,
+          contexto: {
+            conversas_usadas: totalConv,
+            conversas_incluidas: cota,
+            buffer_excedente: planoConfig.bufferExcedente,
+            preco_excedente: planoConfig.precoExcedente,
+          },
+        });
+      } else if (pct >= 80) {
+        alertas.push({
+          tipo: "cota_conversas_80",
+          prioridade: "media",
+          titulo: "80% da cota de conversas utilizada",
+          descricao: `Você utilizou ${totalConv} de ${cota} conversas incluídas no mês (${Math.round(pct)}%). Conversas acima da cota custam R$0,75 cada.`,
+          contexto: {
+            conversas_usadas: totalConv,
+            conversas_incluidas: cota,
+            percentual: Math.round(pct),
           },
         });
       }

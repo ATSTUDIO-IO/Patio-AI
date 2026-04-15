@@ -1,24 +1,19 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, gte, inArray } from "drizzle-orm";
 import { z } from "zod/v4";
 import {
   db,
   lojas,
   veiculos,
+  conversas,
   ciclosBilling,
   eventosBilling,
 } from "@workspace/db";
 import { requireAuth, requirePerfil } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
-import { PLANOS_CONFIG } from "../lib/planos";
+import { PLANOS_CONFIG, getPlanoConfig, getInicioMesAtual } from "../lib/planos";
 
 const router: IRouter = Router();
-
-const PRECOS: Record<string, number> = {
-  starter: PLANOS_CONFIG.starter.precoUnitario,
-  pro: PLANOS_CONFIG.pro.precoUnitario,
-  full: PLANOS_CONFIG.full.precoUnitario,
-};
 
 function requireLojaIdDono(
   req: Parameters<Parameters<typeof router.get>[1]>[0],
@@ -36,8 +31,11 @@ function mapCiclo(c: typeof ciclosBilling.$inferSelect) {
   return {
     id: c.id,
     mes_ref: c.mesRef,
-    veiculos_ativos: c.veiculosAtivos,
-    preco_unitario: Number(c.precoUnitario),
+    conversas_incluidas: c.conversasIncluidas,
+    conversas_usadas: c.conversasUsadas,
+    conversas_excedentes: c.conversasExcedentes,
+    valor_base: Number(c.valorBase),
+    valor_excedente: Number(c.valorExcedente),
     valor_total: Number(c.valorTotal),
     status: c.status,
     gerado_em: c.geradoEm,
@@ -56,6 +54,23 @@ function mapEvento(
     ocorrido_em: e.ocorridoEm,
     motivo: e.motivo,
   };
+}
+
+async function contarConversasMes(lojaId: string, inicioMes: Date): Promise<number> {
+  const veiculosDaLoja = await db
+    .select({ id: veiculos.id })
+    .from(veiculos)
+    .where(eq(veiculos.lojaId, lojaId));
+  const ids = veiculosDaLoja.map((v) => v.id);
+  if (ids.length === 0) return 0;
+  const veiculoFilter = ids.length === 1
+    ? eq(conversas.veiculoId, ids[0])
+    : inArray(conversas.veiculoId, ids);
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(conversas)
+    .where(and(veiculoFilter, gte(conversas.iniciadaEm, inicioMes)));
+  return total;
 }
 
 router.get(
@@ -96,15 +111,16 @@ router.get(
       return;
     }
 
-    const [{ value: veiculosAtivos }] = await db
-      .select({ value: count() })
-      .from(veiculos)
-      .where(and(eq(veiculos.lojaId, lojaId), eq(veiculos.status, "ativo")));
+    const cfg = getPlanoConfig(loja.plano);
+    const inicioMes = getInicioMesAtual();
+    const conversasUsadas = await contarConversasMes(lojaId, inicioMes);
+    const conversasExcedentes = Math.max(0, conversasUsadas - cfg.conversasIncluidas);
+    const valorBase = cfg.precoUnitario;
+    const valorExcedente = conversasExcedentes * cfg.precoExcedente;
+    const valorTotal = valorBase + valorExcedente;
 
     const now = new Date();
     const mesRef = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const precoUnitario = PRECOS[loja.plano] ?? 30;
-    const valorTotal = veiculosAtivos * precoUnitario;
 
     const [cicloExistente] = await db
       .select()
@@ -117,8 +133,13 @@ router.get(
     res.json({
       mes_ref: mesRef,
       plano: loja.plano,
-      veiculos_ativos: veiculosAtivos,
-      preco_unitario: precoUnitario,
+      conversas_incluidas: cfg.conversasIncluidas,
+      conversas_usadas: conversasUsadas,
+      conversas_excedentes: conversasExcedentes,
+      buffer_excedente: cfg.bufferExcedente,
+      preco_excedente: cfg.precoExcedente,
+      valor_base: valorBase,
+      valor_excedente: valorExcedente,
       valor_total: valorTotal,
       status: cicloExistente?.status ?? "aberto",
       vencimento: vencimento.toISOString().split("T")[0],
@@ -186,6 +207,7 @@ router.post(
   async (_req, res): Promise<void> => {
     const now = new Date();
     const mesRef = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const inicioMes = getInicioMesAtual();
 
     const todasLojas = await db
       .select({ id: lojas.id, plano: lojas.plano })
@@ -195,21 +217,23 @@ router.post(
     const resultados: Array<{ loja_id: string; status: string }> = [];
 
     for (const loja of todasLojas) {
-      const [{ value: veiculosAtivos }] = await db
-        .select({ value: count() })
-        .from(veiculos)
-        .where(and(eq(veiculos.lojaId, loja.id), eq(veiculos.status, "ativo")));
-
-      const precoUnitario = PRECOS[loja.plano] ?? 30;
-      const valorTotal = veiculosAtivos * precoUnitario;
+      const cfg = getPlanoConfig(loja.plano);
+      const conversasUsadas = await contarConversasMes(loja.id, inicioMes);
+      const conversasExcedentes = Math.max(0, conversasUsadas - cfg.conversasIncluidas);
+      const valorBase = cfg.precoUnitario;
+      const valorExcedente = conversasExcedentes * cfg.precoExcedente;
+      const valorTotal = valorBase + valorExcedente;
 
       const inserted = await db
         .insert(ciclosBilling)
         .values({
           lojaId: loja.id,
           mesRef,
-          veiculosAtivos: veiculosAtivos,
-          precoUnitario: String(precoUnitario),
+          conversasIncluidas: cfg.conversasIncluidas,
+          conversasUsadas: conversasUsadas,
+          conversasExcedentes: conversasExcedentes,
+          valorBase: String(valorBase),
+          valorExcedente: String(valorExcedente),
           valorTotal: String(valorTotal),
           status: "aberto",
         })

@@ -12,11 +12,31 @@ const STATUS_INFO: Record<string, { label: string; color: string }> = {
   inadimplente: { label: "Inadimplente", color: "bg-red-100 text-red-700" },
 };
 
+function QuotaBar({ usadas, incluidas, buffer }: { usadas: number; incluidas: number; buffer: number }) {
+  const pct = Math.min((usadas / incluidas) * 100, 100);
+  const excedentes = Math.max(0, usadas - incluidas);
+  const cor = usadas >= incluidas ? "bg-red-400" : pct >= 80 ? "bg-yellow-400" : "bg-green-400";
+  return (
+    <div className="mt-4">
+      <div className="flex justify-between text-xs text-white/70 mb-1">
+        <span>Uso de conversas</span>
+        <span>{usadas} / {incluidas} incluídas {excedentes > 0 ? `(+${excedentes} excedentes)` : ""}</span>
+      </div>
+      <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${pct}%` }} />
+      </div>
+      <p className="text-xs text-white/50 mt-1">Buffer de {buffer} conversas adicionais após a cota</p>
+    </div>
+  );
+}
+
 export default function PainelFatura() {
   const { user } = useAuth();
 
   const { data: atual, isLoading: isLoadingAtual } = useGetFaturaAtual();
   const { data: historico = [], isLoading: isLoadingHistorico } = useListFaturas();
+
+  const planoLabel: Record<string, string> = { starter: "Starter", pro: "Pro", full: "Full" };
 
   return (
     <PainelLayout>
@@ -31,22 +51,34 @@ export default function PainelFatura() {
               <p className="text-4xl font-bold mt-1">{formatBRL(atual.valor_total)}</p>
               <div className="mt-4 grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-white/60 text-xs">Veículos Ativos</p>
-                  <p className="text-lg font-semibold">{atual.veiculos_ativos}</p>
-                </div>
-                <div>
-                  <p className="text-white/60 text-xs">Preço Unitário</p>
-                  <p className="text-lg font-semibold">{formatBRL(atual.preco_unitario)}/veíc.</p>
-                </div>
-                <div>
                   <p className="text-white/60 text-xs">Plano</p>
-                  <p className="text-lg font-semibold capitalize">{user?.loja?.plano ?? atual.plano}</p>
+                  <p className="text-lg font-semibold">{planoLabel[user?.loja?.plano ?? atual.plano] ?? atual.plano}</p>
+                </div>
+                <div>
+                  <p className="text-white/60 text-xs">Mensalidade Base</p>
+                  <p className="text-lg font-semibold">{formatBRL(atual.valor_base)}</p>
+                </div>
+                <div>
+                  <p className="text-white/60 text-xs">Excedente</p>
+                  <p className="text-lg font-semibold">{formatBRL(atual.valor_excedente)}</p>
                 </div>
               </div>
+
+              <QuotaBar
+                usadas={atual.conversas_usadas}
+                incluidas={atual.conversas_incluidas}
+                buffer={atual.buffer_excedente}
+              />
+
               <div className="mt-4 pt-4 border-t border-white/20">
                 <p className="text-xs text-white/60">
                   Mês de referência: {atual.mes_ref} · Vencimento: {new Date(atual.vencimento).toLocaleDateString("pt-BR")}
                 </p>
+                {atual.conversas_excedentes > 0 && (
+                  <p className="text-xs text-white/60 mt-1">
+                    {atual.conversas_excedentes} conversas excedentes × {formatBRL(atual.preco_excedente)} = {formatBRL(atual.valor_excedente)}
+                  </p>
+                )}
                 <span className="inline-block mt-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
                   {STATUS_INFO[atual.status]?.label ?? atual.status}
                 </span>
@@ -72,8 +104,9 @@ export default function PainelFatura() {
                   <div>
                     <p className="text-sm font-medium text-gray-900">{f.mes_ref}</p>
                     <p className="text-xs text-gray-400">
-                      {f.veiculos_ativos} veíc. × {formatBRL(f.preco_unitario)}
-                      {f.gerado_em ? ` · Gerado em ${new Date(f.gerado_em).toLocaleDateString("pt-BR")}` : ""}
+                      {f.conversas_usadas}/{f.conversas_incluidas} conversas
+                      {f.conversas_excedentes > 0 ? ` · +${f.conversas_excedentes} excedentes` : ""}
+                      {f.gerado_em ? ` · ${new Date(f.gerado_em).toLocaleDateString("pt-BR")}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -88,12 +121,25 @@ export default function PainelFatura() {
           )}
         </div>
 
-        <div className="bg-blue-50 rounded-2xl p-4">
+        <div className="bg-blue-50 rounded-2xl p-4 space-y-3">
           <p className="text-sm text-blue-700 font-medium">ℹ️ Como funciona a cobrança</p>
-          <p className="text-xs text-blue-600 mt-1.5 leading-relaxed">
-            O valor é calculado com base no número de veículos ativos no período. Veículos pausados ou vendidos não são cobrados.
-            As faturas são fechadas mensalmente pela equipe PátioAI e o pagamento é processado automaticamente.
+          <p className="text-xs text-blue-600 leading-relaxed">
+            Cada plano inclui uma cota mensal de conversas. Ao ultrapassar a cota, há um buffer de 20 conversas adicionais incluídas.
+            Conversas acima da cota são cobradas a R$0,75 por conversa. O agente é bloqueado ao esgotar o buffer.
           </p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { plano: "Starter", preco: "R$129,90", cotas: "60 conv./mês" },
+              { plano: "Pro", preco: "R$249,90", cotas: "200 conv./mês" },
+              { plano: "Full", preco: "R$449,90", cotas: "500 conv./mês" },
+            ].map((p) => (
+              <div key={p.plano} className="bg-white rounded-xl p-3 text-center border border-blue-100">
+                <p className="text-xs font-bold text-blue-800">{p.plano}</p>
+                <p className="text-sm font-semibold text-blue-700 mt-1">{p.preco}</p>
+                <p className="text-xs text-blue-500">{p.cotas}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </PainelLayout>

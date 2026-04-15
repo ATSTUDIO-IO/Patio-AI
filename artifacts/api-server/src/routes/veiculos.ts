@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql, count } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db, veiculos, qrcodes, eventosBilling, lojas } from "@workspace/db";
 import {
   ListVeiculosQueryParams,
@@ -23,34 +23,6 @@ import {
 
 const router: IRouter = Router();
 
-async function verificarLimiteVeiculosAgente(
-  lojaId: string,
-  excluirVeiculoId?: string,
-): Promise<{ bloqueado: boolean; atual: number; limite: number; plano: string }> {
-  const [lojaData] = await db
-    .select({ plano: lojas.plano })
-    .from(lojas)
-    .where(eq(lojas.id, lojaId))
-    .limit(1);
-
-  const plano = lojaData?.plano ?? "starter";
-  const cfg = getPlanoConfig(plano);
-
-  const conditions = [eq(veiculos.lojaId, lojaId), eq(veiculos.ativoAgente, true)];
-  if (excluirVeiculoId) conditions.push(sql`${veiculos.id} != ${excluirVeiculoId}`);
-
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(veiculos)
-    .where(and(...conditions));
-
-  return {
-    bloqueado: total >= cfg.veiculosMax,
-    atual: total,
-    limite: cfg.veiculosMax,
-    plano,
-  };
-}
 
 function mapVeiculo(
   v: typeof veiculos.$inferSelect,
@@ -156,17 +128,6 @@ router.post("/veiculos", requireAuth, async (req, res): Promise<void> => {
 
   if (placaExistente) {
     res.status(409).json({ error: "Placa já cadastrada nesta loja" });
-    return;
-  }
-
-  const limiteVeiculos = await verificarLimiteVeiculosAgente(lojaId);
-  if (limiteVeiculos.bloqueado) {
-    res.status(403).json({
-      error: `Limite de ${limiteVeiculos.limite} veículos com agente ativo atingido para o plano ${limiteVeiculos.plano}. Faça upgrade para adicionar mais veículos.`,
-      codigo: "LIMITE_VEICULOS_ATINGIDO",
-      atual: limiteVeiculos.atual,
-      limite: limiteVeiculos.limite,
-    });
     return;
   }
 
@@ -352,18 +313,6 @@ router.put(
     if (d.descricao_agente !== undefined)
       updateData.descricaoAgente = d.descricao_agente;
     if (d.ativo_agente !== undefined) {
-      if (d.ativo_agente === true && !veiculoExistente.ativoAgente) {
-        const limiteVeiculos = await verificarLimiteVeiculosAgente(lojaId, veiculoExistente.id);
-        if (limiteVeiculos.bloqueado) {
-          res.status(403).json({
-            error: `Limite de ${limiteVeiculos.limite} veículos com agente ativo atingido para o plano ${limiteVeiculos.plano}. Faça upgrade para ativar mais veículos.`,
-            codigo: "LIMITE_VEICULOS_ATINGIDO",
-            atual: limiteVeiculos.atual,
-            limite: limiteVeiculos.limite,
-          });
-          return;
-        }
-      }
       updateData.ativoAgente = d.ativo_agente;
     }
 
@@ -426,19 +375,6 @@ router.patch(
 
     const novoStatus = body.data.status as "ativo" | "vendido" | "pausado";
     const motivo = body.data.motivo ?? null;
-
-    if (novoStatus === "ativo" && !veiculoExistente.ativoAgente) {
-      const limiteVeiculos = await verificarLimiteVeiculosAgente(lojaId, veiculoExistente.id);
-      if (limiteVeiculos.bloqueado) {
-        res.status(403).json({
-          error: `Limite de ${limiteVeiculos.limite} veículos com agente ativo atingido para o plano ${limiteVeiculos.plano}. Faça upgrade para ativar mais veículos.`,
-          codigo: "LIMITE_VEICULOS_ATINGIDO",
-          atual: limiteVeiculos.atual,
-          limite: limiteVeiculos.limite,
-        });
-        return;
-      }
-    }
 
     const { veiculoAtualizado, qrAtualizado } = await db.transaction(
       async (tx) => {

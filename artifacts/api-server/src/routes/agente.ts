@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, count, gte, inArray } from "drizzle-orm";
 import {
   db,
   qrcodes,
@@ -26,7 +26,7 @@ import {
 import { formatZodError } from "../lib/errors";
 import { logger } from "../lib/logger";
 import { simular, formatarSimulacaoParaAgente } from "../lib/simulator";
-import { getPlanoConfig } from "../lib/planos";
+import { getPlanoConfig, getInicioMesAtual } from "../lib/planos";
 
 const router: IRouter = Router();
 
@@ -343,6 +343,45 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
 
   if (!loja) {
     res.status(404).json({ error: "Loja não encontrada" });
+    return;
+  }
+
+  const planoConfig = getPlanoConfig(loja.plano);
+  const inicioMes = getInicioMesAtual();
+
+  const veiculosIdsDaLoja = await db
+    .select({ id: veiculos.id })
+    .from(veiculos)
+    .where(eq(veiculos.lojaId, loja.id));
+
+  const idsLoja = veiculosIdsDaLoja.map((v) => v.id);
+
+  let conversasMes = 0;
+  if (idsLoja.length > 0) {
+    const veiculoFilter = idsLoja.length === 1
+      ? eq(conversas.veiculoId, idsLoja[0])
+      : inArray(conversas.veiculoId, idsLoja);
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(conversas)
+      .where(
+        and(veiculoFilter, gte(conversas.iniciadaEm, inicioMes))
+      );
+    conversasMes = total;
+  }
+
+  const cotaTotal = planoConfig.conversasIncluidas + planoConfig.bufferExcedente;
+
+  if (conversasMes >= cotaTotal) {
+    const mensagemBloqueio = `No momento nosso assistente de atendimento está temporariamente indisponível por limite mensal de conversas.${loja.telefone ? ` Entre em contato pelo ${loja.telefone}.` : " Entre em contato diretamente com a loja."}`;
+    const audioBloqueio = await gerarAudioBase64(mensagemBloqueio);
+    res.json({
+      conversa_id: null,
+      bloqueado: true,
+      motivo: "cota_esgotada",
+      mensagem: mensagemBloqueio,
+      audio_base64: audioBloqueio,
+    });
     return;
   }
 

@@ -34,11 +34,11 @@ export const ciclosBilling = pgTable(
       .notNull()
       .references(() => lojas.id),
     mesRef: date("mes_ref").notNull(),
-    veiculosAtivos: integer("veiculos_ativos").notNull(),
-    precoUnitario: numeric("preco_unitario", {
-      precision: 10,
-      scale: 2,
-    }).notNull(),
+    conversasIncluidas: integer("conversas_incluidas").notNull().default(0),
+    conversasUsadas: integer("conversas_usadas").notNull().default(0),
+    conversasExcedentes: integer("conversas_excedentes").notNull().default(0),
+    valorBase: numeric("valor_base", { precision: 10, scale: 2 }).notNull().default("0"),
+    valorExcedente: numeric("valor_excedente", { precision: 10, scale: 2 }).notNull().default("0"),
     valorTotal: numeric("valor_total", { precision: 12, scale: 2 }).notNull(),
     status: statusBillingEnum("status").notNull().default("aberto"),
     geradoEm: timestamp("gerado_em", { withTimezone: true }).defaultNow(),
@@ -59,7 +59,6 @@ export const eventosBilling = pgTable(
       .notNull()
       .references(() => lojas.id),
     veiculoId: uuid("veiculo_id")
-      .notNull()
       .references(() => veiculos.id),
     tipo: tipoBillingEnum("tipo").notNull(),
     ocorridoEm: timestamp("ocorrido_em", { withTimezone: true }).defaultNow(),

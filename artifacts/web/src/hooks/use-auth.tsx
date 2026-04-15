@@ -6,8 +6,9 @@ const USER_KEY = "patioai_user";
 
 export type PlanoConfig = {
   preco_unitario: number;
-  veiculos_max: number;
-  vendedores_max: number;
+  conversas_incluidas: number;
+  buffer_excedente: number;
+  preco_excedente: number;
   personalizacao_avancada: boolean;
   assistente_financiamento: boolean;
   consulta_documental: boolean;

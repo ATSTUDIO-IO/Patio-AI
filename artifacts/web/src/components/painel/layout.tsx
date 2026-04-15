@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { useLogout } from "@workspace/api-client-react";
+import { useLogout, useGetFaturaAtual } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 type NavItem = {
@@ -27,6 +27,7 @@ export function PainelLayout({ children }: { children: ReactNode }) {
   const logoutMutation = useLogout();
 
   const isDono = user?.perfil === "dono" || user?.perfil === "admin_patioai";
+  const { data: fatura } = useGetFaturaAtual({ query: { enabled: isDono } });
 
   const handleLogout = async () => {
     try { await logoutMutation.mutateAsync(); } catch { }
@@ -71,6 +72,28 @@ export function PainelLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="p-3 border-t border-gray-100">
+          {isDono && fatura && (
+            <div className="mx-3 mb-2 bg-gray-50 rounded-lg px-2.5 py-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-500">Conversas do mês</span>
+                <span className={`text-xs font-semibold ${
+                  fatura.conversas_usadas >= fatura.conversas_incluidas ? "text-red-600" :
+                  (fatura.conversas_usadas / fatura.conversas_incluidas) >= 0.8 ? "text-yellow-600" :
+                  "text-gray-700"
+                }`}>{fatura.conversas_usadas}/{fatura.conversas_incluidas}</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    fatura.conversas_usadas >= fatura.conversas_incluidas ? "bg-red-500" :
+                    (fatura.conversas_usadas / fatura.conversas_incluidas) >= 0.8 ? "bg-yellow-400" :
+                    "bg-green-500"
+                  }`}
+                  style={{ width: `${Math.min((fatura.conversas_usadas / fatura.conversas_incluidas) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
           {user?.loja?.plano && (
             <div className="mx-3 mb-2 flex items-center justify-between bg-gray-50 rounded-lg px-2.5 py-1.5">
               <span className="text-xs text-gray-500">Plano</span>
