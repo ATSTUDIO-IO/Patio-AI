@@ -322,6 +322,16 @@ export interface LojaPublic {
   nome_agente?: string | null;
   /** @nullable */
   tom_agente?: string | null;
+  /** @nullable */
+  horario_atendimento?: string | null;
+  /** @nullable */
+  instrucoes_especificas?: string | null;
+  /** @nullable */
+  aceita_troca?: boolean | null;
+  /** @nullable */
+  descricao_garantia?: string | null;
+  /** @nullable */
+  bancos_parceiros?: string | null;
 }
 
 export interface AuthResponse {
@@ -346,6 +356,16 @@ export interface UpdateLojaRequest {
   nome_agente?: string | null;
   /** @nullable */
   tom_agente?: string | null;
+  /** @nullable */
+  horario_atendimento?: string | null;
+  /** @nullable */
+  instrucoes_especificas?: string | null;
+  /** @nullable */
+  aceita_troca?: boolean | null;
+  /** @nullable */
+  descricao_garantia?: string | null;
+  /** @nullable */
+  bancos_parceiros?: string | null;
 }
 
 export interface CreateVendedorRequest {

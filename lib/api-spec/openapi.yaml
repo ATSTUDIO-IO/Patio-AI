@@ -1839,6 +1839,16 @@ components:
           type: ["string", "null"]
         tom_agente:
           type: ["string", "null"]
+        horario_atendimento:
+          type: ["string", "null"]
+        instrucoes_especificas:
+          type: ["string", "null"]
+        aceita_troca:
+          type: ["boolean", "null"]
+        descricao_garantia:
+          type: ["string", "null"]
+        bancos_parceiros:
+          type: ["string", "null"]
       required:
         - id
         - razao_social
@@ -1887,6 +1897,16 @@ components:
         nome_agente:
           type: ["string", "null"]
         tom_agente:
+          type: ["string", "null"]
+        horario_atendimento:
+          type: ["string", "null"]
+        instrucoes_especificas:
+          type: ["string", "null"]
+        aceita_troca:
+          type: ["boolean", "null"]
+        descricao_garantia:
+          type: ["string", "null"]
+        bancos_parceiros:
           type: ["string", "null"]
 
     CreateVendedorRequest:

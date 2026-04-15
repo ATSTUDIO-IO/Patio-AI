@@ -41,6 +41,24 @@ function InputField({
   );
 }
 
+function TextareaField({
+  label,
+  hint,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string }) {
+  return (
+    <div>
+      <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
+      <textarea
+        {...props}
+        rows={3}
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+      />
+      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
 function SelectField({
   label,
   hint,
@@ -61,6 +79,36 @@ function SelectField({
   );
 }
 
+function ToggleField({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (val: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-gray-700">{label}</p>
+        {hint && <p className="text-xs text-gray-400 mt-0.5">{hint}</p>}
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${checked ? "bg-blue-600" : "bg-gray-200"}`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out ${checked ? "translate-x-5" : "translate-x-0"}`}
+        />
+      </button>
+    </div>
+  );
+}
+
 function StatusMessage({ msg }: { msg: string | null }) {
   if (!msg) return null;
   const isError = msg.startsWith("Erro");
@@ -70,6 +118,20 @@ function StatusMessage({ msg }: { msg: string | null }) {
     </p>
   );
 }
+
+const TOM_OPTIONS = [
+  { value: "profissional_cordial", label: "Profissional e Cordial" },
+  { value: "descontraido_amigavel", label: "Descontraído e Amigável" },
+  { value: "consultivo_tecnico", label: "Consultivo e Técnico" },
+  { value: "direto_objetivo", label: "Direto e Objetivo" },
+];
+
+const TOM_DESCRICAO: Record<string, string> = {
+  profissional_cordial: "Consultor confiável, linguagem formal mas acessível, transmite segurança.",
+  descontraido_amigavel: "Informal e próximo, como um amigo especialista em carros.",
+  consultivo_tecnico: "Foca em dados e especificações, ajuda o cliente a decidir com razão.",
+  direto_objetivo: "Vai ao ponto, respostas concisas, resolve a necessidade rapidamente.",
+};
 
 export default function PainelConfiguracoes() {
   const { user, setAuth, token } = useAuth();
@@ -85,7 +147,12 @@ export default function PainelConfiguracoes() {
 
   const [agenteForm, setAgenteForm] = useState({
     nome_agente: user?.loja?.nome_agente ?? "Agente PátioAI",
-    tom_agente: user?.loja?.tom_agente ?? "amigável e profissional",
+    tom_agente: user?.loja?.tom_agente ?? "profissional_cordial",
+    horario_atendimento: user?.loja?.horario_atendimento ?? "",
+    instrucoes_especificas: user?.loja?.instrucoes_especificas ?? "",
+    aceita_troca: user?.loja?.aceita_troca ?? true,
+    descricao_garantia: user?.loja?.descricao_garantia ?? "",
+    bancos_parceiros: user?.loja?.bancos_parceiros ?? "",
   });
 
   const [vendedorForm, setVendedorForm] = useState({ nome: "", email: "", senha: "" });
@@ -112,7 +179,7 @@ export default function PainelConfiguracoes() {
 
   const setLoja = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setLojaForm((f) => ({ ...f, [k]: e.target.value }));
-  const setAgente = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const setAgente = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setAgenteForm((f) => ({ ...f, [k]: e.target.value }));
   const setVendedor = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setVendedorForm((f) => ({ ...f, [k]: e.target.value }));
@@ -148,8 +215,13 @@ export default function PainelConfiguracoes() {
       await updateLoja.mutateAsync({
         lojaId,
         data: {
-          nome_agente: agenteForm.nome_agente,
-          tom_agente: agenteForm.tom_agente,
+          nome_agente: agenteForm.nome_agente || undefined,
+          tom_agente: agenteForm.tom_agente || undefined,
+          horario_atendimento: agenteForm.horario_atendimento || undefined,
+          instrucoes_especificas: agenteForm.instrucoes_especificas || undefined,
+          aceita_troca: agenteForm.aceita_troca,
+          descricao_garantia: agenteForm.descricao_garantia || undefined,
+          bancos_parceiros: agenteForm.bancos_parceiros || undefined,
         },
       });
       setAgenteStatus("Configurações do agente salvas!");
@@ -219,13 +291,7 @@ export default function PainelConfiguracoes() {
     }
   };
 
-  const TOM_OPTIONS = [
-    "amigável e profissional",
-    "formal e técnico",
-    "descontraído e jovial",
-    "consultivo e paciente",
-    "objetivo e direto",
-  ];
+  const tomAtual = TOM_OPTIONS.find((t) => t.value === agenteForm.tom_agente);
 
   return (
     <PainelLayout>
@@ -275,31 +341,75 @@ export default function PainelConfiguracoes() {
 
         <SectionCard
           title="Personalização do Agente de Voz"
-          subtitle="Configure como o agente IA se apresenta ao comprador"
+          subtitle="Configure identidade, comportamento e informações que o agente usa nas conversas"
         >
-          <form onSubmit={handleSaveAgente} className="space-y-3">
-            <InputField
-              label="Nome do Agente"
-              value={agenteForm.nome_agente}
-              onChange={setAgente("nome_agente")}
-              placeholder="Ex: Max, Sofia, Carlos..."
-              hint="Este nome será usado pelo agente ao se apresentar ao comprador."
-            />
-            <SelectField
-              label="Tom / Estilo de Comunicação"
-              value={agenteForm.tom_agente}
-              onChange={setAgente("tom_agente")}
-              hint="Define como o agente vai interagir durante a conversa."
-            >
-              {TOM_OPTIONS.map((tom) => (
-                <option key={tom} value={tom}>{tom.charAt(0).toUpperCase() + tom.slice(1)}</option>
-              ))}
-            </SelectField>
-            <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
-              <span className="font-semibold">Prévia: </span>
-              "Olá! Eu sou o {agenteForm.nome_agente || "Agente"}, seu assistente {agenteForm.tom_agente}. Estou aqui para
-              te ajudar a conhecer este veículo. Como posso te ajudar?"
+          <form onSubmit={handleSaveAgente} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <InputField
+                label="Nome do Agente"
+                value={agenteForm.nome_agente}
+                onChange={setAgente("nome_agente")}
+                placeholder="Ex: Max, Sofia, Carlos..."
+                hint="Nome pelo qual o agente se apresenta."
+              />
+              <SelectField
+                label="Perfil de Comportamento"
+                value={agenteForm.tom_agente}
+                onChange={setAgente("tom_agente")}
+                hint={tomAtual ? TOM_DESCRICAO[tomAtual.value] : undefined}
+              >
+                {TOM_OPTIONS.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </SelectField>
             </div>
+
+            <InputField
+              label="Horário de Atendimento"
+              value={agenteForm.horario_atendimento}
+              onChange={setAgente("horario_atendimento")}
+              placeholder="Ex: Seg a Sex das 8h às 18h, Sáb das 9h às 13h"
+              hint="O agente informa ao lead quando a loja está disponível."
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <ToggleField
+                label="Aceita Troca de Veículo"
+                hint="O agente menciona essa possibilidade ao lead."
+                checked={agenteForm.aceita_troca}
+                onChange={(val) => setAgenteForm((f) => ({ ...f, aceita_troca: val }))}
+              />
+              <InputField
+                label="Bancos Parceiros"
+                value={agenteForm.bancos_parceiros}
+                onChange={setAgente("bancos_parceiros")}
+                placeholder="Ex: Itaú, Santander, BV Financeira"
+                hint="Listados ao simular financiamento."
+              />
+            </div>
+
+            <TextareaField
+              label="Descrição da Garantia"
+              value={agenteForm.descricao_garantia}
+              onChange={setAgente("descricao_garantia")}
+              placeholder="Ex: 90 dias de garantia legal + 6 meses de garantia da loja para motor e câmbio."
+              hint="O agente usa essa descrição ao responder sobre garantia."
+            />
+
+            <TextareaField
+              label="Instruções Especiais"
+              value={agenteForm.instrucoes_especificas}
+              onChange={setAgente("instrucoes_especificas")}
+              placeholder="Ex: Sempre pergunte se o cliente já possui financiamento pré-aprovado. Destaque o programa de revisão gratuita nos primeiros 3 meses."
+              hint="Orientações extras que o agente deve seguir em todas as conversas."
+            />
+
+            <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
+              <span className="font-semibold">Prévia da apresentação: </span>
+              "Olá! Eu sou {agenteForm.nome_agente || "o Agente"}, da {user?.loja?.nome_fantasia ?? "nossa loja"}!
+              {agenteForm.aceita_troca ? " Aceitamos troca de veículos." : ""} Como posso te ajudar?"
+            </div>
+
             <StatusMessage msg={agenteStatus} />
             <button
               type="submit"

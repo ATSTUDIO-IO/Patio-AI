@@ -221,6 +221,11 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
         ativo: lojaData.ativo,
         nome_agente: lojaData.nomeAgente,
         tom_agente: lojaData.tomAgente,
+        horario_atendimento: lojaData.horarioAtendimento,
+        instrucoes_especificas: lojaData.instrucoesEspecificas,
+        aceita_troca: lojaData.aceitaTroca,
+        descricao_garantia: lojaData.descricaoGarantia,
+        bancos_parceiros: lojaData.bancosParceiros,
         criado_em: lojaData.criadoEm,
       };
     }

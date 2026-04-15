@@ -83,6 +83,11 @@ export const GetMeResponse = zod.object({
         criado_em: zod.coerce.date().nullish(),
         nome_agente: zod.string().nullish(),
         tom_agente: zod.string().nullish(),
+        horario_atendimento: zod.string().nullish(),
+        instrucoes_especificas: zod.string().nullish(),
+        aceita_troca: zod.boolean().nullish(),
+        descricao_garantia: zod.string().nullish(),
+        bancos_parceiros: zod.string().nullish(),
       }),
       zod.null(),
     ])
@@ -104,6 +109,11 @@ export const UpdateLojaBody = zod.object({
   cidade: zod.string().nullish(),
   nome_agente: zod.string().nullish(),
   tom_agente: zod.string().nullish(),
+  horario_atendimento: zod.string().nullish(),
+  instrucoes_especificas: zod.string().nullish(),
+  aceita_troca: zod.boolean().nullish(),
+  descricao_garantia: zod.string().nullish(),
+  bancos_parceiros: zod.string().nullish(),
 });
 
 export const UpdateLojaResponse = zod.object({
@@ -119,6 +129,11 @@ export const UpdateLojaResponse = zod.object({
   criado_em: zod.coerce.date().nullish(),
   nome_agente: zod.string().nullish(),
   tom_agente: zod.string().nullish(),
+  horario_atendimento: zod.string().nullish(),
+  instrucoes_especificas: zod.string().nullish(),
+  aceita_troca: zod.boolean().nullish(),
+  descricao_garantia: zod.string().nullish(),
+  bancos_parceiros: zod.string().nullish(),
 });
 
 /**

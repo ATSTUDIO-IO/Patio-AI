@@ -66,6 +66,7 @@ Todas as tabelas estão em `lib/db/src/schema/` organizadas por domínio:
 | 5 | CRM e Financiamento (M4+M5) | ✅ Concluído |
 | 6 | Billing e Painel do Lojista (React) | ✅ Concluído |
 | 7 | Painel Admin PátioAI | ✅ Concluído |
+| 17 | Script do Agente Configurável (5 novos campos no DB + 4 perfis de comportamento) | ✅ Concluído |
 
 ## Autenticação (M1 — Implementado)
 

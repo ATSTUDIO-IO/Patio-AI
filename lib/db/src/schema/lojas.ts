@@ -28,7 +28,12 @@ export const lojas = pgTable("lojas", {
   plano: planoEnum("plano").notNull().default("starter"),
   ativo: boolean("ativo").notNull().default(true),
   nomeAgente: text("nome_agente").default("Agente PátioAI"),
-  tomAgente: text("tom_agente").default("amigável e profissional"),
+  tomAgente: text("tom_agente").default("profissional_cordial"),
+  horarioAtendimento: text("horario_atendimento"),
+  instrucoesEspecificas: text("instrucoes_especificas"),
+  aceitaTroca: boolean("aceita_troca").notNull().default(true),
+  descricaoGarantia: text("descricao_garantia"),
+  bancosParceiros: text("bancos_parceiros"),
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
 });
 

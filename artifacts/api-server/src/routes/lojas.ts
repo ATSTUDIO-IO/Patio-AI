@@ -67,6 +67,16 @@ router.put(
       updateData.nomeAgente = body.data.nome_agente;
     if (body.data.tom_agente !== undefined)
       updateData.tomAgente = body.data.tom_agente;
+    if (body.data.horario_atendimento !== undefined)
+      updateData.horarioAtendimento = body.data.horario_atendimento;
+    if (body.data.instrucoes_especificas !== undefined)
+      updateData.instrucoesEspecificas = body.data.instrucoes_especificas;
+    if (body.data.aceita_troca !== undefined)
+      updateData.aceitaTroca = body.data.aceita_troca;
+    if (body.data.descricao_garantia !== undefined)
+      updateData.descricaoGarantia = body.data.descricao_garantia;
+    if (body.data.bancos_parceiros !== undefined)
+      updateData.bancosParceiros = body.data.bancos_parceiros;
 
     if (Object.keys(updateData).length === 0) {
       res.status(400).json({ error: "Nenhum campo para atualizar" });
@@ -91,6 +101,11 @@ router.put(
       ativo: lojaAtualizada.ativo,
       nome_agente: lojaAtualizada.nomeAgente,
       tom_agente: lojaAtualizada.tomAgente,
+      horario_atendimento: lojaAtualizada.horarioAtendimento,
+      instrucoes_especificas: lojaAtualizada.instrucoesEspecificas,
+      aceita_troca: lojaAtualizada.aceitaTroca,
+      descricao_garantia: lojaAtualizada.descricaoGarantia,
+      bancos_parceiros: lojaAtualizada.bancosParceiros,
       criado_em: lojaAtualizada.criadoEm,
     });
 

@@ -31,6 +31,17 @@ const router: IRouter = Router();
 
 const CLAUDE_MODEL = "claude-haiku-4-5";
 
+const PERFIS_TOM: Record<string, string> = {
+  profissional_cordial:
+    "Tom profissional e cordial: mantenha postura de consultor confiável, use linguagem formal mas acessível, transmita segurança e respeito.",
+  descontraido_amigavel:
+    "Tom descontraído e amigável: seja informal e próximo, use linguagem casual, crie conexão pessoal com o cliente, como se fosse um amigo especialista em carros.",
+  consultivo_tecnico:
+    "Tom consultivo e técnico: foque em dados, especificações e comparativos, explique detalhes técnicos com precisão, ajude o cliente a tomar a decisão mais racional.",
+  direto_objetivo:
+    "Tom direto e objetivo: vá ao ponto, respostas concisas e práticas, sem rodeios, foque em resolver a necessidade do cliente rapidamente.",
+};
+
 function buildSystemPrompt(
   veiculo: Pick<
     Veiculo,
@@ -46,7 +57,19 @@ function buildSystemPrompt(
     | "opcionais"
     | "descricaoAgente"
   >,
-  loja: Pick<Loja, "nomeFantasia" | "cidade" | "telefone">,
+  loja: Pick<
+    Loja,
+    | "nomeFantasia"
+    | "cidade"
+    | "telefone"
+    | "nomeAgente"
+    | "tomAgente"
+    | "horarioAtendimento"
+    | "instrucoesEspecificas"
+    | "aceitaTroca"
+    | "descricaoGarantia"
+    | "bancosParceiros"
+  >,
 ): string {
   const km = veiculo.quilometragem.toLocaleString("pt-BR");
   const preco = Number(veiculo.precoVenda).toLocaleString("pt-BR", {
@@ -54,31 +77,53 @@ function buildSystemPrompt(
     currency: "BRL",
   });
 
-  const linhasOpcional: string[] = [];
-  if (veiculo.cor) linhasOpcional.push(`- Cor: ${veiculo.cor}`);
-  if (veiculo.cambio) linhasOpcional.push(`- Câmbio: ${veiculo.cambio}`);
-  if (veiculo.combustivel) linhasOpcional.push(`- Combustível: ${veiculo.combustivel}`);
+  const nomeAgente = loja.nomeAgente || "Pátio AI";
+  const tomKey = loja.tomAgente || "profissional_cordial";
+  const descricaoTom = PERFIS_TOM[tomKey] ?? PERFIS_TOM["profissional_cordial"];
+
+  const linhasVeiculo: string[] = [
+    `- Modelo: ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}/${veiculo.anoModelo}`,
+    `- Quilometragem: ${km} km`,
+    `- Preço: ${preco}`,
+  ];
+  if (veiculo.cor) linhasVeiculo.push(`- Cor: ${veiculo.cor}`);
+  if (veiculo.cambio) linhasVeiculo.push(`- Câmbio: ${veiculo.cambio}`);
+  if (veiculo.combustivel) linhasVeiculo.push(`- Combustível: ${veiculo.combustivel}`);
   if (veiculo.opcionais && veiculo.opcionais.length > 0)
-    linhasOpcional.push(`- Opcionais: ${veiculo.opcionais.join(", ")}`);
+    linhasVeiculo.push(`- Opcionais: ${veiculo.opcionais.join(", ")}`);
   if (veiculo.descricaoAgente)
-    linhasOpcional.push(`\nInformações adicionais: ${veiculo.descricaoAgente}`);
+    linhasVeiculo.push(`\nInformações adicionais: ${veiculo.descricaoAgente}`);
 
-  const telefoneLoja = loja.telefone ? `\n- Telefone da loja: ${loja.telefone}` : "";
+  const linhasLoja: string[] = [];
+  if (loja.telefone) linhasLoja.push(`- Telefone: ${loja.telefone}`);
+  if (loja.horarioAtendimento) linhasLoja.push(`- Horário de atendimento: ${loja.horarioAtendimento}`);
+  if (loja.aceitaTroca !== null && loja.aceitaTroca !== undefined)
+    linhasLoja.push(`- Aceita troca: ${loja.aceitaTroca ? "Sim" : "Não"}`);
+  if (loja.descricaoGarantia) linhasLoja.push(`- Garantia: ${loja.descricaoGarantia}`);
+  if (loja.bancosParceiros) linhasLoja.push(`- Bancos parceiros: ${loja.bancosParceiros}`);
 
-  return `Você é o Pátio AI, agente de voz especialista em vendas de veículos seminovos para a loja "${loja.nomeFantasia}"${loja.cidade ? ` em ${loja.cidade}` : ""}.${telefoneLoja}
+  const secaoLoja =
+    linhasLoja.length > 0
+      ? `\nInformações da loja:\n${linhasLoja.join("\n")}`
+      : "";
 
+  const secaoInstrucoes = loja.instrucoesEspecificas
+    ? `\nInstruções especiais da loja:\n${loja.instrucoesEspecificas}`
+    : "";
+
+  return `Você é ${nomeAgente}, agente de voz especialista em vendas de veículos seminovos para a loja "${loja.nomeFantasia}"${loja.cidade ? ` em ${loja.cidade}` : ""}.
+
+Perfil de comportamento: ${descricaoTom}
+${secaoLoja}
 Veículo em destaque:
-- Modelo: ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}/${veiculo.anoModelo}
-- Quilometragem: ${km} km
-- Preço: ${preco}
-${linhasOpcional.join("\n")}
-
+${linhasVeiculo.join("\n")}
+${secaoInstrucoes}
 Objetivos:
 1. Apresentar o veículo com entusiasmo e profissionalismo
 2. Responder perguntas sobre o veículo, financiamento e test drive
 3. Coletar nome, telefone e e-mail do lead de forma natural durante a conversa
-4. Para financiamento: pergunte valor de entrada e simule parcelas estimadas
-5. Sempre em Português Brasileiro, tom amigável e direto
+4. Para financiamento: pergunte valor de entrada e simule parcelas estimadas${loja.bancosParceiros ? ` (bancos disponíveis: ${loja.bancosParceiros})` : ""}
+5. Sempre em Português Brasileiro
 
 Regras:
 - Respostas curtas e conversacionais (máx 3 frases por turno)

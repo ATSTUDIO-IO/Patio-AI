@@ -19,6 +19,11 @@ export type UserInfo = {
     cidade?: string | null;
     nome_agente?: string | null;
     tom_agente?: string | null;
+    horario_atendimento?: string | null;
+    instrucoes_especificas?: string | null;
+    aceita_troca?: boolean | null;
+    descricao_garantia?: string | null;
+    bancos_parceiros?: string | null;
   };
 };
 
