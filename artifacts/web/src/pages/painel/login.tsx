@@ -33,6 +33,7 @@ export default function PainelLogin() {
           nome_fantasia: meData.loja.nome_fantasia,
           plano: meData.loja.plano,
         } : undefined,
+        plano_config: meData.plano_config ?? null,
       };
       setAuth(resp.token, user);
       setLocation(user.perfil === "admin_patioai" ? "/admin" : "/painel");

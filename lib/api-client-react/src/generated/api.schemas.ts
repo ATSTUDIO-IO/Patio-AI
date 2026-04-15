@@ -339,9 +339,20 @@ export interface AuthResponse {
   usuario: UsuarioPublic;
 }
 
+export interface PlanoConfigResponse {
+  preco_unitario: number;
+  veiculos_max: number;
+  vendedores_max: number;
+  personalizacao_avancada: boolean;
+  assistente_financiamento: boolean;
+  consulta_documental: boolean;
+  crm_retencao_dias: number | null;
+}
+
 export interface MeResponse {
   usuario: UsuarioPublic;
   loja?: LojaPublic | null;
+  plano_config?: PlanoConfigResponse | null;
 }
 
 export interface UpdateLojaRequest {

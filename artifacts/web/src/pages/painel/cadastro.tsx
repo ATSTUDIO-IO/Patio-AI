@@ -53,6 +53,7 @@ export default function PainelCadastro() {
         perfil: meData.usuario.perfil as UserInfo["perfil"],
         loja_id: meData.usuario.loja_id ?? null,
         loja: meData.loja ? { id: meData.loja.id, nome_fantasia: meData.loja.nome_fantasia, plano: meData.loja.plano } : undefined,
+        plano_config: meData.plano_config ?? null,
       };
       setAuth(loginResp.token, user);
       setLocation("/painel");

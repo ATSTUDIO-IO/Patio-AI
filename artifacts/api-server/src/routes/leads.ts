@@ -42,8 +42,9 @@ router.get("/leads", requireAuth, async (req, res): Promise<void> => {
   if (status) conditions.push(eq(leads.statusCrm, status));
   if (interesse) conditions.push(eq(leads.interesse, interesse));
   if (veiculo_id) conditions.push(eq(leads.veiculoId, veiculo_id));
-  if (crmSince && !desde) conditions.push(gte(leads.criadoEm, crmSince));
-  if (desde) conditions.push(gte(leads.criadoEm, new Date(desde)));
+  const desdeDate = desde ? new Date(desde) : null;
+  const lowerBound = crmSince && desdeDate ? (desdeDate > crmSince ? desdeDate : crmSince) : (crmSince ?? desdeDate);
+  if (lowerBound) conditions.push(gte(leads.criadoEm, lowerBound));
   if (ate) conditions.push(lte(leads.criadoEm, new Date(ate)));
 
   const rows = await db
