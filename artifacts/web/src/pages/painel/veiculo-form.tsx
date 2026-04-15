@@ -218,7 +218,7 @@ export default function VeiculoForm() {
                         setConsultaStatus(null);
                         try {
                           const resp = await fetch(`/api/veiculos/${editId}/consulta-documental`, {
-                            method: "POST",
+                            method: "GET",
                             headers: { Authorization: `Bearer ${token}` },
                           });
                           const data = await resp.json();
