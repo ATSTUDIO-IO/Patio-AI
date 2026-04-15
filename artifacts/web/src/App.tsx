@@ -54,6 +54,7 @@ function Router() {
       <Route path="/painel/fatura" component={() => <ProtectedRoute component={PainelFatura} donoOnly />} />
       <Route path="/painel/configuracoes" component={() => <ProtectedRoute component={PainelConfiguracoes} donoOnly />} />
       <Route path="/admin" component={() => <AdminRoute component={AdminDashboard} />} />
+      <Route path="/admin/dashboard" component={() => <AdminRoute component={AdminDashboard} />} />
       <Route path="/admin/lojas" component={() => <AdminRoute component={AdminDashboard} />} />
       <Route path="/admin/lojas/:id" component={() => <AdminRoute component={AdminLojaDetail} />} />
       <Route path="/admin/inteligencia" component={() => <AdminRoute component={AdminInteligencia} />} />

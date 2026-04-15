@@ -29,6 +29,11 @@ type Nota = {
   admin_id: string;
 };
 
+type InteresseDist = {
+  interesse: string;
+  total: number;
+};
+
 type LojaDetail = {
   id: string;
   razao_social: string;
@@ -44,9 +49,11 @@ type LojaDetail = {
   total_conversas: number;
   total_leads: number;
   leads_30d: number;
+  scans_30d: number;
   usuarios: Usuario[];
   faturas: Fatura[];
   notas: Nota[];
+  interesse_distribuicao: InteresseDist[];
 };
 
 const planoColors: Record<string, string> = {
@@ -278,11 +285,12 @@ export default function AdminLojaDetail() {
       )}
 
       <div className="p-8 space-y-6">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
           <MiniStat label="Veículos Ativos" value={loja.veiculos_ativos} icon="🚗" />
           <MiniStat label="Total Leads" value={loja.total_leads} icon="👥" />
           <MiniStat label="Leads (30d)" value={loja.leads_30d} icon="📈" />
-          <MiniStat label="Conversas" value={loja.total_conversas} icon="💬" />
+          <MiniStat label="Conversas (30d)" value={loja.scans_30d} icon="🔊" />
+          <MiniStat label="Conversas Total" value={loja.total_conversas} icon="💬" />
         </div>
 
         <div className="grid grid-cols-3 gap-6">
@@ -356,6 +364,43 @@ export default function AdminLojaDetail() {
             )}
           </div>
         </div>
+
+        {(loja.interesse_distribuicao ?? []).length > 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+            <h3 className="text-sm font-semibold text-white mb-4">Funil de Leads — Distribuição por Interesse</h3>
+            <div className="space-y-2">
+              {(() => {
+                const total = loja.interesse_distribuicao.reduce((s, i) => s + i.total, 0);
+                return loja.interesse_distribuicao.map((item) => {
+                  const pct = total > 0 ? Math.round((item.total / total) * 100) : 0;
+                  return (
+                    <div key={item.interesse}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-300">{item.interesse}</span>
+                        <span className="text-gray-500">{item.total} ({pct}%)</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+            {loja.scans_30d > 0 && (
+              <div className="mt-4 pt-3 border-t border-gray-800 flex gap-6 text-xs text-gray-400">
+                <span>Conversas 30d: <span className="text-white">{loja.scans_30d}</span></span>
+                <span>Leads 30d: <span className="text-white">{loja.leads_30d}</span></span>
+                <span>
+                  Taxa scan→lead:{" "}
+                  <span className="text-white">
+                    {loja.scans_30d > 0 ? Math.round((loja.leads_30d / loja.scans_30d) * 100) : 0}%
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-6">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">

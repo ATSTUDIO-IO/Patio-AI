@@ -13,28 +13,38 @@ type Loja = {
   criado_em: string;
   cidade: string | null;
   veiculos_ativos: number;
-  total_conversas: number;
-  total_leads: number;
-  total_usuarios: number;
-  ultima_fatura_status: string | null;
+  leads_30d: number;
+  scans_30d: number;
+  mrr: number;
+  status_fatura: string | null;
 };
 
-type Stats = {
+type MRR = {
+  total: number;
+  novo: number;
+  expandido: number;
+  perdido: number;
+};
+
+type DashboardData = {
+  mrr: MRR;
   total_lojas_ativas: number;
   total_veiculos_ativos: number;
   total_conversas: number;
-  receita_total: number;
-  mrr_mes_atual: number;
+  lojas: Loja[];
 };
 
 export default function AdminDashboard() {
   const { token } = useAuth();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [lojas, setLojas] = useState<Loja[]>([]);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<"todas" | "ativas" | "inativas">("todas");
   const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const [filtroStatus, setFiltroStatus] = useState<"todas" | "ativa" | "inativa">("todas");
+  const [filtroPlano, setFiltroPlano] = useState<"" | "starter" | "pro" | "full">("");
+  const [filtroCidade, setFiltroCidade] = useState("");
+  const [filtroAtividade, setFiltroAtividade] = useState<"" | "ativa" | "inativa">("");
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -42,14 +52,19 @@ export default function AdminDashboard() {
     setLoading(true);
     setErro(null);
     try {
-      const [statsResp, lojasResp] = await Promise.all([
-        fetch("/api/admin/stats", { headers }),
-        fetch("/api/admin/lojas", { headers }),
+      const params = new URLSearchParams();
+      if (filtroStatus !== "todas") params.set("status", filtroStatus);
+      if (filtroPlano) params.set("plano", filtroPlano);
+      if (filtroCidade.trim()) params.set("cidade", filtroCidade.trim());
+      if (filtroAtividade) params.set("atividade", filtroAtividade);
+
+      const [dashResp, lojasResp] = await Promise.all([
+        fetch("/api/admin/dashboard", { headers }),
+        fetch(`/api/admin/lojas?${params.toString()}`, { headers }),
       ]);
-      if (!statsResp.ok || !lojasResp.ok) throw new Error("Erro ao carregar dados");
-      const [statsData, lojasData] = await Promise.all([statsResp.json(), lojasResp.json()]);
-      setStats(statsData);
-      setLojas(lojasData);
+      if (!dashResp.ok) throw new Error("Erro ao carregar dashboard");
+      const [dashData, lojasData] = await Promise.all([dashResp.json(), lojasResp.json()]);
+      setData({ ...dashData, lojas: lojasData });
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro desconhecido");
     } finally {
@@ -57,7 +72,9 @@ export default function AdminDashboard() {
     }
   }
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => { carregar(); }, [filtroStatus, filtroPlano, filtroAtividade]);
+
+  function aplicarFiltroCidade() { carregar(); }
 
   async function toggleStatus(lojaId: string, ativo: boolean) {
     setTogglingId(lojaId);
@@ -76,17 +93,19 @@ export default function AdminDashboard() {
     }
   }
 
-  const lojasFiltered = lojas.filter((l) => {
-    if (filtro === "ativas") return l.ativo;
-    if (filtro === "inativas") return !l.ativo;
-    return true;
-  });
-
   const planoColors: Record<string, string> = {
     starter: "bg-gray-700 text-gray-300",
     pro: "bg-blue-900 text-blue-300",
     full: "bg-violet-900 text-violet-300",
   };
+
+  const statusFaturaColors: Record<string, string> = {
+    aberto: "text-yellow-400",
+    pago: "text-green-400",
+    inadimplente: "text-red-400",
+  };
+
+  const mrr = data?.mrr;
 
   return (
     <AdminLayout>
@@ -104,49 +123,78 @@ export default function AdminDashboard() {
       />
 
       <div className="p-8 space-y-8">
-        {loading && !stats ? (
+        {loading && !data ? (
           <div className="flex items-center justify-center py-24 text-gray-500">Carregando...</div>
         ) : erro ? (
           <div className="p-4 bg-red-900/30 border border-red-800 rounded-xl text-red-300 text-sm">{erro}</div>
         ) : (
           <>
-            <div className="grid grid-cols-4 gap-4">
-              <StatCard label="Lojas Ativas" value={stats?.total_lojas_ativas ?? 0} icon="🏪" color="violet" />
-              <StatCard label="Veículos Ativos" value={stats?.total_veiculos_ativos ?? 0} icon="🚗" color="blue" />
-              <StatCard label="Conversas" value={stats?.total_conversas ?? 0} icon="💬" color="green" />
-              <StatCard
-                label="MRR (Mês Atual)"
-                value={`R$ ${(stats?.mrr_mes_atual ?? 0).toLocaleString("pt-BR")}`}
-                icon="💰"
-                color="amber"
-              />
+            <div className="grid grid-cols-3 gap-4">
+              <StatCard label="Lojas Ativas" value={data?.total_lojas_ativas ?? 0} icon="🏪" color="violet" />
+              <StatCard label="Veículos Ativos" value={data?.total_veiculos_ativos ?? 0} icon="🚗" color="blue" />
+              <StatCard label="Conversas" value={data?.total_conversas ?? 0} icon="💬" color="green" />
             </div>
-            <div className="flex justify-end">
-              <Link
-                href="/admin/inteligencia"
-                className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
-              >
-                Ver análise de risco de churn e inteligência →
-              </Link>
+
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-white">MRR — Mês Atual</h2>
+                <Link href="/admin/inteligencia" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                  Ver inteligência de churn →
+                </Link>
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <MRRCard label="Total" value={mrr?.total ?? 0} color="text-white" />
+                <MRRCard label="Novo" value={mrr?.novo ?? 0} color="text-green-400" prefix="+" />
+                <MRRCard label="Expansão" value={mrr?.expandido ?? 0} color="text-blue-400" prefix="+" />
+                <MRRCard label="Perdido" value={mrr?.perdido ?? 0} color="text-red-400" prefix="-" />
+              </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-white">Lojas</h2>
-                <div className="flex gap-2">
-                  {(["todas", "ativas", "inativas"] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setFiltro(f)}
-                      className={`px-3 py-1 text-xs rounded-lg transition-colors ${
-                        filtro === f
-                          ? "bg-violet-600 text-white"
-                          : "text-gray-400 hover:text-white border border-gray-700"
-                      }`}
-                    >
-                      {f === "todas" ? "Todas" : f === "ativas" ? "Ativas" : "Inativas"}
+                <div className="flex items-center gap-3 flex-wrap justify-end">
+                  <select
+                    value={filtroStatus}
+                    onChange={(e) => setFiltroStatus(e.target.value as "todas" | "ativa" | "inativa")}
+                    className="px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 focus:outline-none"
+                  >
+                    <option value="todas">Todas</option>
+                    <option value="ativa">Ativas</option>
+                    <option value="inativa">Inativas</option>
+                  </select>
+                  <select
+                    value={filtroPlano}
+                    onChange={(e) => setFiltroPlano(e.target.value as "" | "starter" | "pro" | "full")}
+                    className="px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 focus:outline-none"
+                  >
+                    <option value="">Todos os planos</option>
+                    <option value="starter">Starter</option>
+                    <option value="pro">Pro</option>
+                    <option value="full">Full</option>
+                  </select>
+                  <select
+                    value={filtroAtividade}
+                    onChange={(e) => setFiltroAtividade(e.target.value as "" | "ativa" | "inativa")}
+                    className="px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 focus:outline-none"
+                  >
+                    <option value="">Qualquer atividade</option>
+                    <option value="ativa">Com atividade recente</option>
+                    <option value="inativa">Sem atividade</option>
+                  </select>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="text"
+                      placeholder="Filtrar por cidade..."
+                      value={filtroCidade}
+                      onChange={(e) => setFiltroCidade(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && aplicarFiltroCidade()}
+                      className="px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-300 placeholder-gray-600 focus:outline-none focus:border-violet-600 w-40"
+                    />
+                    <button onClick={aplicarFiltroCidade} className="px-2 py-1 text-xs text-violet-400 hover:text-violet-300">
+                      OK
                     </button>
-                  ))}
+                  </div>
                 </div>
               </div>
 
@@ -157,23 +205,24 @@ export default function AdminDashboard() {
                       <th className="text-left px-5 py-3 font-medium">Loja</th>
                       <th className="text-left px-5 py-3 font-medium">Plano</th>
                       <th className="text-right px-5 py-3 font-medium">Veículos</th>
-                      <th className="text-right px-5 py-3 font-medium">Conversas</th>
-                      <th className="text-right px-5 py-3 font-medium">Usuários</th>
+                      <th className="text-right px-5 py-3 font-medium">Leads 30d</th>
+                      <th className="text-right px-5 py-3 font-medium">Scans 30d</th>
+                      <th className="text-center px-5 py-3 font-medium">Fatura</th>
                       <th className="text-center px-5 py-3 font-medium">Status</th>
                       <th className="px-5 py-3"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {lojasFiltered.length === 0 ? (
+                    {(data?.lojas ?? []).length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-gray-500">Nenhuma loja encontrada</td>
+                        <td colSpan={8} className="py-12 text-center text-gray-500">Nenhuma loja encontrada</td>
                       </tr>
                     ) : (
-                      lojasFiltered.map((loja) => (
+                      (data?.lojas ?? []).map((loja) => (
                         <tr key={loja.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
                           <td className="px-5 py-3.5">
                             <div className="font-medium text-white">{loja.nome_fantasia}</div>
-                            <div className="text-xs text-gray-500">{loja.cnpj}</div>
+                            <div className="text-xs text-gray-500">{loja.cidade ?? loja.cnpj}</div>
                           </td>
                           <td className="px-5 py-3.5">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${planoColors[loja.plano] ?? "bg-gray-700 text-gray-300"}`}>
@@ -181,8 +230,13 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td className="px-5 py-3.5 text-right text-gray-300">{loja.veiculos_ativos}</td>
-                          <td className="px-5 py-3.5 text-right text-gray-300">{loja.total_conversas}</td>
-                          <td className="px-5 py-3.5 text-right text-gray-300">{loja.total_usuarios}</td>
+                          <td className="px-5 py-3.5 text-right text-gray-300">{loja.leads_30d}</td>
+                          <td className="px-5 py-3.5 text-right text-gray-300">{loja.scans_30d}</td>
+                          <td className="px-5 py-3.5 text-center">
+                            <span className={`text-xs font-medium ${statusFaturaColors[loja.status_fatura ?? ""] ?? "text-gray-500"}`}>
+                              {loja.status_fatura ?? "—"}
+                            </span>
+                          </td>
                           <td className="px-5 py-3.5 text-center">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${loja.ativo ? "bg-green-900 text-green-300" : "bg-red-900 text-red-300"}`}>
                               {loja.ativo ? "Ativa" : "Suspensa"}
@@ -200,9 +254,7 @@ export default function AdminDashboard() {
                                 onClick={() => toggleStatus(loja.id, !loja.ativo)}
                                 disabled={togglingId === loja.id}
                                 className={`text-xs transition-colors ${
-                                  loja.ativo
-                                    ? "text-red-400 hover:text-red-300"
-                                    : "text-green-400 hover:text-green-300"
+                                  loja.ativo ? "text-red-400 hover:text-red-300" : "text-green-400 hover:text-green-300"
                                 } disabled:opacity-50`}
                               >
                                 {togglingId === loja.id ? "..." : loja.ativo ? "Suspender" : "Ativar"}
@@ -235,6 +287,17 @@ function StatCard({ label, value, icon, color }: { label: string; value: number 
       <div className="text-2xl mb-2">{icon}</div>
       <div className="text-2xl font-bold text-white">{value}</div>
       <div className="text-sm text-gray-400 mt-1">{label}</div>
+    </div>
+  );
+}
+
+function MRRCard({ label, value, color, prefix = "" }: { label: string; value: number; color: string; prefix?: string }) {
+  return (
+    <div className="text-center">
+      <div className={`text-xl font-bold ${color}`}>
+        {prefix}R$ {value.toLocaleString("pt-BR")}
+      </div>
+      <div className="text-xs text-gray-500 mt-1">{label}</div>
     </div>
   );
 }

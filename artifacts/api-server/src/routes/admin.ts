@@ -6,28 +6,26 @@ import { requireAuth, requirePerfil } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-async function countConversasByLoja(lojaId: string): Promise<number> {
-  const veiculosIds = await db
-    .select({ id: veiculos.id })
-    .from(veiculos)
-    .where(eq(veiculos.lojaId, lojaId));
+async function getVeiculoIdsByLoja(lojaId: string): Promise<string[]> {
+  const rows = await db.select({ id: veiculos.id }).from(veiculos).where(eq(veiculos.lojaId, lojaId));
+  return rows.map((v) => v.id);
+}
 
-  if (veiculosIds.length === 0) return 0;
-
-  const ids = veiculosIds.map((v) => v.id);
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(conversas)
-    .where(inArray(conversas.veiculoId, ids));
-
+async function countConversasByVeiculoIds(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const [{ total }] = await db.select({ total: count() }).from(conversas).where(inArray(conversas.veiculoId, ids));
   return total;
 }
 
-async function countLeadsByLoja(lojaId: string): Promise<number> {
+async function countConversasByLojaRecentes(lojaId: string, dias: number): Promise<number> {
+  const ids = await getVeiculoIdsByLoja(lojaId);
+  if (ids.length === 0) return 0;
+  const desde = new Date();
+  desde.setDate(desde.getDate() - dias);
   const [{ total }] = await db
     .select({ total: count() })
-    .from(leads)
-    .where(eq(leads.lojaId, lojaId));
+    .from(conversas)
+    .where(and(inArray(conversas.veiculoId, ids), gte(conversas.iniciadaEm, desde)));
   return total;
 }
 
@@ -39,6 +37,19 @@ async function countLeadsByLojaRecentes(lojaId: string, dias: number): Promise<n
     .from(leads)
     .where(and(eq(leads.lojaId, lojaId), gte(leads.criadoEm, desde)));
   return total;
+}
+
+function calcHealthScore(params: {
+  scans30d: number;
+  leads30d: number;
+  activeUsers: number;
+  pagamentoEmDia: boolean;
+}): number {
+  const scansComp = Math.min(params.scans30d / 10, 1) * 100;
+  const leadsComp = Math.min(params.leads30d / 5, 1) * 100;
+  const loginComp = Math.min(params.activeUsers / 2, 1) * 100;
+  const pgtoComp = params.pagamentoEmDia ? 100 : 0;
+  return Math.round(scansComp * 0.30 + leadsComp * 0.25 + loginComp * 0.20 + pgtoComp * 0.25);
 }
 
 router.get(
@@ -56,9 +67,7 @@ router.get(
       .from(veiculos)
       .where(eq(veiculos.status, "ativo"));
 
-    const [{ totalConversas }] = await db
-      .select({ totalConversas: count() })
-      .from(conversas);
+    const [{ totalConversas }] = await db.select({ totalConversas: count() }).from(conversas);
 
     const receitaResult = await db
       .select({ total: sql<string>`COALESCE(SUM(${ciclosBilling.valorTotal}), 0)` })
@@ -83,11 +92,116 @@ router.get(
 );
 
 router.get(
-  "/admin/lojas",
+  "/admin/dashboard",
   requireAuth,
   requirePerfil("admin_patioai"),
   async (_req, res): Promise<void> => {
-    const rows = await db
+    const agora = new Date();
+    const mesRefAtual = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-01`;
+    const anoMesAnterior = agora.getMonth() === 0
+      ? `${agora.getFullYear() - 1}-12-01`
+      : `${agora.getFullYear()}-${String(agora.getMonth()).padStart(2, "0")}-01`;
+
+    const [statsLojas] = await db.select({ total: count() }).from(lojas).where(eq(lojas.ativo, true));
+    const [statsVeiculos] = await db.select({ total: count() }).from(veiculos).where(eq(veiculos.status, "ativo"));
+    const [statsConversas] = await db.select({ total: count() }).from(conversas);
+
+    const mrrAtualResult = await db
+      .select({ total: sql<string>`COALESCE(SUM(${ciclosBilling.valorTotal}), 0)` })
+      .from(ciclosBilling)
+      .where(and(eq(ciclosBilling.mesRef, mesRefAtual), eq(ciclosBilling.status, "aberto")));
+    const mrrAtualPagoResult = await db
+      .select({ total: sql<string>`COALESCE(SUM(${ciclosBilling.valorTotal}), 0)` })
+      .from(ciclosBilling)
+      .where(and(eq(ciclosBilling.mesRef, mesRefAtual), eq(ciclosBilling.status, "pago")));
+    const mrrAtualTotal = Number(mrrAtualResult[0]?.total ?? 0) + Number(mrrAtualPagoResult[0]?.total ?? 0);
+
+    const mrrMesAnteriorResult = await db
+      .select({ total: sql<string>`COALESCE(SUM(${ciclosBilling.valorTotal}), 0)` })
+      .from(ciclosBilling)
+      .where(eq(ciclosBilling.mesRef, anoMesAnterior));
+    const mrrAnterior = Number(mrrMesAnteriorResult[0]?.total ?? 0);
+
+    const ciclosAtual = await db
+      .select({ lojaId: ciclosBilling.lojaId, valor: ciclosBilling.valorTotal })
+      .from(ciclosBilling)
+      .where(eq(ciclosBilling.mesRef, mesRefAtual));
+    const ciclosAnterior = await db
+      .select({ lojaId: ciclosBilling.lojaId })
+      .from(ciclosBilling)
+      .where(eq(ciclosBilling.mesRef, anoMesAnterior));
+
+    const lojaIdsAnterior = new Set(ciclosAnterior.map((c) => c.lojaId));
+    const mrrNovo = ciclosAtual
+      .filter((c) => !lojaIdsAnterior.has(c.lojaId))
+      .reduce((s, c) => s + Number(c.valor), 0);
+    const mrrExpandido = 0;
+    const mrrPerdido = mrrAnterior - mrrAtualTotal > 0 ? mrrAnterior - mrrAtualTotal : 0;
+
+    const todasLojas = await db
+      .select({
+        id: lojas.id,
+        nome_fantasia: lojas.nomeFantasia,
+        cnpj: lojas.cnpj,
+        plano: lojas.plano,
+        ativo: lojas.ativo,
+        cidade: lojas.cidade,
+        criado_em: lojas.criadoEm,
+      })
+      .from(lojas)
+      .orderBy(desc(lojas.criadoEm));
+
+    const lojasComMetricas = await Promise.all(
+      todasLojas.map(async (loja) => {
+        const [{ veiculosAtivos }] = await db
+          .select({ veiculosAtivos: count() })
+          .from(veiculos)
+          .where(and(eq(veiculos.lojaId, loja.id), eq(veiculos.status, "ativo")));
+
+        const leads30d = await countLeadsByLojaRecentes(loja.id, 30);
+        const scans30d = await countConversasByLojaRecentes(loja.id, 30);
+
+        const [ultimaFatura] = await db
+          .select({ status: ciclosBilling.status, valor: ciclosBilling.valorTotal })
+          .from(ciclosBilling)
+          .where(eq(ciclosBilling.lojaId, loja.id))
+          .orderBy(desc(ciclosBilling.mesRef))
+          .limit(1);
+
+        return {
+          ...loja,
+          veiculos_ativos: veiculosAtivos,
+          leads_30d: leads30d,
+          scans_30d: scans30d,
+          mrr: ultimaFatura ? Number(ultimaFatura.valor) : 0,
+          status_fatura: ultimaFatura?.status ?? null,
+        };
+      }),
+    );
+
+    res.json({
+      mrr: {
+        total: mrrAtualTotal,
+        novo: mrrNovo,
+        expandido: mrrExpandido,
+        perdido: mrrPerdido,
+      },
+      total_lojas_ativas: statsLojas.total,
+      total_veiculos_ativos: statsVeiculos.total,
+      total_conversas: statsConversas.total,
+      lojas: lojasComMetricas,
+    });
+  },
+);
+
+router.get(
+  "/admin/lojas",
+  requireAuth,
+  requirePerfil("admin_patioai"),
+  async (req, res): Promise<void> => {
+    const { plano, status, cidade, atividade } = req.query as Record<string, string | undefined>;
+
+    let rows = await db
       .select({
         id: lojas.id,
         razao_social: lojas.razaoSocial,
@@ -102,6 +216,19 @@ router.get(
       .from(lojas)
       .orderBy(desc(lojas.criadoEm));
 
+    if (plano && ["starter", "pro", "full"].includes(plano)) {
+      rows = rows.filter((l) => l.plano === plano);
+    }
+    if (status === "ativa") {
+      rows = rows.filter((l) => l.ativo);
+    } else if (status === "inativa") {
+      rows = rows.filter((l) => !l.ativo);
+    }
+    if (cidade) {
+      const cidadeLower = cidade.toLowerCase();
+      rows = rows.filter((l) => l.cidade?.toLowerCase().includes(cidadeLower));
+    }
+
     const lojasComStats = await Promise.all(
       rows.map(async (loja) => {
         const [{ veiculosAtivos }] = await db
@@ -109,8 +236,8 @@ router.get(
           .from(veiculos)
           .where(and(eq(veiculos.lojaId, loja.id), eq(veiculos.status, "ativo")));
 
-        const totalConversas = await countConversasByLoja(loja.id);
-        const totalLeads = await countLeadsByLoja(loja.id);
+        const totalConversas = await countConversasByLojaRecentes(loja.id, 999);
+        const leads30d = await countLeadsByLojaRecentes(loja.id, 30);
 
         const [{ totalUsuarios }] = await db
           .select({ totalUsuarios: count() })
@@ -124,19 +251,26 @@ router.get(
           .orderBy(desc(ciclosBilling.mesRef))
           .limit(1);
 
-        return {
+        const stats = {
           ...loja,
           veiculos_ativos: veiculosAtivos,
           total_conversas: totalConversas,
-          total_leads: totalLeads,
+          leads_30d: leads30d,
           total_usuarios: totalUsuarios,
           ultima_fatura_status: ultimaFatura?.status ?? null,
           ultima_fatura_valor: ultimaFatura ? Number(ultimaFatura.valorTotal) : 0,
         };
+
+        if (atividade) {
+          if (atividade === "ativa" && leads30d === 0 && veiculosAtivos === 0) return null;
+          if (atividade === "inativa" && (leads30d > 0 || veiculosAtivos > 0)) return null;
+        }
+
+        return stats;
       }),
     );
 
-    res.json(lojasComStats);
+    res.json(lojasComStats.filter(Boolean));
   },
 );
 
@@ -147,12 +281,7 @@ router.get(
   async (req, res): Promise<void> => {
     const lojaId = req.params.lojaId as string;
 
-    const [loja] = await db
-      .select()
-      .from(lojas)
-      .where(eq(lojas.id, lojaId))
-      .limit(1);
-
+    const [loja] = await db.select().from(lojas).where(eq(lojas.id, lojaId)).limit(1);
     if (!loja) {
       res.status(404).json({ error: "Loja não encontrada" });
       return;
@@ -163,18 +292,18 @@ router.get(
       .from(veiculos)
       .where(and(eq(veiculos.lojaId, lojaId), eq(veiculos.status, "ativo")));
 
-    const totalConversas = await countConversasByLoja(lojaId);
-    const totalLeads = await countLeadsByLoja(lojaId);
+    const veiculoIds = await getVeiculoIdsByLoja(lojaId);
+    const totalConversas = await countConversasByVeiculoIds(veiculoIds);
     const leads30d = await countLeadsByLojaRecentes(lojaId, 30);
+    const scans30d = await countConversasByLojaRecentes(lojaId, 30);
+
+    const [{ totalLeads }] = await db
+      .select({ totalLeads: count() })
+      .from(leads)
+      .where(eq(leads.lojaId, lojaId));
 
     const usuariosLoja = await db
-      .select({
-        id: usuarios.id,
-        nome: usuarios.nome,
-        email: usuarios.email,
-        perfil: usuarios.perfil,
-        ativo: usuarios.ativo,
-      })
+      .select({ id: usuarios.id, nome: usuarios.nome, email: usuarios.email, perfil: usuarios.perfil, ativo: usuarios.ativo })
       .from(usuarios)
       .where(eq(usuarios.lojaId, lojaId));
 
@@ -186,16 +315,27 @@ router.get(
       .limit(12);
 
     const notas = await db
-      .select({
-        id: notasAdmin.id,
-        conteudo: notasAdmin.conteudo,
-        criado_em: notasAdmin.criadoEm,
-        admin_id: notasAdmin.adminId,
-      })
+      .select({ id: notasAdmin.id, conteudo: notasAdmin.conteudo, criado_em: notasAdmin.criadoEm, admin_id: notasAdmin.adminId })
       .from(notasAdmin)
       .where(eq(notasAdmin.lojaId, lojaId))
       .orderBy(desc(notasAdmin.criadoEm))
       .limit(20);
+
+    const leadsData = await db
+      .select({ interesse: leads.interesse, criado_em: leads.criadoEm })
+      .from(leads)
+      .where(eq(leads.lojaId, lojaId))
+      .orderBy(desc(leads.criadoEm))
+      .limit(100);
+
+    const interesseDist = leadsData.reduce(
+      (acc, l) => {
+        const k = l.interesse ?? "Não informado";
+        acc[k] = (acc[k] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     res.json({
       id: loja.id,
@@ -212,6 +352,7 @@ router.get(
       total_conversas: totalConversas,
       total_leads: totalLeads,
       leads_30d: leads30d,
+      scans_30d: scans30d,
       usuarios: usuariosLoja,
       faturas: faturas.map((f) => ({
         id: f.id,
@@ -224,6 +365,7 @@ router.get(
         pago_em: f.pagoEm,
       })),
       notas,
+      interesse_distribuicao: Object.entries(interesseDist).map(([interesse, total]) => ({ interesse, total })),
     });
   },
 );
@@ -236,23 +378,19 @@ router.patch(
     const lojaId = req.params.lojaId as string;
     const schema = z.object({ ativo: z.boolean() });
     const body = schema.safeParse(req.body);
-
     if (!body.success) {
       res.status(400).json({ error: "Campo 'ativo' é obrigatório (boolean)" });
       return;
     }
-
     const [updated] = await db
       .update(lojas)
       .set({ ativo: body.data.ativo })
       .where(eq(lojas.id, lojaId))
       .returning({ id: lojas.id, ativo: lojas.ativo, nome_fantasia: lojas.nomeFantasia });
-
     if (!updated) {
       res.status(404).json({ error: "Loja não encontrada" });
       return;
     }
-
     res.json({ id: updated.id, ativo: updated.ativo, nome_fantasia: updated.nome_fantasia });
   },
 );
@@ -265,23 +403,19 @@ router.patch(
     const lojaId = req.params.lojaId as string;
     const schema = z.object({ plano: z.enum(["starter", "pro", "full"]) });
     const body = schema.safeParse(req.body);
-
     if (!body.success) {
       res.status(400).json({ error: "Campo 'plano' inválido. Use: starter, pro ou full" });
       return;
     }
-
     const [updated] = await db
       .update(lojas)
       .set({ plano: body.data.plano })
       .where(eq(lojas.id, lojaId))
       .returning({ id: lojas.id, plano: lojas.plano, nome_fantasia: lojas.nomeFantasia });
-
     if (!updated) {
       res.status(404).json({ error: "Loja não encontrada" });
       return;
     }
-
     res.json({ id: updated.id, plano: updated.plano, nome_fantasia: updated.nome_fantasia });
   },
 );
@@ -292,24 +426,16 @@ router.patch(
   requirePerfil("admin_patioai"),
   async (req, res): Promise<void> => {
     const cicloId = req.params.cicloId as string;
-
-    const [ciclo] = await db
-      .select()
-      .from(ciclosBilling)
-      .where(eq(ciclosBilling.id, cicloId))
-      .limit(1);
-
+    const [ciclo] = await db.select().from(ciclosBilling).where(eq(ciclosBilling.id, cicloId)).limit(1);
     if (!ciclo) {
       res.status(404).json({ error: "Ciclo de billing não encontrado" });
       return;
     }
-
     const [updated] = await db
       .update(ciclosBilling)
       .set({ status: "pago", pagoEm: new Date() })
       .where(eq(ciclosBilling.id, cicloId))
       .returning();
-
     res.json({
       id: updated.id,
       mes_ref: updated.mesRef,
@@ -331,25 +457,17 @@ router.post(
       res.status(401).json({ error: "Não autenticado" });
       return;
     }
-
     const schema = z.object({ conteudo: z.string().min(1).max(2000) });
     const body = schema.safeParse(req.body);
     if (!body.success) {
       res.status(400).json({ error: "Conteúdo é obrigatório" });
       return;
     }
-
     const [nota] = await db
       .insert(notasAdmin)
       .values({ lojaId, adminId, conteudo: body.data.conteudo })
       .returning();
-
-    res.status(201).json({
-      id: nota.id,
-      conteudo: nota.conteudo,
-      criado_em: nota.criadoEm,
-      admin_id: nota.adminId,
-    });
+    res.status(201).json({ id: nota.id, conteudo: nota.conteudo, criado_em: nota.criadoEm, admin_id: nota.adminId });
   },
 );
 
@@ -359,29 +477,19 @@ router.get(
   requirePerfil("admin_patioai"),
   async (req, res): Promise<void> => {
     const lojaId = req.params.lojaId as string;
-
-    const [loja] = await db
-      .select({ nome: lojas.nomeFantasia })
-      .from(lojas)
-      .where(eq(lojas.id, lojaId))
-      .limit(1);
-
+    const [loja] = await db.select({ nome: lojas.nomeFantasia }).from(lojas).where(eq(lojas.id, lojaId)).limit(1);
     if (!loja) {
       res.status(404).json({ error: "Loja não encontrada" });
       return;
     }
 
-    const veiculosData = await db
-      .select()
-      .from(veiculos)
-      .where(eq(veiculos.lojaId, lojaId))
-      .orderBy(desc(veiculos.criadoEm));
+    const veiculosData = await db.select().from(veiculos).where(eq(veiculos.lojaId, lojaId)).orderBy(desc(veiculos.criadoEm));
+    const leadsData = await db.select().from(leads).where(eq(leads.lojaId, lojaId)).orderBy(desc(leads.criadoEm));
 
-    const leadsData = await db
-      .select()
-      .from(leads)
-      .where(eq(leads.lojaId, lojaId))
-      .orderBy(desc(leads.criadoEm));
+    const veiculoIds = veiculosData.map((v) => v.id);
+    const conversasData = veiculoIds.length > 0
+      ? await db.select().from(conversas).where(inArray(conversas.veiculoId, veiculoIds)).orderBy(desc(conversas.iniciadaEm))
+      : [];
 
     const linhas: string[] = [];
 
@@ -400,9 +508,15 @@ router.get(
         l.interesse ?? "", l.criadoEm?.toISOString() ?? ""].join(","));
     }
 
+    linhas.push("");
+    linhas.push("=== CONVERSAS ===");
+    linhas.push("ID,Veículo ID,Iniciada Em,Encerrada Em");
+    for (const c of conversasData) {
+      linhas.push([c.id, c.veiculoId, c.iniciadaEm?.toISOString() ?? "", c.encerradaEm?.toISOString() ?? ""].join(","));
+    }
+
     const csv = linhas.join("\n");
     const nomeArquivo = `patioai_${loja.nome.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`;
-
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${nomeArquivo}"`);
     res.send("\uFEFF" + csv);
@@ -415,14 +529,7 @@ router.get(
   requirePerfil("admin_patioai"),
   async (_req, res): Promise<void> => {
     const todasLojas = await db
-      .select({
-        id: lojas.id,
-        nome_fantasia: lojas.nomeFantasia,
-        plano: lojas.plano,
-        ativo: lojas.ativo,
-        cidade: lojas.cidade,
-        criado_em: lojas.criadoEm,
-      })
+      .select({ id: lojas.id, nome_fantasia: lojas.nomeFantasia, plano: lojas.plano, ativo: lojas.ativo, cidade: lojas.cidade, criado_em: lojas.criadoEm })
       .from(lojas)
       .where(eq(lojas.ativo, true))
       .orderBy(lojas.nomeFantasia);
@@ -435,24 +542,17 @@ router.get(
           .where(and(eq(veiculos.lojaId, loja.id), eq(veiculos.status, "ativo")));
 
         const leads30d = await countLeadsByLojaRecentes(loja.id, 30);
-        const totalLeads = await countLeadsByLoja(loja.id);
+        const scans30d = await countConversasByLojaRecentes(loja.id, 30);
 
-        const veiculosIds = await db
-          .select({ id: veiculos.id })
-          .from(veiculos)
-          .where(eq(veiculos.lojaId, loja.id));
+        const [{ totalLeads }] = await db
+          .select({ totalLeads: count() })
+          .from(leads)
+          .where(eq(leads.lojaId, loja.id));
 
-        let scans30d = 0;
-        if (veiculosIds.length > 0) {
-          const ids = veiculosIds.map((v) => v.id);
-          const desde = new Date();
-          desde.setDate(desde.getDate() - 30);
-          const [{ total }] = await db
-            .select({ total: count() })
-            .from(conversas)
-            .where(and(inArray(conversas.veiculoId, ids), gte(conversas.iniciadaEm, desde)));
-          scans30d = total;
-        }
+        const [{ activeUsers }] = await db
+          .select({ activeUsers: count() })
+          .from(usuarios)
+          .where(and(eq(usuarios.lojaId, loja.id), eq(usuarios.ativo, true)));
 
         const [ultimaFatura] = await db
           .select({ status: ciclosBilling.status })
@@ -461,12 +561,8 @@ router.get(
           .orderBy(desc(ciclosBilling.mesRef))
           .limit(1);
 
-        const pagamentoEmDia = !ultimaFatura || ultimaFatura.status === "pago" ? 25 : 0;
-        const scoreScans = Math.min(scans30d * 3, 30);
-        const scoreLeads = Math.min(leads30d * 5, 25);
-        const scoreAtividade = veiculosAtivos > 0 ? 20 : 0;
-        const score = Math.round(scoreScans + scoreLeads + scoreAtividade + pagamentoEmDia);
-
+        const pagamentoEmDia = !ultimaFatura || ultimaFatura.status === "pago";
+        const score = calcHealthScore({ scans30d, leads30d, activeUsers, pagamentoEmDia });
         const risco = score >= 60 ? "baixo" : score >= 30 ? "medio" : "alto";
         const elegivel_upsell = loja.plano === "starter" && leads30d >= 20;
 
@@ -476,12 +572,13 @@ router.get(
           plano: loja.plano,
           cidade: loja.cidade,
           score,
-          risco_churn: risco,
+          risco_churn: risco as "alto" | "medio" | "baixo",
           veiculos_ativos: veiculosAtivos,
           leads_30d: leads30d,
           scans_30d: scans30d,
           total_leads: totalLeads,
-          pagamento_em_dia: pagamentoEmDia === 25,
+          active_users: activeUsers,
+          pagamento_em_dia: pagamentoEmDia,
           elegivel_upsell,
           mrr_potencial_upsell: elegivel_upsell ? (50 - 30) * veiculosAtivos : 0,
         };
@@ -489,7 +586,6 @@ router.get(
     );
 
     scores.sort((a, b) => a.score - b.score);
-
     const sinaisUpsell = scores.filter((s) => s.elegivel_upsell);
 
     const porCidade = scores.reduce(
@@ -511,14 +607,39 @@ router.get(
         leads_30d: dados.leads,
         scans_30d: dados.scans,
         media_leads_por_loja: dados.total > 0 ? Math.round(dados.leads / dados.total) : 0,
+        taxa_conversao_pct: dados.scans > 0 ? Math.round((dados.leads / dados.scans) * 100) : 0,
       }))
       .sort((a, b) => b.leads_30d - a.leads_30d)
       .slice(0, 10);
+
+    const benchmarks = await db
+      .select({ marca: veiculos.marca, total: count() })
+      .from(veiculos)
+      .groupBy(veiculos.marca)
+      .orderBy(desc(count()))
+      .limit(10);
+
+    const ticketMedioResult = await db
+      .select({ media: sql<string>`ROUND(AVG(CAST(${veiculos.precoVenda} AS NUMERIC)), 2)` })
+      .from(veiculos)
+      .where(eq(veiculos.status, "ativo"));
+
+    const leadsJornada = await db
+      .select({ interesse: leads.interesse, total: count() })
+      .from(leads)
+      .groupBy(leads.interesse)
+      .orderBy(desc(count()))
+      .limit(10);
 
     res.json({
       scores_saude: scores,
       sinais_upsell: sinaisUpsell,
       performance_por_cidade: performancePorCidade,
+      benchmarks_mercado: {
+        marcas_mais_cadastradas: benchmarks.map((b) => ({ marca: b.marca, total: b.total })),
+        ticket_medio_ativo: Number(ticketMedioResult[0]?.media ?? 0),
+      },
+      jornada_lead: leadsJornada.map((l) => ({ interesse: l.interesse ?? "Não informado", total: l.total })),
       resumo: {
         total_lojas: scores.length,
         risco_alto: scores.filter((s) => s.risco_churn === "alto").length,
