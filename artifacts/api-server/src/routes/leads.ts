@@ -98,6 +98,9 @@ router.get("/leads/:leadId", requireAuth, async (req, res): Promise<void> => {
   const lojaId = requireLojaId(req, res);
   if (!lojaId) return;
 
+  const [lojaRow] = await db.select({ plano: lojas.plano }).from(lojas).where(eq(lojas.id, lojaId)).limit(1);
+  const crmSinceDetail = getCrmDataSince(lojaRow?.plano ?? "starter");
+
   const [lead] = await db
     .select()
     .from(leads)
@@ -106,6 +109,11 @@ router.get("/leads/:leadId", requireAuth, async (req, res): Promise<void> => {
 
   if (!lead) {
     res.status(404).json({ error: "Lead não encontrado" });
+    return;
+  }
+
+  if (crmSinceDetail && lead.criadoEm && lead.criadoEm < crmSinceDetail) {
+    res.status(403).json({ error: "Lead fora do período permitido pelo plano atual", codigo: "CRM_FORA_DO_PLANO" });
     return;
   }
 

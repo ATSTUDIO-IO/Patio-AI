@@ -4,6 +4,7 @@ import { PainelLayout, PageHeader } from "@/components/painel/layout";
 import { useCreateVeiculo, useUpdateVeiculo, useGetVeiculo } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { CreateVeiculoRequest } from "@workspace/api-client-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const EMPTY: Omit<CreateVeiculoRequest, "loja_id"> = {
   placa: "",
@@ -25,9 +26,14 @@ export default function VeiculoForm() {
   const params = useParams<{ id?: string }>();
   const editId = params.id;
   const qc = useQueryClient();
+  const { user, token } = useAuth();
+  const planoConfig = user?.plano_config;
+  const temConsultaDocumental = planoConfig?.consulta_documental ?? false;
   const [form, setForm] = useState(EMPTY);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
+  const [consultaStatus, setConsultaStatus] = useState<string | null>(null);
+  const [consultaLoading, setConsultaLoading] = useState(false);
 
   const { data: veiculo } = useGetVeiculo(editId ?? "");
   const createMutation = useCreateVeiculo();
@@ -191,6 +197,57 @@ export default function VeiculoForm() {
                 </div>
               )}
             </div>
+            {editId && (
+              <div className="border border-dashed border-gray-200 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Consulta Documental</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Verifica pendências, multas e restrições do veículo.</p>
+                  </div>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${temConsultaDocumental ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                    {temConsultaDocumental ? "Pro / Full" : "Starter"}
+                  </span>
+                </div>
+                {temConsultaDocumental ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={consultaLoading}
+                      onClick={async () => {
+                        setConsultaLoading(true);
+                        setConsultaStatus(null);
+                        try {
+                          const resp = await fetch(`/api/veiculos/${editId}/consulta-documental`, {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${token}` },
+                          });
+                          const data = await resp.json();
+                          if (!resp.ok) setConsultaStatus(`Erro: ${data.error ?? "Falha na consulta"}`);
+                          else setConsultaStatus(data.mensagem ?? "Consulta realizada com sucesso.");
+                        } catch {
+                          setConsultaStatus("Erro ao conectar com o servidor.");
+                        } finally {
+                          setConsultaLoading(false);
+                        }
+                      }}
+                      className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60"
+                    >
+                      {consultaLoading ? "Consultando..." : "Consultar Documentação"}
+                    </button>
+                    {consultaStatus && (
+                      <p className={`mt-2 text-xs px-3 py-2 rounded-lg ${consultaStatus.startsWith("Erro") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-700"}`}>{consultaStatus}</p>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <svg viewBox="0 0 20 20" className="w-4 h-4 text-gray-400 fill-current flex-shrink-0">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/>
+                    </svg>
+                    <p className="text-xs text-gray-400">Disponível nos planos Pro e Full. Faça upgrade para acessar.</p>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               type="submit"
               disabled={isPending}

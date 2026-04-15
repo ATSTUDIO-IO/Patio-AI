@@ -175,7 +175,7 @@ router.post(
       const [{ total }] = await db
         .select({ total: count() })
         .from(usuarios)
-        .where(and(eq(usuarios.lojaId, lojaId), eq(usuarios.ativo, true)));
+        .where(and(eq(usuarios.lojaId, lojaId), eq(usuarios.ativo, true), eq(usuarios.perfil, "vendedor")));
 
       if (total >= cfg.vendedoresMax) {
         res.status(403).json({

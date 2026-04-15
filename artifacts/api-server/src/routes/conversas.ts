@@ -97,6 +97,9 @@ router.get(
     const lojaId = requireLojaId(req, res);
     if (!lojaId) return;
 
+    const [lojaRowDetail] = await db.select({ plano: lojas.plano }).from(lojas).where(eq(lojas.id, lojaId)).limit(1);
+    const crmSinceConv = getCrmDataSince(lojaRowDetail?.plano ?? "starter");
+
     const [row] = await db
       .select({
         conversa: conversas,
@@ -119,6 +122,11 @@ router.get(
 
     if (!row) {
       res.status(404).json({ error: "Conversa não encontrada" });
+      return;
+    }
+
+    if (crmSinceConv && row.conversa.iniciadaEm && row.conversa.iniciadaEm < crmSinceConv) {
+      res.status(403).json({ error: "Conversa fora do período permitido pelo plano atual", codigo: "CRM_FORA_DO_PLANO" });
       return;
     }
 
