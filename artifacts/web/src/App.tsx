@@ -57,6 +57,7 @@ function Router() {
       <Route path="/admin/dashboard" component={() => <AdminRoute component={AdminDashboard} />} />
       <Route path="/admin/lojas" component={() => <AdminRoute component={AdminDashboard} />} />
       <Route path="/admin/lojas/:id" component={() => <AdminRoute component={AdminLojaDetail} />} />
+      <Route path="/admin/lojistas/:id" component={() => <AdminRoute component={AdminLojaDetail} />} />
       <Route path="/admin/inteligencia" component={() => <AdminRoute component={AdminInteligencia} />} />
       <Route path="/admin/billing" component={() => <AdminRoute component={AdminBilling} />} />
       <Route component={NotFound} />

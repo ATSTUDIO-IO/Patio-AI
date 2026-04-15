@@ -106,15 +106,11 @@ router.get(
     const [statsVeiculos] = await db.select({ total: count() }).from(veiculos).where(eq(veiculos.status, "ativo"));
     const [statsConversas] = await db.select({ total: count() }).from(conversas);
 
-    const mrrAtualResult = await db
+    const [mrrAtualResult] = await db
       .select({ total: sql<string>`COALESCE(SUM(${ciclosBilling.valorTotal}), 0)` })
       .from(ciclosBilling)
-      .where(and(eq(ciclosBilling.mesRef, mesRefAtual), eq(ciclosBilling.status, "aberto")));
-    const mrrAtualPagoResult = await db
-      .select({ total: sql<string>`COALESCE(SUM(${ciclosBilling.valorTotal}), 0)` })
-      .from(ciclosBilling)
-      .where(and(eq(ciclosBilling.mesRef, mesRefAtual), eq(ciclosBilling.status, "pago")));
-    const mrrAtualTotal = Number(mrrAtualResult[0]?.total ?? 0) + Number(mrrAtualPagoResult[0]?.total ?? 0);
+      .where(eq(ciclosBilling.mesRef, mesRefAtual));
+    const mrrAtualTotal = Number(mrrAtualResult?.total ?? 0);
 
     const mrrMesAnteriorResult = await db
       .select({ total: sql<string>`COALESCE(SUM(${ciclosBilling.valorTotal}), 0)` })
