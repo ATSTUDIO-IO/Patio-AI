@@ -193,9 +193,10 @@ Quando o cliente perguntar sobre financiamento:
 
 function gerarSaudacaoTexto(
   veiculo: Pick<Veiculo, "marca" | "modelo" | "anoFabricacao">,
-  loja: Pick<Loja, "nomeFantasia">,
+  loja: Pick<Loja, "nomeFantasia" | "nomeAgente">,
 ): string {
-  return `Olá! Bem-vindo ao Pátio AI, o assistente virtual da ${loja.nomeFantasia}! Vi que você se interessou pelo ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}. Fico feliz em apresentar esse veículo incrível pra você! Pode fazer suas perguntas, estou aqui pra ajudar.`;
+  const agente = loja.nomeAgente ?? "Pátio AI";
+  return `Olá! Sou ${agente}, assistente virtual da ${loja.nomeFantasia}! Vi que você se interessou pelo ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}. Fico feliz em apresentar esse veículo pra você! Pode fazer suas perguntas, estou aqui pra ajudar.`;
 }
 
 const KEYWORDS_FINANCIAMENTO = [
@@ -266,15 +267,35 @@ async function gerarAudioBase64(texto: string): Promise<string> {
   }
 }
 
+const KEYWORDS_ENCERRAMENTO = [
+  "até logo",
+  "tchau",
+  "obrigado pela visita",
+  "boa sorte",
+  "até breve",
+  "obrigado",
+  "obrigada",
+  "muito obrigado",
+  "muito obrigada",
+  "ótimo dia",
+  "bom dia",
+  "boa tarde",
+  "boa noite",
+  "pode encerrar",
+  "pode fechar",
+  "não preciso mais",
+  "já vi o que precisava",
+  "era isso",
+  "era só isso",
+  "valeu",
+  "foi ótimo",
+  "um prazer",
+  "qualquer dúvida",
+];
+
 function detectarEncerramento(texto: string): boolean {
   const lower = texto.toLowerCase();
-  return (
-    lower.includes("até logo") ||
-    lower.includes("tchau") ||
-    lower.includes("obrigado pela visita") ||
-    lower.includes("boa sorte") ||
-    lower.includes("até breve")
-  );
+  return KEYWORDS_ENCERRAMENTO.some((kw) => lower.includes(kw));
 }
 
 router.post("/agente/sessao", async (req, res): Promise<void> => {
@@ -335,7 +356,7 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
 
   const saudacaoTexto = gerarSaudacaoTexto(
     { marca: veiculo.marca, modelo: veiculo.modelo, anoFabricacao: veiculo.anoFabricacao },
-    { nomeFantasia: loja.nomeFantasia },
+    { nomeFantasia: loja.nomeFantasia, nomeAgente: loja.nomeAgente },
   );
 
   const [, saudacaoAudio] = await Promise.all([
@@ -367,6 +388,11 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
       nome_fantasia: loja.nomeFantasia,
       cidade: loja.cidade,
       telefone: loja.telefone,
+      horario_atendimento: loja.horarioAtendimento,
+      aceita_troca: loja.aceitaTroca,
+      descricao_garantia: loja.descricaoGarantia,
+      bancos_parceiros: loja.bancosParceiros,
+      instrucoes_especificas: loja.instrucoesEspecificas,
     },
     saudacao_audio: saudacaoAudio,
     saudacao_texto: saudacaoTexto,
@@ -830,6 +856,19 @@ router.post("/agente/encerrar", async (req, res): Promise<void> => {
   const transcricao = historico
     .map((m) => `${m.papel === "user" ? "Usuário" : "Agente"}: ${m.conteudo}`)
     .join("\n");
+
+  const temMensagemDoUsuario = historico.some((m) => m.papel === "user");
+
+  if (!temMensagemDoUsuario) {
+    await db.update(conversas).set({
+      encerradaEm,
+      duracaoSegundos,
+      transcricao,
+      resumoIa: "Conversa encerrada sem interação do usuário.",
+    }).where(eq(conversas.id, conversa.id));
+    res.json({ lead_id: null, duracao_segundos: duracaoSegundos, resumo: "Conversa encerrada sem interação." });
+    return;
+  }
 
   const leadExtraido = await extrairLeadDaTranscricao(transcricao).catch((err) => {
     logger.warn({ err }, "Falha ao extrair lead da transcrição");

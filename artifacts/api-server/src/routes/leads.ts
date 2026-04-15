@@ -2,22 +2,10 @@ import { Router, type IRouter } from "express";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, leads, conversas, mensagens, veiculos } from "@workspace/db";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireLojaId } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
 
 const router: IRouter = Router();
-
-function requireLojaId(
-  req: Parameters<Parameters<typeof router.get>[1]>[0],
-  res: Parameters<Parameters<typeof router.get>[1]>[1],
-): string | null {
-  const lojaId = req.user?.loja_id ?? null;
-  if (!lojaId) {
-    res.status(403).json({ error: "Usuário sem loja associada" });
-    return null;
-  }
-  return lojaId;
-}
 
 const ListLeadsQuery = z.object({
   status: z.enum(["novo", "em_contato", "perdido", "ganho"]).optional(),

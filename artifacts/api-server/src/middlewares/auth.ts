@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { createHmac } from "crypto";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, lt } from "drizzle-orm";
 import { db, sessoes } from "@workspace/db";
 
 export interface JwtPayload {
@@ -86,4 +86,17 @@ export function requirePerfil(...perfis: JwtPayload["perfil"][]) {
 
 export function signToken(payload: JwtPayload): string {
   return jwt.sign(payload, getJwtSecret(), { expiresIn: "7d" });
+}
+
+export function requireLojaId(req: Request, res: Response): string | null {
+  const lojaId = req.user?.loja_id ?? null;
+  if (!lojaId) {
+    res.status(403).json({ error: "Usuário sem loja associada" });
+    return null;
+  }
+  return lojaId;
+}
+
+export async function limparSessoesExpiradas(): Promise<void> {
+  await db.delete(sessoes).where(lt(sessoes.expiraEm, new Date()));
 }

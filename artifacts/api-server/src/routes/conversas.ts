@@ -2,22 +2,10 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, conversas, mensagens, veiculos, leads } from "@workspace/db";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireLojaId } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
 
 const router: IRouter = Router();
-
-function requireLojaId(
-  req: Parameters<Parameters<typeof router.get>[1]>[0],
-  res: Parameters<Parameters<typeof router.get>[1]>[1],
-): string | null {
-  const lojaId = req.user?.loja_id ?? null;
-  if (!lojaId) {
-    res.status(403).json({ error: "Usuário sem loja associada" });
-    return null;
-  }
-  return lojaId;
-}
 
 const ListConversasQuery = z.object({
   veiculo_id: z.string().uuid().optional(),
@@ -61,7 +49,7 @@ router.get("/conversas", requireAuth, async (req, res): Promise<void> => {
       },
     })
     .from(conversas)
-    .innerJoin(veiculos, eq(conversas.veiculoId, veiculos.id))
+    .leftJoin(veiculos, eq(conversas.veiculoId, veiculos.id))
     .leftJoin(leads, eq(conversas.leadId, leads.id))
     .where(and(...conditions))
     .orderBy(desc(conversas.iniciadaEm))
@@ -77,13 +65,15 @@ router.get("/conversas", requireAuth, async (req, res): Promise<void> => {
       resumo_ia: r.conversa.resumoIa,
       simulacao_realizada: r.conversa.simulacaoRealizada,
       consentimento_lgpd: r.conversa.consentimentoLgpd,
-      veiculo: {
-        id: r.veiculo.id,
-        marca: r.veiculo.marca,
-        modelo: r.veiculo.modelo,
-        ano_fabricacao: r.veiculo.anoFabricacao,
-        ano_modelo: r.veiculo.anoModelo,
-      },
+      veiculo: r.veiculo
+        ? {
+            id: r.veiculo.id,
+            marca: r.veiculo.marca,
+            modelo: r.veiculo.modelo,
+            ano_fabricacao: r.veiculo.anoFabricacao,
+            ano_modelo: r.veiculo.anoModelo,
+          }
+        : null,
       lead: r.lead,
     })),
   );
@@ -116,7 +106,7 @@ router.get(
         },
       })
       .from(conversas)
-      .innerJoin(veiculos, eq(conversas.veiculoId, veiculos.id))
+      .leftJoin(veiculos, eq(conversas.veiculoId, veiculos.id))
       .where(
         and(eq(conversas.id, params.data.conversaId), eq(veiculos.lojaId, lojaId)),
       )
@@ -163,15 +153,17 @@ router.get(
       resumo_ia: row.conversa.resumoIa,
       simulacao_realizada: row.conversa.simulacaoRealizada,
       consentimento_lgpd: row.conversa.consentimentoLgpd,
-      veiculo: {
-        id: row.veiculo.id,
-        marca: row.veiculo.marca,
-        modelo: row.veiculo.modelo,
-        placa: row.veiculo.placa,
-        ano_fabricacao: row.veiculo.anoFabricacao,
-        ano_modelo: row.veiculo.anoModelo,
-        preco_venda: row.veiculo.precoVenda,
-      },
+      veiculo: row.veiculo
+        ? {
+            id: row.veiculo.id,
+            marca: row.veiculo.marca,
+            modelo: row.veiculo.modelo,
+            placa: row.veiculo.placa,
+            ano_fabricacao: row.veiculo.anoFabricacao,
+            ano_modelo: row.veiculo.anoModelo,
+            preco_venda: row.veiculo.precoVenda,
+          }
+        : null,
       lead,
       mensagens: msgs.map((m) => ({
         id: m.id,

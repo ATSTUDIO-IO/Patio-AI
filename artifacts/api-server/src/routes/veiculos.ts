@@ -11,7 +11,7 @@ import {
   PatchVeiculoStatusBody,
   GetVeiculoQrParams,
 } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireLojaId } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
 import {
   gerarSlugCandidatos,
@@ -56,18 +56,6 @@ function mapVeiculo(
         }
       : null,
   };
-}
-
-function requireLojaId(
-  req: Parameters<Parameters<typeof router.get>[1]>[0],
-  res: Parameters<Parameters<typeof router.get>[1]>[1],
-): string | null {
-  const lojaId = req.user?.loja_id ?? null;
-  if (!lojaId) {
-    res.status(403).json({ error: "Usuário sem loja associada" });
-    return null;
-  }
-  return lojaId;
 }
 
 router.get("/veiculos", requireAuth, async (req, res): Promise<void> => {

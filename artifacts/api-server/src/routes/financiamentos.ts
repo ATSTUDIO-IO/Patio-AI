@@ -2,23 +2,11 @@ import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, financiamentos, veiculos, qrcodes } from "@workspace/db";
-import { requireAuth, requirePerfil } from "../middlewares/auth";
+import { requireAuth, requirePerfil, requireLojaId } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
 import { simular } from "../lib/simulator";
 
 const router: IRouter = Router();
-
-function requireLojaId(
-  req: Parameters<Parameters<typeof router.get>[1]>[0],
-  res: Parameters<Parameters<typeof router.get>[1]>[1],
-): string | null {
-  const lojaId = req.user?.loja_id ?? null;
-  if (!lojaId) {
-    res.status(403).json({ error: "Usuário sem loja associada" });
-    return null;
-  }
-  return lojaId;
-}
 
 const CreateFinanciamentoBody = z.object({
   banco: z.string().min(1, "Banco obrigatório"),
@@ -207,6 +195,7 @@ router.delete(
 
 router.post(
   "/financiamentos/simular",
+  requireAuth,
   async (req, res): Promise<void> => {
     const body = SimularBody.safeParse(req.body);
     if (!body.success) {

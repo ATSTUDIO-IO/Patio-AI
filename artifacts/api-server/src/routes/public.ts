@@ -47,11 +47,6 @@ router.get("/v/:slug", async (req, res): Promise<void> => {
     .where(eq(lojas.id, veiculo.lojaId))
     .limit(1);
 
-  await db
-    .update(qrcodes)
-    .set({ totalScans: sql`${qrcodes.totalScans} + 1` })
-    .where(eq(qrcodes.id, qr.id));
-
   if (veiculo.status === "vendido" && veiculo.vendidoEm) {
     const diasDesdeVenda = Math.floor(
       (Date.now() - veiculo.vendidoEm.getTime()) / (1000 * 60 * 60 * 24),
@@ -82,6 +77,11 @@ router.get("/v/:slug", async (req, res): Promise<void> => {
     res.status(404).json({ error: "QR code inativo" });
     return;
   }
+
+  await db
+    .update(qrcodes)
+    .set({ totalScans: sql`${qrcodes.totalScans} + 1` })
+    .where(eq(qrcodes.id, qr.id));
 
   res.json({
     disponivel: true,

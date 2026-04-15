@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "wouter";
 import {
   getVeiculoPublico,
@@ -73,15 +73,19 @@ function VeiculoCard({ veiculo, loja }: { veiculo: VeiculoPublico; loja: LojaPub
   );
 }
 
+const WAVEFORM_BARS = [1, 2, 3, 4, 5, 6, 7];
+const WAVEFORM_HEIGHTS = WAVEFORM_BARS.map(() => Math.random() * 24 + 8);
+
 function WaveformAnimation({ ativo }: { ativo: boolean }) {
+  const heights = useMemo(() => WAVEFORM_HEIGHTS, []);
   return (
     <div className="flex items-center justify-center gap-1 h-12">
-      {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+      {WAVEFORM_BARS.map((i, idx) => (
         <div
           key={i}
           className={`w-1.5 rounded-full transition-all duration-150 ${ativo ? "bg-emerald-400" : "bg-white/30"}`}
           style={{
-            height: ativo ? `${Math.random() * 24 + 8}px` : "8px",
+            height: ativo ? `${heights[idx]}px` : "8px",
             animation: ativo ? `wave ${0.5 + i * 0.1}s ease-in-out infinite alternate` : "none",
           }}
         />

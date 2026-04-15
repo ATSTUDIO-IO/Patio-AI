@@ -156,33 +156,54 @@ router.get(
       .from(lojas)
       .orderBy(desc(lojas.criadoEm));
 
-    const lojasComMetricas = await Promise.all(
-      todasLojas.map(async (loja) => {
-        const [{ veiculosAtivos }] = await db
-          .select({ veiculosAtivos: count() })
-          .from(veiculos)
-          .where(and(eq(veiculos.lojaId, loja.id), eq(veiculos.status, "ativo")));
+    const dashboardLojaIds = todasLojas.map((l) => l.id);
+    const desde30dDash = new Date();
+    desde30dDash.setDate(desde30dDash.getDate() - 30);
 
-        const leads30d = await countLeadsByLojaRecentes(loja.id, 30);
-        const scans30d = await countConversasByLojaRecentes(loja.id, 30);
+    const [dashVeicBatch, dashLeadsBatch, dashScansBatch, dashFaturasBatch] =
+      dashboardLojaIds.length > 0
+        ? await Promise.all([
+            db
+              .select({ lojaId: veiculos.lojaId, total: count() })
+              .from(veiculos)
+              .where(and(inArray(veiculos.lojaId, dashboardLojaIds), eq(veiculos.status, "ativo")))
+              .groupBy(veiculos.lojaId),
+            db
+              .select({ lojaId: leads.lojaId, total: count() })
+              .from(leads)
+              .where(and(inArray(leads.lojaId, dashboardLojaIds), gte(leads.criadoEm, desde30dDash)))
+              .groupBy(leads.lojaId),
+            db
+              .select({ lojaId: veiculos.lojaId, total: count() })
+              .from(conversas)
+              .innerJoin(veiculos, eq(conversas.veiculoId, veiculos.id))
+              .where(and(inArray(veiculos.lojaId, dashboardLojaIds), gte(conversas.iniciadaEm, desde30dDash)))
+              .groupBy(veiculos.lojaId),
+            db
+              .selectDistinctOn([ciclosBilling.lojaId], {
+                lojaId: ciclosBilling.lojaId,
+                status: ciclosBilling.status,
+                valor: ciclosBilling.valorTotal,
+              })
+              .from(ciclosBilling)
+              .where(inArray(ciclosBilling.lojaId, dashboardLojaIds))
+              .orderBy(ciclosBilling.lojaId, desc(ciclosBilling.mesRef)),
+          ])
+        : [[], [], [], []];
 
-        const [ultimaFatura] = await db
-          .select({ status: ciclosBilling.status, valor: ciclosBilling.valorTotal })
-          .from(ciclosBilling)
-          .where(eq(ciclosBilling.lojaId, loja.id))
-          .orderBy(desc(ciclosBilling.mesRef))
-          .limit(1);
+    const dashVeicMap = new Map(dashVeicBatch.map((r) => [r.lojaId, r.total]));
+    const dashLeadsMap = new Map(dashLeadsBatch.map((r) => [r.lojaId, r.total]));
+    const dashScansMap = new Map(dashScansBatch.map((r) => [r.lojaId, r.total]));
+    const dashFaturaMap = new Map(dashFaturasBatch.map((r) => [r.lojaId, r]));
 
-        return {
-          ...loja,
-          veiculos_ativos: veiculosAtivos,
-          leads_30d: leads30d,
-          scans_30d: scans30d,
-          mrr: ultimaFatura ? Number(ultimaFatura.valor) : 0,
-          status_fatura: ultimaFatura?.status ?? null,
-        };
-      }),
-    );
+    const lojasComMetricas = todasLojas.map((loja) => ({
+      ...loja,
+      veiculos_ativos: dashVeicMap.get(loja.id) ?? 0,
+      leads_30d: dashLeadsMap.get(loja.id) ?? 0,
+      scans_30d: dashScansMap.get(loja.id) ?? 0,
+      mrr: Number(dashFaturaMap.get(loja.id)?.valor ?? 0),
+      status_fatura: dashFaturaMap.get(loja.id)?.status ?? null,
+    }));
 
     const historicoMrrRaw = await db
       .select({
@@ -262,29 +283,68 @@ router.get(
       rows = rows.filter((l) => l.cidade?.toLowerCase().includes(cidadeLower));
     }
 
-    const lojasComStats = await Promise.all(
-      rows.map(async (loja) => {
-        const [{ veiculosAtivos }] = await db
-          .select({ veiculosAtivos: count() })
-          .from(veiculos)
-          .where(and(eq(veiculos.lojaId, loja.id), eq(veiculos.status, "ativo")));
+    if (rows.length === 0) {
+      res.json([]);
+      return;
+    }
 
-        const scans30d = await countConversasByLojaRecentes(loja.id, 30);
-        const leads30d = await countLeadsByLojaRecentes(loja.id, 30);
+    const lojaIds = rows.map((l) => l.id);
+    const desde30d = new Date();
+    desde30d.setDate(desde30d.getDate() - 30);
 
-        const [{ totalUsuarios }] = await db
-          .select({ totalUsuarios: count() })
-          .from(usuarios)
-          .where(eq(usuarios.lojaId, loja.id));
+    const [veiculosBatch, leadsBatch, scansBatch, usuariosBatch, faturasBatch] = await Promise.all([
+      db
+        .select({ lojaId: veiculos.lojaId, total: count() })
+        .from(veiculos)
+        .where(and(inArray(veiculos.lojaId, lojaIds), eq(veiculos.status, "ativo")))
+        .groupBy(veiculos.lojaId),
+      db
+        .select({ lojaId: leads.lojaId, total: count() })
+        .from(leads)
+        .where(and(inArray(leads.lojaId, lojaIds), gte(leads.criadoEm, desde30d)))
+        .groupBy(leads.lojaId),
+      db
+        .select({ lojaId: veiculos.lojaId, total: count() })
+        .from(conversas)
+        .innerJoin(veiculos, eq(conversas.veiculoId, veiculos.id))
+        .where(and(inArray(veiculos.lojaId, lojaIds), gte(conversas.iniciadaEm, desde30d)))
+        .groupBy(veiculos.lojaId),
+      db
+        .select({ lojaId: usuarios.lojaId, total: count() })
+        .from(usuarios)
+        .where(inArray(usuarios.lojaId, lojaIds))
+        .groupBy(usuarios.lojaId),
+      db
+        .selectDistinctOn([ciclosBilling.lojaId], {
+          lojaId: ciclosBilling.lojaId,
+          status: ciclosBilling.status,
+          valorTotal: ciclosBilling.valorTotal,
+        })
+        .from(ciclosBilling)
+        .where(inArray(ciclosBilling.lojaId, lojaIds))
+        .orderBy(ciclosBilling.lojaId, desc(ciclosBilling.mesRef)),
+    ]);
 
-        const [ultimaFatura] = await db
-          .select({ status: ciclosBilling.status, valorTotal: ciclosBilling.valorTotal })
-          .from(ciclosBilling)
-          .where(eq(ciclosBilling.lojaId, loja.id))
-          .orderBy(desc(ciclosBilling.mesRef))
-          .limit(1);
+    const veicMap = new Map(veiculosBatch.map((r) => [r.lojaId, r.total]));
+    const leadsMap = new Map(leadsBatch.map((r) => [r.lojaId, r.total]));
+    const scansMap = new Map(scansBatch.map((r) => [r.lojaId, r.total]));
+    const usersMap = new Map(usuariosBatch.map((r) => [r.lojaId ?? "", r.total]));
+    const faturaMap = new Map(faturasBatch.map((r) => [r.lojaId, r]));
 
-        const stats = {
+    const lojasComStats = rows
+      .map((loja) => {
+        const veiculosAtivos = veicMap.get(loja.id) ?? 0;
+        const leads30d = leadsMap.get(loja.id) ?? 0;
+        const scans30d = scansMap.get(loja.id) ?? 0;
+        const totalUsuarios = usersMap.get(loja.id) ?? 0;
+        const ultimaFatura = faturaMap.get(loja.id);
+
+        if (atividade) {
+          if (atividade === "ativa" && leads30d === 0 && veiculosAtivos === 0) return null;
+          if (atividade === "inativa" && (leads30d > 0 || veiculosAtivos > 0)) return null;
+        }
+
+        return {
           ...loja,
           veiculos_ativos: veiculosAtivos,
           scans_30d: scans30d,
@@ -293,17 +353,10 @@ router.get(
           status_fatura: ultimaFatura?.status ?? null,
           mrr: ultimaFatura ? Number(ultimaFatura.valorTotal) : 0,
         };
+      })
+      .filter(Boolean);
 
-        if (atividade) {
-          if (atividade === "ativa" && leads30d === 0 && veiculosAtivos === 0) return null;
-          if (atividade === "inativa" && (leads30d > 0 || veiculosAtivos > 0)) return null;
-        }
-
-        return stats;
-      }),
-    );
-
-    res.json(lojasComStats.filter(Boolean));
+    res.json(lojasComStats);
   },
 );
 

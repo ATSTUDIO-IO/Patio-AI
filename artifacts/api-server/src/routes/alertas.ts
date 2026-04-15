@@ -1,21 +1,9 @@
 import { Router, type IRouter } from "express";
 import { eq, and, lt, sql, gte, inArray } from "drizzle-orm";
 import { db, leads, veiculos, qrcodes, conversas } from "@workspace/db";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireLojaId } from "../middlewares/auth";
 
 const router: IRouter = Router();
-
-function requireLojaId(
-  req: Parameters<Parameters<typeof router.get>[1]>[0],
-  res: Parameters<Parameters<typeof router.get>[1]>[1],
-): string | null {
-  const lojaId = req.user?.loja_id ?? null;
-  if (!lojaId) {
-    res.status(403).json({ error: "Usuário sem loja associada" });
-    return null;
-  }
-  return lojaId;
-}
 
 type Alerta = {
   tipo:

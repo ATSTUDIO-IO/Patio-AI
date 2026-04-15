@@ -192,9 +192,9 @@ export default function PainelConfiguracoes() {
         lojaId,
         data: {
           nome_fantasia: lojaForm.nome_fantasia,
-          telefone: lojaForm.telefone || undefined,
+          telefone: lojaForm.telefone || null,
           email_contato: lojaForm.email_contato || undefined,
-          cidade: lojaForm.cidade || undefined,
+          cidade: lojaForm.cidade || null,
         },
       });
       if (user && token) {
@@ -215,13 +215,13 @@ export default function PainelConfiguracoes() {
       await updateLoja.mutateAsync({
         lojaId,
         data: {
-          nome_agente: agenteForm.nome_agente || undefined,
-          tom_agente: agenteForm.tom_agente || undefined,
-          horario_atendimento: agenteForm.horario_atendimento || undefined,
-          instrucoes_especificas: agenteForm.instrucoes_especificas || undefined,
+          nome_agente: agenteForm.nome_agente || null,
+          tom_agente: agenteForm.tom_agente || null,
+          horario_atendimento: agenteForm.horario_atendimento || null,
+          instrucoes_especificas: agenteForm.instrucoes_especificas || null,
           aceita_troca: agenteForm.aceita_troca,
-          descricao_garantia: agenteForm.descricao_garantia || undefined,
-          bancos_parceiros: agenteForm.bancos_parceiros || undefined,
+          descricao_garantia: agenteForm.descricao_garantia || null,
+          bancos_parceiros: agenteForm.bancos_parceiros || null,
         },
       });
       setAgenteStatus("Configurações do agente salvas!");

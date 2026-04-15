@@ -9,7 +9,7 @@ import {
   LoginResponse,
   LogoutResponse,
 } from "@workspace/api-zod";
-import { requireAuth, signToken } from "../middlewares/auth";
+import { requireAuth, signToken, limparSessoesExpiradas } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
 
 const router: IRouter = Router();
@@ -149,6 +149,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     token,
     expiraEm: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
+
+  limparSessoesExpiradas().catch(() => {});
 
   await db
     .update(usuarios)
