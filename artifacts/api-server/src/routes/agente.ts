@@ -462,10 +462,12 @@ router.post("/agente/mensagem/stream", async (req, res): Promise<void> => {
 
     sendEvent({ type: "transcricao", texto: transcricao });
 
-    const [, historico] = await Promise.all([
-      db.insert(mensagens).values({ conversaId: conversa.id, papel: "user", conteudo: transcricao }),
-      db.select().from(mensagens).where(eq(mensagens.conversaId, conversa.id)).orderBy(asc(mensagens.criadoEm)),
-    ]);
+    await db.insert(mensagens).values({ conversaId: conversa.id, papel: "user", conteudo: transcricao });
+    const historico = await db
+      .select()
+      .from(mensagens)
+      .where(eq(mensagens.conversaId, conversa.id))
+      .orderBy(asc(mensagens.criadoEm));
 
     let systemPrompt = buildSystemPrompt(veiculo, loja);
     let simulacaoInjetada = false;

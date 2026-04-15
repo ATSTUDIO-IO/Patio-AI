@@ -174,11 +174,6 @@ export default function AgenteVoz() {
       audioQueueRef.current.push({ index, url });
       if (!isPlayingAudioRef.current) {
         playNextInQueue();
-      } else {
-        const expectedNext = nextToPlayRef.current;
-        if (audioQueueRef.current.some((a) => a.index === expectedNext)) {
-          playNextInQueue();
-        }
       }
     },
     [playNextInQueue],
