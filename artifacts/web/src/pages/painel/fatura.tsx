@@ -7,9 +7,8 @@ function formatBRL(v: number) {
 }
 
 const STATUS_INFO: Record<string, { label: string; color: string }> = {
-  aberta: { label: "Em aberto", color: "bg-yellow-100 text-yellow-700" },
-  fechada: { label: "Fechada", color: "bg-blue-100 text-blue-600" },
-  paga: { label: "Paga", color: "bg-green-100 text-green-700" },
+  aberto: { label: "Em aberto", color: "bg-yellow-100 text-yellow-700" },
+  pago: { label: "Pago", color: "bg-green-100 text-green-700" },
   inadimplente: { label: "Inadimplente", color: "bg-red-100 text-red-700" },
 };
 

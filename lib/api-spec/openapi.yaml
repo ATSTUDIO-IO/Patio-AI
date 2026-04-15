@@ -1242,6 +1242,9 @@ components:
           type: ["string", "null"]
         cidade:
           type: ["string", "null"]
+        plano:
+          type: string
+          enum: [starter, pro, full]
       required:
         - razao_social
         - nome_fantasia

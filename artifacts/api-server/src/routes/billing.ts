@@ -202,20 +202,22 @@ router.post(
       const precoUnitario = PRECOS[loja.plano] ?? 30;
       const valorTotal = veiculosAtivos * precoUnitario;
 
-      try {
-        await db
-          .insert(ciclosBilling)
-          .values({
-            lojaId: loja.id,
-            mesRef,
-            veiculosAtivos: veiculosAtivos,
-            precoUnitario: String(precoUnitario),
-            valorTotal: String(valorTotal),
-            status: "aberto",
-          })
-          .onConflictDoNothing();
+      const inserted = await db
+        .insert(ciclosBilling)
+        .values({
+          lojaId: loja.id,
+          mesRef,
+          veiculosAtivos: veiculosAtivos,
+          precoUnitario: String(precoUnitario),
+          valorTotal: String(valorTotal),
+          status: "aberto",
+        })
+        .onConflictDoNothing()
+        .returning({ id: ciclosBilling.id });
+
+      if (inserted.length > 0) {
         resultados.push({ loja_id: loja.id, status: "criado" });
-      } catch {
+      } else {
         resultados.push({ loja_id: loja.id, status: "ja_existia" });
       }
     }
