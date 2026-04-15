@@ -29,7 +29,7 @@ import { simular, formatarSimulacaoParaAgente } from "../lib/simulator";
 
 const router: IRouter = Router();
 
-const CLAUDE_MODEL = "claude-sonnet-4-6";
+const CLAUDE_MODEL = "claude-haiku-3-5";
 
 function buildSystemPrompt(
   veiculo: Pick<
@@ -139,7 +139,6 @@ function extrairEntradaEParcelas(texto: string): {
   return { entrada_pct, n_parcelas };
 }
 
-
 async function gerarAudioBase64(texto: string): Promise<string> {
   try {
     const buf = await textToSpeech(texto, "nova", "mp3");
@@ -148,6 +147,17 @@ async function gerarAudioBase64(texto: string): Promise<string> {
     logger.warn({ err }, "Falha ao gerar áudio TTS");
     return "";
   }
+}
+
+function detectarEncerramento(texto: string): boolean {
+  const lower = texto.toLowerCase();
+  return (
+    lower.includes("até logo") ||
+    lower.includes("tchau") ||
+    lower.includes("obrigado pela visita") ||
+    lower.includes("boa sorte") ||
+    lower.includes("até breve")
+  );
 }
 
 router.post("/agente/sessao", async (req, res): Promise<void> => {
@@ -211,13 +221,14 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
     { nomeFantasia: loja.nomeFantasia },
   );
 
-  await db.insert(mensagens).values({
-    conversaId: conversa.id,
-    papel: "agente",
-    conteudo: saudacaoTexto,
-  });
-
-  const saudacaoAudio = await gerarAudioBase64(saudacaoTexto);
+  const [, saudacaoAudio] = await Promise.all([
+    db.insert(mensagens).values({
+      conversaId: conversa.id,
+      papel: "agente",
+      conteudo: saudacaoTexto,
+    }),
+    gerarAudioBase64(saudacaoTexto),
+  ]);
 
   res.status(201).json({
     conversa_id: conversa.id,
@@ -252,25 +263,14 @@ async function resolveConversaComSlug(
   | { conversa: Conversa; veiculo: Veiculo; loja: Loja; qr: typeof qrcodes.$inferSelect }
   | { error: string; status: number }
 > {
-  const [qr] = await db
-    .select()
-    .from(qrcodes)
-    .where(eq(qrcodes.slug, slug))
-    .limit(1);
+  const [[qr], [conversa]] = await Promise.all([
+    db.select().from(qrcodes).where(eq(qrcodes.slug, slug)).limit(1),
+    db.select().from(conversas).where(eq(conversas.id, conversaId)).limit(1),
+  ]);
 
   if (!qr) return { error: "QR code não encontrado", status: 404 };
-
-  const [conversa] = await db
-    .select()
-    .from(conversas)
-    .where(eq(conversas.id, conversaId))
-    .limit(1);
-
   if (!conversa) return { error: "Sessão não encontrada", status: 404 };
-
-  if (conversa.qrcodeId !== qr.id) {
-    return { error: "Sessão não pertence a este veículo", status: 403 };
-  }
+  if (conversa.qrcodeId !== qr.id) return { error: "Sessão não pertence a este veículo", status: 403 };
 
   const [veiculo] = await db
     .select()
@@ -291,6 +291,17 @@ async function resolveConversaComSlug(
   return { conversa, veiculo, loja, qr };
 }
 
+function buildSttPromise(audio_base64: string, formato: string): Promise<string> {
+  const inputBuf = Buffer.from(audio_base64, "base64");
+  const audioFmt = (formato ?? "webm") as "webm" | "mp3" | "wav" | "mp4" | "ogg";
+  if (audioFmt === "wav" || audioFmt === "mp3") {
+    return speechToText(inputBuf, audioFmt);
+  }
+  return ensureCompatibleFormat(inputBuf).then(({ buffer, format }) =>
+    speechToText(buffer, format),
+  );
+}
+
 router.post("/agente/mensagem", async (req, res): Promise<void> => {
   const body = EnviarMensagemAgenteBody.safeParse(req.body);
   if (!body.success) {
@@ -305,7 +316,15 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     return;
   }
 
-  const resolved = await resolveConversaComSlug(conversa_id, slug);
+  const sttPromise: Promise<string> = texto
+    ? Promise.resolve(texto)
+    : buildSttPromise(audio_base64!, formato ?? "webm");
+
+  const [resolved, transcricao] = await Promise.all([
+    resolveConversaComSlug(conversa_id, slug),
+    sttPromise,
+  ]);
+
   if ("error" in resolved) {
     res.status(resolved.status).json({ error: resolved.error });
     return;
@@ -316,21 +335,6 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
   if (conversa.encerradaEm) {
     res.status(400).json({ error: "Sessão já encerrada" });
     return;
-  }
-
-  let transcricao: string;
-  if (texto) {
-    transcricao = texto;
-  } else {
-    const inputBuf = Buffer.from(audio_base64!, "base64");
-    const audioFmt = (formato ?? "webm") as "webm" | "mp3" | "wav" | "mp4" | "ogg";
-
-    if (audioFmt === "wav" || audioFmt === "mp3") {
-      transcricao = await speechToText(inputBuf, audioFmt);
-    } else {
-      const { buffer: compatBuffer, format: compatFormat } = await ensureCompatibleFormat(inputBuf);
-      transcricao = await speechToText(compatBuffer, compatFormat);
-    }
   }
 
   await db.insert(mensagens).values({
@@ -374,7 +378,7 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
 
   const claudeResp = await anthropic.messages.create({
     model: CLAUDE_MODEL,
-    max_tokens: 8192,
+    max_tokens: 300,
     system: systemPrompt,
     messages: claudeMsgs,
   });
@@ -384,34 +388,197 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
     .map((b) => ("text" in b ? (b.text as string) : ""))
     .join("");
 
-  await db.insert(mensagens).values({
-    conversaId: conversa.id,
-    papel: "agente",
-    conteudo: textoAgente,
-  });
-
-  if (simulacaoInjetada) {
-    await db
-      .update(conversas)
-      .set({ simulacaoRealizada: true })
-      .where(eq(conversas.id, conversa.id));
-  }
-
-  const audioAgente = await gerarAudioBase64(textoAgente);
-
-  const encerrar =
-    textoAgente.toLowerCase().includes("até logo") ||
-    textoAgente.toLowerCase().includes("tchau") ||
-    textoAgente.toLowerCase().includes("obrigado pela visita") ||
-    textoAgente.toLowerCase().includes("boa sorte") ||
-    textoAgente.toLowerCase().includes("até breve");
+  const [, audioAgente] = await Promise.all([
+    db.insert(mensagens).values({
+      conversaId: conversa.id,
+      papel: "agente",
+      conteudo: textoAgente,
+    }),
+    gerarAudioBase64(textoAgente),
+    simulacaoInjetada
+      ? db.update(conversas).set({ simulacaoRealizada: true }).where(eq(conversas.id, conversa.id))
+      : Promise.resolve(),
+  ]);
 
   res.json({
     texto_usuario: transcricao,
     texto_agente: textoAgente,
     audio_agente: audioAgente,
-    encerrar,
+    encerrar: detectarEncerramento(textoAgente),
   });
+});
+
+router.post("/agente/mensagem/stream", async (req, res): Promise<void> => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  const sendEvent = (data: object) => {
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    }
+  };
+
+  try {
+    const body = EnviarMensagemAgenteBody.safeParse(req.body);
+    if (!body.success) {
+      sendEvent({ type: "error", mensagem: formatZodError(body.error) });
+      res.end();
+      return;
+    }
+
+    const { slug, conversa_id, audio_base64, formato, texto } = body.data;
+
+    if (!audio_base64 && !texto) {
+      sendEvent({ type: "error", mensagem: "Informe audio_base64 ou texto" });
+      res.end();
+      return;
+    }
+
+    const sttPromise: Promise<string> = texto
+      ? Promise.resolve(texto)
+      : buildSttPromise(audio_base64!, formato ?? "webm");
+
+    const [resolved, transcricao] = await Promise.all([
+      resolveConversaComSlug(conversa_id, slug),
+      sttPromise,
+    ]);
+
+    if ("error" in resolved) {
+      sendEvent({ type: "error", mensagem: resolved.error });
+      res.end();
+      return;
+    }
+
+    const { conversa, veiculo, loja } = resolved;
+
+    if (conversa.encerradaEm) {
+      sendEvent({ type: "error", mensagem: "Sessão já encerrada" });
+      res.end();
+      return;
+    }
+
+    sendEvent({ type: "transcricao", texto: transcricao });
+
+    const [, historico] = await Promise.all([
+      db.insert(mensagens).values({ conversaId: conversa.id, papel: "user", conteudo: transcricao }),
+      db.select().from(mensagens).where(eq(mensagens.conversaId, conversa.id)).orderBy(asc(mensagens.criadoEm)),
+    ]);
+
+    let systemPrompt = buildSystemPrompt(veiculo, loja);
+    let simulacaoInjetada = false;
+
+    if (detectarPedidoFinanciamento(transcricao)) {
+      const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
+      const resultadoSimulacao = await simular({
+        lojaId: veiculo.lojaId,
+        precoVenda: Number(veiculo.precoVenda),
+        entradaPct: entrada_pct,
+        nParcelas: n_parcelas,
+      }).catch((err) => {
+        logger.warn({ err }, "Falha ao simular financiamento");
+        return null;
+      });
+
+      if (resultadoSimulacao) {
+        const textoSimulacao = formatarSimulacaoParaAgente(resultadoSimulacao);
+        systemPrompt += `\n\n${textoSimulacao}\nUse estes valores calculados ao responder sobre financiamento.`;
+        simulacaoInjetada = true;
+      }
+    }
+
+    const claudeMsgs = historico.map((m) => ({
+      role: m.papel === "user" ? ("user" as const) : ("assistant" as const),
+      content: m.conteudo,
+    }));
+
+    let textoCompleto = "";
+    let sentenceBuffer = "";
+    let ttsIndex = 0;
+    const ttsPromises: Promise<void>[] = [];
+
+    const SENTENCE_END = /[.!?](?:\s|$)/;
+
+    const fireTts = (sentence: string) => {
+      const idx = ttsIndex++;
+      const p = gerarAudioBase64(sentence)
+        .then((audio) => {
+          if (audio) {
+            sendEvent({ type: "audio_chunk", index: idx, audio_base64: audio, texto: sentence });
+          }
+        })
+        .catch(() => {});
+      ttsPromises.push(p);
+    };
+
+    const flushSentenceBuffer = (flush = false) => {
+      while (true) {
+        const match = SENTENCE_END.exec(sentenceBuffer);
+        if (!match) {
+          if (flush && sentenceBuffer.trim()) {
+            fireTts(sentenceBuffer.trim());
+            sentenceBuffer = "";
+          }
+          break;
+        }
+        const sentence = sentenceBuffer.slice(0, match.index + 1).trim();
+        sentenceBuffer = sentenceBuffer.slice(match.index + match[0].length);
+        if (sentence) {
+          fireTts(sentence);
+        }
+        if (flush && !sentenceBuffer.trim()) break;
+      }
+    };
+
+    const stream = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: claudeMsgs,
+      stream: true,
+    });
+
+    for await (const event of stream) {
+      if (res.writableEnded) break;
+      if (
+        event.type === "content_block_delta" &&
+        "delta" in event &&
+        event.delta.type === "text_delta"
+      ) {
+        const chunk = event.delta.text as string;
+        textoCompleto += chunk;
+        sentenceBuffer += chunk;
+        sendEvent({ type: "text_chunk", texto: chunk });
+        flushSentenceBuffer(false);
+      }
+    }
+
+    flushSentenceBuffer(true);
+
+    await Promise.all(ttsPromises);
+
+    await Promise.all([
+      db.insert(mensagens).values({ conversaId: conversa.id, papel: "agente", conteudo: textoCompleto }),
+      simulacaoInjetada
+        ? db.update(conversas).set({ simulacaoRealizada: true }).where(eq(conversas.id, conversa.id))
+        : Promise.resolve(),
+    ]);
+
+    sendEvent({
+      type: "done",
+      encerrar: detectarEncerramento(textoCompleto),
+      texto_completo: textoCompleto,
+    });
+    res.end();
+  } catch (err) {
+    logger.error({ err }, "Erro no streaming do agente");
+    if (!res.writableEnded) {
+      sendEvent({ type: "error", mensagem: "Erro interno do servidor" });
+      res.end();
+    }
+  }
 });
 
 type LeadExtraido = {
@@ -443,7 +610,7 @@ ${transcricao}`;
 
   const resp = await anthropic.messages.create({
     model: CLAUDE_MODEL,
-    max_tokens: 1024,
+    max_tokens: 512,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -580,21 +747,16 @@ router.post("/agente/encerrar", async (req, res): Promise<void> => {
 
   const leadId = lead.id;
 
-  await db
-    .update(conversas)
-    .set({ leadId: lead.id })
-    .where(eq(conversas.id, conversa.id));
-
-  await db
-    .update(conversas)
-    .set({
+  await Promise.all([
+    db.update(conversas).set({ leadId: lead.id }).where(eq(conversas.id, conversa.id)),
+    db.update(conversas).set({
       encerradaEm,
       duracaoSegundos,
       transcricao,
       resumoIa: leadExtraido.resumo,
       simulacaoRealizada: conversa.simulacaoRealizada || leadExtraido.pediu_financiamento,
-    })
-    .where(eq(conversas.id, conversa.id));
+    }).where(eq(conversas.id, conversa.id)),
+  ]);
 
   res.json({
     lead_id: leadId,

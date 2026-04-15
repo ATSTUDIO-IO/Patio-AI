@@ -3,7 +3,7 @@ import { useParams } from "wouter";
 import {
   getVeiculoPublico,
   iniciarSessao,
-  enviarMensagem,
+  enviarMensagemStream,
   encerrarSessao,
   base64ToAudioUrl,
   type VeiculoPublico,
@@ -26,6 +26,8 @@ type EstadoSessao =
   | "sem_microfone"
   | "encerrado"
   | "erro";
+
+type AudioItem = { index: number; url: string };
 
 function formatarPreco(preco: string): string {
   return Number(preco).toLocaleString("pt-BR", {
@@ -99,6 +101,7 @@ export default function AgenteVoz() {
   const [conversaId, setConversaId] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [consentimento, setConsentimento] = useState(false);
+  const [textoAgenteAtual, setTextoAgenteAtual] = useState<string | null>(null);
 
   const [nomeLead, setNomeLead] = useState("");
   const [telefoneLead, setTelefoneLead] = useState("");
@@ -112,9 +115,13 @@ export default function AgenteVoz() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mensagensEndRef = useRef<HTMLDivElement>(null);
 
+  const audioQueueRef = useRef<AudioItem[]>([]);
+  const nextToPlayRef = useRef(0);
+  const isPlayingAudioRef = useRef(false);
+
   useEffect(() => {
     mensagensEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensagens]);
+  }, [mensagens, textoAgenteAtual]);
 
   useEffect(() => {
     if (!slug) return;
@@ -135,17 +142,74 @@ export default function AgenteVoz() {
       });
   }, [slug]);
 
-  const playAudio = useCallback((base64: string) => {
-    const url = base64ToAudioUrl(base64, "audio/mpeg");
+  const playNextInQueue = useCallback(() => {
+    const next = audioQueueRef.current.find((a) => a.index === nextToPlayRef.current);
+    if (!next) {
+      isPlayingAudioRef.current = false;
+      return;
+    }
+    audioQueueRef.current = audioQueueRef.current.filter((a) => a.index !== next.index);
+    nextToPlayRef.current++;
+    isPlayingAudioRef.current = true;
+
     if (audioRef.current) {
       audioRef.current.pause();
-      URL.revokeObjectURL(audioRef.current.src);
     }
-    const audio = new Audio(url);
+    const audio = new Audio(next.url);
     audioRef.current = audio;
-    audio.play().catch(() => {});
-    audio.onended = () => URL.revokeObjectURL(url);
+    audio.onended = () => {
+      URL.revokeObjectURL(next.url);
+      playNextInQueue();
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(next.url);
+      playNextInQueue();
+    };
+    audio.play().catch(() => playNextInQueue());
   }, []);
+
+  const onAudioChunk = useCallback(
+    (index: number, base64: string) => {
+      const url = base64ToAudioUrl(base64, "audio/mpeg");
+      audioQueueRef.current.push({ index, url });
+      if (!isPlayingAudioRef.current) {
+        playNextInQueue();
+      } else {
+        const expectedNext = nextToPlayRef.current;
+        if (audioQueueRef.current.some((a) => a.index === expectedNext)) {
+          playNextInQueue();
+        }
+      }
+    },
+    [playNextInQueue],
+  );
+
+  const resetAudioQueue = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    audioQueueRef.current.forEach((a) => URL.revokeObjectURL(a.url));
+    audioQueueRef.current = [];
+    nextToPlayRef.current = 0;
+    isPlayingAudioRef.current = false;
+  }, []);
+
+  const playAudio = useCallback(
+    (base64: string) => {
+      resetAudioQueue();
+      const url = base64ToAudioUrl(base64, "audio/mpeg");
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      isPlayingAudioRef.current = true;
+      audio.play().catch(() => {});
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        isPlayingAudioRef.current = false;
+      };
+    },
+    [resetAudioQueue],
+  );
 
   const handleIniciarSessao = useCallback(async () => {
     if (!slug || !consentimento) return;
@@ -293,28 +357,51 @@ export default function AgenteVoz() {
       return;
     }
 
+    resetAudioQueue();
+    setTextoAgenteAtual("");
+
+    let textoUsuario = "";
+    let textoAgente = "";
+
     try {
-      const resp = await enviarMensagem(slug!, conversaId!, base64, formato);
-      setMensagens((prev) => [
-        ...prev,
-        { papel: "user", texto: resp.texto_usuario },
-        { papel: "agente", texto: resp.texto_agente },
-      ]);
-      if (resp.audio_agente) {
-        playAudio(resp.audio_agente);
-      }
-      if (resp.encerrar) {
-        setMostrarFormulario(true);
-        setEstado("encerrado");
-      } else {
-        setEstado("pronto");
-      }
+      await enviarMensagemStream(slug!, conversaId!, base64, formato, {
+        onTranscricao: (txt) => {
+          textoUsuario = txt;
+          setMensagens((prev) => [...prev, { papel: "user", texto: txt }]);
+        },
+        onTextChunk: (chunk) => {
+          textoAgente += chunk;
+          setTextoAgenteAtual((prev) => (prev ?? "") + chunk);
+        },
+        onAudioChunk: (index, audioBase64) => {
+          onAudioChunk(index, audioBase64);
+        },
+        onDone: (encerrar, textoCompleto) => {
+          setTextoAgenteAtual(null);
+          setMensagens((prev) => [
+            ...prev,
+            { papel: "agente", texto: textoCompleto || textoAgente },
+          ]);
+          if (encerrar) {
+            setMostrarFormulario(true);
+            setEstado("encerrado");
+          } else {
+            setEstado("pronto");
+          }
+        },
+        onError: (mensagem) => {
+          setTextoAgenteAtual(null);
+          setErro(mensagem);
+          setEstado("pronto");
+        },
+      });
     } catch (err: unknown) {
+      setTextoAgenteAtual(null);
       const msg = err instanceof Error ? err.message : "Falha ao processar mensagem";
       setErro(msg);
       setEstado("pronto");
     }
-  }, [estado, slug, conversaId, playAudio, float32ToWavBase64]);
+  }, [estado, slug, conversaId, onAudioChunk, resetAudioQueue, float32ToWavBase64]);
 
   const sessaoEncerradaRef = useRef(false);
 
@@ -332,11 +419,11 @@ export default function AgenteVoz() {
 
   const handleEncerrar = useCallback(() => {
     if (!conversaId) return;
-    if (audioRef.current) audioRef.current.pause();
+    resetAudioQueue();
     setMostrarFormulario(true);
     setEstado("encerrado");
     encerrarSessaoServidor();
-  }, [conversaId, encerrarSessaoServidor]);
+  }, [conversaId, encerrarSessaoServidor, resetAudioQueue]);
 
   const handleEnviarLead = useCallback(async () => {
     setMostrarFormulario(false);
@@ -484,7 +571,28 @@ export default function AgenteVoz() {
           </div>
         ))}
 
-        {estado === "processando" && (
+        {textoAgenteAtual !== null && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%] bg-white/10 rounded-2xl rounded-bl-sm px-4 py-2.5 border border-white/10">
+              <p className="text-emerald-400 text-xs font-medium mb-1">🤖 Pátio AI</p>
+              {textoAgenteAtual ? (
+                <p className="text-white/90 text-sm leading-relaxed">{textoAgenteAtual}</p>
+              ) : (
+                <div className="flex gap-1 py-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {estado === "processando" && textoAgenteAtual === null && (
           <div className="flex justify-start">
             <div className="bg-white/10 rounded-2xl rounded-bl-sm px-4 py-3 border border-white/10">
               <p className="text-emerald-400 text-xs font-medium mb-1">🤖 Pátio AI</p>
