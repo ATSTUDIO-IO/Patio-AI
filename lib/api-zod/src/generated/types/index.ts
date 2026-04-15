@@ -82,7 +82,7 @@ export * from "./lojaAdminDetailInteresseDistribuicaoItem";
 export * from "./lojaAdminDetailNotasItem";
 export * from "./lojaAdminDetailUsuariosItem";
 export * from "./lojaAdminPlano";
-export * from "./lojaAdminUltimaFaturaStatus";
+export * from "./lojaAdminStatusFatura";
 export * from "./lojaPublic";
 export * from "./lojaPublicaMinima";
 export * from "./lojaPublicPlano";

@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LojaAdminPlano } from "./lojaAdminPlano";
-import type { LojaAdminUltimaFaturaStatus } from "./lojaAdminUltimaFaturaStatus";
+import type { LojaAdminStatusFatura } from "./lojaAdminStatusFatura";
 
 export interface LojaAdmin {
   id: string;
@@ -23,10 +23,10 @@ export interface LojaAdmin {
   email_contato?: string | null;
   criado_em?: Date;
   veiculos_ativos?: number;
-  total_conversas?: number;
   total_leads?: number;
   leads_30d?: number;
   scans_30d?: number;
+  mrr?: number;
   /** @nullable */
-  ultima_fatura_status?: LojaAdminUltimaFaturaStatus;
+  status_fatura?: LojaAdminStatusFatura;
 }

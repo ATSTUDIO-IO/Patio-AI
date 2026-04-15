@@ -1044,11 +1044,11 @@ export const GetAdminDashboardResponse = zod.object({
       email_contato: zod.string().nullish(),
       criado_em: zod.coerce.date().optional(),
       veiculos_ativos: zod.number().optional(),
-      total_conversas: zod.number().optional(),
       total_leads: zod.number().optional(),
       leads_30d: zod.number().optional(),
       scans_30d: zod.number().optional(),
-      ultima_fatura_status: zod
+      mrr: zod.number().optional(),
+      status_fatura: zod
         .enum(["aberto", "pago", "inadimplente", "null"])
         .nullish(),
     }),
@@ -1077,13 +1077,11 @@ export const GetAdminLojasResponseItem = zod.object({
   email_contato: zod.string().nullish(),
   criado_em: zod.coerce.date().optional(),
   veiculos_ativos: zod.number().optional(),
-  total_conversas: zod.number().optional(),
   total_leads: zod.number().optional(),
   leads_30d: zod.number().optional(),
   scans_30d: zod.number().optional(),
-  ultima_fatura_status: zod
-    .enum(["aberto", "pago", "inadimplente", "null"])
-    .nullish(),
+  mrr: zod.number().optional(),
+  status_fatura: zod.enum(["aberto", "pago", "inadimplente", "null"]).nullish(),
 });
 export const GetAdminLojasResponse = zod.array(GetAdminLojasResponseItem);
 
@@ -1107,11 +1105,11 @@ export const GetAdminLojasLojaIdResponse = zod
     email_contato: zod.string().nullish(),
     criado_em: zod.coerce.date().optional(),
     veiculos_ativos: zod.number().optional(),
-    total_conversas: zod.number().optional(),
     total_leads: zod.number().optional(),
     leads_30d: zod.number().optional(),
     scans_30d: zod.number().optional(),
-    ultima_fatura_status: zod
+    mrr: zod.number().optional(),
+    status_fatura: zod
       .enum(["aberto", "pago", "inadimplente", "null"])
       .nullish(),
   })

@@ -9,11 +9,11 @@
 /**
  * @nullable
  */
-export type LojaAdminUltimaFaturaStatus =
-  | (typeof LojaAdminUltimaFaturaStatus)[keyof typeof LojaAdminUltimaFaturaStatus]
+export type LojaAdminStatusFatura =
+  | (typeof LojaAdminStatusFatura)[keyof typeof LojaAdminStatusFatura]
   | null;
 
-export const LojaAdminUltimaFaturaStatus = {
+export const LojaAdminStatusFatura = {
   aberto: "aberto",
   pago: "pago",
   inadimplente: "inadimplente",

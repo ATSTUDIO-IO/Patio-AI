@@ -1549,15 +1549,15 @@ components:
           format: date-time
         veiculos_ativos:
           type: integer
-        total_conversas:
-          type: integer
         total_leads:
           type: integer
         leads_30d:
           type: integer
         scans_30d:
           type: integer
-        ultima_fatura_status:
+        mrr:
+          type: number
+        status_fatura:
           type: ["string", "null"]
           enum: [aberto, pago, inadimplente, "null"]
       required: [id, nome_fantasia, cnpj, plano, ativo]

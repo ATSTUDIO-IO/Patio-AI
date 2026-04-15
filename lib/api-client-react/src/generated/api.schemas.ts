@@ -64,11 +64,11 @@ export const LojaAdminPlano = {
 /**
  * @nullable
  */
-export type LojaAdminUltimaFaturaStatus =
-  | (typeof LojaAdminUltimaFaturaStatus)[keyof typeof LojaAdminUltimaFaturaStatus]
+export type LojaAdminStatusFatura =
+  | (typeof LojaAdminStatusFatura)[keyof typeof LojaAdminStatusFatura]
   | null;
 
-export const LojaAdminUltimaFaturaStatus = {
+export const LojaAdminStatusFatura = {
   aberto: "aberto",
   pago: "pago",
   inadimplente: "inadimplente",
@@ -90,12 +90,12 @@ export interface LojaAdmin {
   email_contato?: string | null;
   criado_em?: string;
   veiculos_ativos?: number;
-  total_conversas?: number;
   total_leads?: number;
   leads_30d?: number;
   scans_30d?: number;
+  mrr?: number;
   /** @nullable */
-  ultima_fatura_status?: LojaAdminUltimaFaturaStatus;
+  status_fatura?: LojaAdminStatusFatura;
 }
 
 export type LojaAdminDetailUsuariosItem = {

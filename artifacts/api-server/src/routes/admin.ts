@@ -273,7 +273,7 @@ router.get(
           .from(veiculos)
           .where(and(eq(veiculos.lojaId, loja.id), eq(veiculos.status, "ativo")));
 
-        const totalConversas = await countConversasByLojaRecentes(loja.id, 999);
+        const scans30d = await countConversasByLojaRecentes(loja.id, 30);
         const leads30d = await countLeadsByLojaRecentes(loja.id, 30);
 
         const [{ totalUsuarios }] = await db
@@ -291,11 +291,11 @@ router.get(
         const stats = {
           ...loja,
           veiculos_ativos: veiculosAtivos,
-          total_conversas: totalConversas,
+          scans_30d: scans30d,
           leads_30d: leads30d,
           total_usuarios: totalUsuarios,
-          ultima_fatura_status: ultimaFatura?.status ?? null,
-          ultima_fatura_valor: ultimaFatura ? Number(ultimaFatura.valorTotal) : 0,
+          status_fatura: ultimaFatura?.status ?? null,
+          mrr: ultimaFatura ? Number(ultimaFatura.valorTotal) : 0,
         };
 
         if (atividade) {
