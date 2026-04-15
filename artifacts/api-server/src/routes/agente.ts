@@ -507,11 +507,11 @@ router.post("/agente/mensagem/stream", async (req, res): Promise<void> => {
       const idx = ttsIndex++;
       const p = gerarAudioBase64(sentence)
         .then((audio) => {
-          if (audio) {
-            sendEvent({ type: "audio_chunk", index: idx, audio_base64: audio, texto: sentence });
-          }
+          sendEvent({ type: "audio_chunk", index: idx, audio_base64: audio, texto: sentence });
         })
-        .catch(() => {});
+        .catch(() => {
+          sendEvent({ type: "audio_chunk", index: idx, audio_base64: "", texto: sentence });
+        });
       ttsPromises.push(p);
     };
 

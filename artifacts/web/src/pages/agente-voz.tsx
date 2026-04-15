@@ -150,6 +150,12 @@ export default function AgenteVoz() {
     }
     audioQueueRef.current = audioQueueRef.current.filter((a) => a.index !== next.index);
     nextToPlayRef.current++;
+
+    if (!next.url) {
+      playNextInQueue();
+      return;
+    }
+
     isPlayingAudioRef.current = true;
 
     if (audioRef.current) {
@@ -170,7 +176,7 @@ export default function AgenteVoz() {
 
   const onAudioChunk = useCallback(
     (index: number, base64: string) => {
-      const url = base64ToAudioUrl(base64, "audio/mpeg");
+      const url = base64 ? base64ToAudioUrl(base64, "audio/mpeg") : "";
       audioQueueRef.current.push({ index, url });
       if (!isPlayingAudioRef.current) {
         playNextInQueue();
