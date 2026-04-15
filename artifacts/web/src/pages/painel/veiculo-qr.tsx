@@ -12,7 +12,7 @@ export default function VeiculoQR() {
   const handleDownload = () => {
     if (!qr?.imagem_qr) return;
     const link = document.createElement("a");
-    link.href = `data:image/png;base64,${qr.imagem_qr}`;
+    link.href = qr.imagem_qr;
     link.download = `qr-${veiculo?.marca ?? ""}-${veiculo?.modelo ?? ""}-${veiculo?.ano_fabricacao ?? ""}.png`;
     link.click();
   };
@@ -41,7 +41,7 @@ export default function VeiculoQR() {
             ) : qr?.imagem_qr ? (
               <>
                 <img
-                  src={`data:image/png;base64,${qr.imagem_qr}`}
+                  src={qr.imagem_qr}
                   alt="QR Code"
                   className="w-64 h-64 mx-auto rounded-xl"
                 />
