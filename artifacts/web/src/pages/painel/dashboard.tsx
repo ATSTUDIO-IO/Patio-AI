@@ -78,7 +78,7 @@ export default function PainelDashboard() {
     .sort((a, b) => (b.qr_code?.total_scans ?? 0) - (a.qr_code?.total_scans ?? 0))
     .slice(0, 5);
 
-  const totalScansSemana = metricas?.scans_semana.reduce((acc, d) => acc + d.scans, 0) ?? 0;
+  const totalScansSemana = metricas?.scans_semana?.reduce((acc, d) => acc + d.scans, 0) ?? 0;
 
   return (
     <PainelLayout>
@@ -110,7 +110,7 @@ export default function PainelDashboard() {
               <h2 className="font-semibold text-gray-900">Scans por Dia — Últimos 7 dias</h2>
             </div>
             <div className="p-4">
-              {metricas ? (
+              {metricas?.scans_semana ? (
                 <MiniBarChart dados={metricas.scans_semana} />
               ) : (
                 <div className="h-20 flex items-center justify-center text-gray-400 text-sm">Carregando...</div>
