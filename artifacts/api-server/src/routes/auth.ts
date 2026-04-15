@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, signToken, limparSessoesExpiradas } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
+import { getPlanoConfig, serializarPlanoConfig } from "../lib/planos";
 
 const router: IRouter = Router();
 
@@ -244,7 +245,11 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
     loja,
   });
 
-  res.json(data);
+  const planoConfig = loja && usuario.lojaId
+    ? serializarPlanoConfig(getPlanoConfig((data.loja as { plano: string }).plano))
+    : null;
+
+  res.json({ ...data, plano_config: planoConfig });
 });
 
 export default router;

@@ -4,6 +4,16 @@ import { setAuthTokenGetter } from "@workspace/api-client-react";
 const TOKEN_KEY = "patioai_token";
 const USER_KEY = "patioai_user";
 
+export type PlanoConfig = {
+  preco_unitario: number;
+  veiculos_max: number;
+  vendedores_max: number;
+  personalizacao_avancada: boolean;
+  assistente_financiamento: boolean;
+  consulta_documental: boolean;
+  crm_retencao_dias: number | null;
+};
+
 export type UserInfo = {
   id: string;
   nome: string;
@@ -25,6 +35,7 @@ export type UserInfo = {
     descricao_garantia?: string | null;
     bancos_parceiros?: string | null;
   };
+  plano_config?: PlanoConfig | null;
 };
 
 type AuthContextType = {

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, lojas, usuarios } from "@workspace/db";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requirePerfil } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
+import { getPlanoConfig } from "../lib/planos";
 
 const router: IRouter = Router();
 
@@ -51,6 +52,23 @@ router.put(
     if (!lojaExistente) {
       res.status(404).json({ error: "Loja não encontrada" });
       return;
+    }
+
+    const cfg = getPlanoConfig(lojaExistente.plano);
+    const CAMPOS_AVANCADOS = ["instrucoes_especificas", "descricao_garantia", "bancos_parceiros"] as const;
+
+    if (!cfg.personalizacaoAvancada && req.user!.perfil !== "admin_patioai") {
+      const tentouCampoAvancado = CAMPOS_AVANCADOS.some(
+        (campo) => body.data[campo] !== undefined && body.data[campo] !== null && body.data[campo] !== "",
+      );
+      if (tentouCampoAvancado) {
+        res.status(403).json({
+          error: "Personalização avançada (instruções especiais, garantia personalizada e bancos parceiros) está disponível a partir do plano Pro. Faça upgrade para desbloquear.",
+          codigo: "FEATURE_NAO_DISPONIVEL",
+          plano_atual: lojaExistente.plano,
+        });
+        return;
+      }
     }
 
     const updateData: Record<string, unknown> = {};
@@ -142,7 +160,7 @@ router.post(
     }
 
     const [lojaExistente] = await db
-      .select({ id: lojas.id })
+      .select({ id: lojas.id, plano: lojas.plano })
       .from(lojas)
       .where(eq(lojas.id, lojaId))
       .limit(1);
@@ -150,6 +168,24 @@ router.post(
     if (!lojaExistente) {
       res.status(404).json({ error: "Loja não encontrada" });
       return;
+    }
+
+    if (req.user!.perfil !== "admin_patioai") {
+      const cfg = getPlanoConfig(lojaExistente.plano);
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(usuarios)
+        .where(and(eq(usuarios.lojaId, lojaId), eq(usuarios.ativo, true)));
+
+      if (total >= cfg.vendedoresMax) {
+        res.status(403).json({
+          error: `Limite de ${cfg.vendedoresMax} vendedor(es) atingido para o plano ${lojaExistente.plano}. Faça upgrade para adicionar mais vendedores.`,
+          codigo: "LIMITE_VENDEDORES_ATINGIDO",
+          atual: total,
+          limite: cfg.vendedoresMax,
+        });
+        return;
+      }
     }
 
     const emailNormalizado = body.data.email.toLowerCase();

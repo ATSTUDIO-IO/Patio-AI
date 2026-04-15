@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PainelLayout, PageHeader } from "@/components/painel/layout";
 import { useListVeiculos, usePatchVeiculoStatus } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   ativo: { label: "Ativo", color: "bg-green-100 text-green-700" },
@@ -12,6 +13,12 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 const COMB_LABELS: Record<string, string> = {
   flex: "Flex", gasolina: "Gasolina", etanol: "Etanol", diesel: "Diesel", eletrico: "Elétrico", hibrido: "Híbrido"
+};
+
+const PLANO_LABELS: Record<string, string> = {
+  starter: "Starter",
+  pro: "Pro",
+  full: "Full",
 };
 
 function formatBRL(v: number) {
@@ -35,13 +42,56 @@ function AgenteStatus({ temDescricao }: { temDescricao: boolean }) {
   );
 }
 
+function UsageBadge({ atual, limite, plano }: { atual: number; limite: number; plano: string }) {
+  const pct = Math.min((atual / limite) * 100, 100);
+  const cor = pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-yellow-400" : "bg-blue-500";
+  return (
+    <div className="flex items-center gap-2">
+      <div className="text-xs text-gray-500">
+        <span className={`font-semibold ${pct >= 100 ? "text-red-600" : "text-gray-700"}`}>{atual}</span>
+        <span className="text-gray-400">/{limite} veículos ativos</span>
+        <span className="ml-1 text-gray-400">· Plano {PLANO_LABELS[plano] ?? plano}</span>
+      </div>
+      <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function UpgradeBanner({ plano, limite }: { plano: string; limite: number }) {
+  return (
+    <div className="mx-6 mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-4">
+      <div>
+        <p className="text-sm font-semibold text-amber-800">Limite de {limite} veículos atingido</p>
+        <p className="text-xs text-amber-600 mt-0.5">
+          {plano === "starter" && "Faça upgrade para o plano Pro e tenha até 50 veículos com agente ativo."}
+          {plano === "pro" && "Faça upgrade para o plano Full e tenha até 100 veículos com agente ativo."}
+          {plano === "full" && "Você atingiu o limite máximo de veículos com agente ativo no plano Full."}
+        </p>
+      </div>
+      {plano !== "full" && (
+        <div className="flex-shrink-0 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-xl hover:bg-amber-700 transition-colors cursor-default">
+          Fale com o suporte
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PainelVeiculos() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [statusFiltro, setStatusFiltro] = useState<string>("todos");
   const [busca, setBusca] = useState("");
 
   const { data: veiculos = [], isLoading } = useListVeiculos();
   const patchStatus = usePatchVeiculoStatus();
+
+  const plano = user?.loja?.plano ?? "starter";
+  const planoConfig = user?.plano_config;
+  const veiculosAtivosAgente = veiculos.filter(v => v.ativo_agente === true).length;
+  const limiteAtingido = planoConfig ? veiculosAtivosAgente >= planoConfig.veiculos_max : false;
 
   const handlePatch = async (veiculoId: string, status: string) => {
     await patchStatus.mutateAsync({ veiculoId, data: { status: status as "ativo" | "pausado" | "vendido" } });
@@ -67,6 +117,16 @@ export default function PainelVeiculos() {
           </Link>
         }
       />
+
+      {planoConfig && (
+        <div className="px-6 pb-2">
+          <UsageBadge atual={veiculosAtivosAgente} limite={planoConfig.veiculos_max} plano={plano} />
+        </div>
+      )}
+
+      {limiteAtingido && planoConfig && (
+        <UpgradeBanner plano={plano} limite={planoConfig.veiculos_max} />
+      )}
 
       <div className="p-6">
         <div className="flex gap-3 mb-4">

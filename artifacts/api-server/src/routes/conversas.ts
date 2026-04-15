@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { z } from "zod/v4";
-import { db, conversas, mensagens, veiculos, leads } from "@workspace/db";
+import { db, conversas, mensagens, veiculos, leads, lojas } from "@workspace/db";
 import { requireAuth, requireLojaId } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
+import { getCrmDataSince } from "../lib/planos";
 
 const router: IRouter = Router();
 
@@ -26,11 +27,15 @@ router.get("/conversas", requireAuth, async (req, res): Promise<void> => {
   const lojaId = requireLojaId(req, res);
   if (!lojaId) return;
 
+  const [lojaData] = await db.select({ plano: lojas.plano }).from(lojas).where(eq(lojas.id, lojaId)).limit(1);
+  const crmSince = getCrmDataSince(lojaData?.plano ?? "starter");
+
   const { veiculo_id, lead_id, limit, offset } = query.data;
 
   const conditions = [eq(veiculos.lojaId, lojaId)];
   if (veiculo_id) conditions.push(eq(conversas.veiculoId, veiculo_id));
   if (lead_id) conditions.push(eq(conversas.leadId, lead_id));
+  if (crmSince) conditions.push(gte(conversas.iniciadaEm, crmSince));
 
   const rows = await db
     .select({

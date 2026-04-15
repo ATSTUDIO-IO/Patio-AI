@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { z } from "zod/v4";
-import { db, leads, conversas, mensagens, veiculos } from "@workspace/db";
+import { db, leads, conversas, mensagens, veiculos, lojas } from "@workspace/db";
 import { requireAuth, requireLojaId } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
+import { getCrmDataSince } from "../lib/planos";
 
 const router: IRouter = Router();
 
@@ -33,11 +34,15 @@ router.get("/leads", requireAuth, async (req, res): Promise<void> => {
   const lojaId = requireLojaId(req, res);
   if (!lojaId) return;
 
+  const [lojaData] = await db.select({ plano: lojas.plano }).from(lojas).where(eq(lojas.id, lojaId)).limit(1);
+  const crmSince = getCrmDataSince(lojaData?.plano ?? "starter");
+
   const { status, interesse, veiculo_id, desde, ate, limit, offset } = query.data;
   const conditions = [eq(leads.lojaId, lojaId)];
   if (status) conditions.push(eq(leads.statusCrm, status));
   if (interesse) conditions.push(eq(leads.interesse, interesse));
   if (veiculo_id) conditions.push(eq(leads.veiculoId, veiculo_id));
+  if (crmSince && !desde) conditions.push(gte(leads.criadoEm, crmSince));
   if (desde) conditions.push(gte(leads.criadoEm, new Date(desde)));
   if (ate) conditions.push(lte(leads.criadoEm, new Date(ate)));
 

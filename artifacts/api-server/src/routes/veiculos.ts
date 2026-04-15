@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
-import { db, veiculos, qrcodes, eventosBilling } from "@workspace/db";
+import { eq, and, sql, count } from "drizzle-orm";
+import { db, veiculos, qrcodes, eventosBilling, lojas } from "@workspace/db";
 import {
   ListVeiculosQueryParams,
   CreateVeiculoBody,
@@ -13,6 +13,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireLojaId } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
+import { getPlanoConfig } from "../lib/planos";
 import {
   gerarSlugCandidatos,
   gerarUrlPublica,
@@ -21,6 +22,35 @@ import {
 } from "../lib/qrcode";
 
 const router: IRouter = Router();
+
+async function verificarLimiteVeiculosAgente(
+  lojaId: string,
+  excluirVeiculoId?: string,
+): Promise<{ bloqueado: boolean; atual: number; limite: number; plano: string }> {
+  const [lojaData] = await db
+    .select({ plano: lojas.plano })
+    .from(lojas)
+    .where(eq(lojas.id, lojaId))
+    .limit(1);
+
+  const plano = lojaData?.plano ?? "starter";
+  const cfg = getPlanoConfig(plano);
+
+  const conditions = [eq(veiculos.lojaId, lojaId), eq(veiculos.ativoAgente, true)];
+  if (excluirVeiculoId) conditions.push(sql`${veiculos.id} != ${excluirVeiculoId}`);
+
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(veiculos)
+    .where(and(...conditions));
+
+  return {
+    bloqueado: total >= cfg.veiculosMax,
+    atual: total,
+    limite: cfg.veiculosMax,
+    plano,
+  };
+}
 
 function mapVeiculo(
   v: typeof veiculos.$inferSelect,
@@ -126,6 +156,17 @@ router.post("/veiculos", requireAuth, async (req, res): Promise<void> => {
 
   if (placaExistente) {
     res.status(409).json({ error: "Placa já cadastrada nesta loja" });
+    return;
+  }
+
+  const limiteVeiculos = await verificarLimiteVeiculosAgente(lojaId);
+  if (limiteVeiculos.bloqueado) {
+    res.status(403).json({
+      error: `Limite de ${limiteVeiculos.limite} veículos com agente ativo atingido para o plano ${limiteVeiculos.plano}. Faça upgrade para adicionar mais veículos.`,
+      codigo: "LIMITE_VEICULOS_ATINGIDO",
+      atual: limiteVeiculos.atual,
+      limite: limiteVeiculos.limite,
+    });
     return;
   }
 
@@ -310,7 +351,21 @@ router.put(
     if (d.opcionais !== undefined) updateData.opcionais = d.opcionais;
     if (d.descricao_agente !== undefined)
       updateData.descricaoAgente = d.descricao_agente;
-    if (d.ativo_agente !== undefined) updateData.ativoAgente = d.ativo_agente;
+    if (d.ativo_agente !== undefined) {
+      if (d.ativo_agente === true && !veiculoExistente.ativoAgente) {
+        const limiteVeiculos = await verificarLimiteVeiculosAgente(lojaId, veiculoExistente.id);
+        if (limiteVeiculos.bloqueado) {
+          res.status(403).json({
+            error: `Limite de ${limiteVeiculos.limite} veículos com agente ativo atingido para o plano ${limiteVeiculos.plano}. Faça upgrade para ativar mais veículos.`,
+            codigo: "LIMITE_VEICULOS_ATINGIDO",
+            atual: limiteVeiculos.atual,
+            limite: limiteVeiculos.limite,
+          });
+          return;
+        }
+      }
+      updateData.ativoAgente = d.ativo_agente;
+    }
 
     if (Object.keys(updateData).length === 0) {
       res.status(400).json({ error: "Nenhum campo para atualizar" });
@@ -371,6 +426,19 @@ router.patch(
 
     const novoStatus = body.data.status as "ativo" | "vendido" | "pausado";
     const motivo = body.data.motivo ?? null;
+
+    if (novoStatus === "ativo" && !veiculoExistente.ativoAgente) {
+      const limiteVeiculos = await verificarLimiteVeiculosAgente(lojaId, veiculoExistente.id);
+      if (limiteVeiculos.bloqueado) {
+        res.status(403).json({
+          error: `Limite de ${limiteVeiculos.limite} veículos com agente ativo atingido para o plano ${limiteVeiculos.plano}. Faça upgrade para ativar mais veículos.`,
+          codigo: "LIMITE_VEICULOS_ATINGIDO",
+          atual: limiteVeiculos.atual,
+          limite: limiteVeiculos.limite,
+        });
+        return;
+      }
+    }
 
     const { veiculoAtualizado, qrAtualizado } = await db.transaction(
       async (tx) => {
@@ -481,6 +549,75 @@ router.get(
       "Content-Length": pngBuffer.length,
     });
     res.send(pngBuffer);
+  },
+);
+
+router.get(
+  "/veiculos/:veiculoId/consulta-documental",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = GetVeiculoParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: formatZodError(params.error) });
+      return;
+    }
+
+    const lojaId = requireLojaId(req, res);
+    if (!lojaId) return;
+
+    const [lojaData] = await db
+      .select({ plano: lojas.plano })
+      .from(lojas)
+      .where(eq(lojas.id, lojaId))
+      .limit(1);
+
+    const cfg = getPlanoConfig(lojaData?.plano ?? "starter");
+    if (!cfg.consultaDocumental) {
+      res.status(403).json({
+        error: "Consulta documental está disponível a partir do plano Pro. Faça upgrade para acessar esta funcionalidade.",
+        codigo: "FEATURE_NAO_DISPONIVEL",
+        plano_atual: lojaData?.plano ?? "starter",
+      });
+      return;
+    }
+
+    const [veiculo] = await db
+      .select({ id: veiculos.id, placa: veiculos.placa, marca: veiculos.marca, modelo: veiculos.modelo })
+      .from(veiculos)
+      .where(and(eq(veiculos.id, params.data.veiculoId), eq(veiculos.lojaId, lojaId)))
+      .limit(1);
+
+    if (!veiculo) {
+      res.status(404).json({ error: "Veículo não encontrado" });
+      return;
+    }
+
+    res.json({
+      veiculo_id: veiculo.id,
+      placa: veiculo.placa,
+      veiculo: `${veiculo.marca} ${veiculo.modelo}`,
+      integracao_pendente: true,
+      mensagem: "Integração com provedor de consulta documental em breve. Os dados abaixo são ilustrativos.",
+      consultado_em: new Date().toISOString(),
+      debitos: {
+        ipva: { status: "pendente_integracao", valor: null },
+        dpvat: { status: "pendente_integracao", valor: null },
+        multas: { status: "pendente_integracao", quantidade: null },
+      },
+      sinistros: {
+        status: "pendente_integracao",
+        ocorrencias: null,
+      },
+      historico_leilao: {
+        status: "pendente_integracao",
+        participou_leilao: null,
+      },
+      restricoes: {
+        financiamento: { status: "pendente_integracao", bloqueado: null },
+        judicial: { status: "pendente_integracao", bloqueado: null },
+        roubo_furto: { status: "pendente_integracao", bloqueado: null },
+      },
+    });
   },
 );
 

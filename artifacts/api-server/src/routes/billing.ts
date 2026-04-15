@@ -10,13 +10,14 @@ import {
 } from "@workspace/db";
 import { requireAuth, requirePerfil } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
+import { PLANOS_CONFIG } from "../lib/planos";
 
 const router: IRouter = Router();
 
 const PRECOS: Record<string, number> = {
-  starter: 30,
-  pro: 50,
-  full: 75,
+  starter: PLANOS_CONFIG.starter.precoUnitario,
+  pro: PLANOS_CONFIG.pro.precoUnitario,
+  full: PLANOS_CONFIG.full.precoUnitario,
 };
 
 function requireLojaIdDono(

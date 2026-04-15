@@ -26,6 +26,7 @@ import {
 import { formatZodError } from "../lib/errors";
 import { logger } from "../lib/logger";
 import { simular, formatarSimulacaoParaAgente } from "../lib/simulator";
+import { getPlanoConfig } from "../lib/planos";
 
 const router: IRouter = Router();
 
@@ -495,22 +496,28 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
   let systemPrompt = buildSystemPrompt(veiculo, loja);
   let simulacaoInjetada = false;
 
-  if (detectarPedidoFinanciamento(transcricao)) {
-    const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
-    const resultadoSimulacao = await simular({
-      lojaId: veiculo.lojaId,
-      precoVenda: Number(veiculo.precoVenda),
-      entradaPct: entrada_pct,
-      nParcelas: n_parcelas,
-    }).catch((err) => {
-      logger.warn({ err }, "Falha ao simular financiamento");
-      return null;
-    });
+  const planoConfig = getPlanoConfig(loja.plano);
 
-    if (resultadoSimulacao) {
-      const textoSimulacao = formatarSimulacaoParaAgente(resultadoSimulacao);
-      systemPrompt += `\n\n${textoSimulacao}\nUse estes valores calculados ao responder sobre financiamento.`;
-      simulacaoInjetada = true;
+  if (detectarPedidoFinanciamento(transcricao)) {
+    if (!planoConfig.assistenteFinanciamento) {
+      systemPrompt += `\n\nINSTRUCAO ESPECIAL: O assistente de simulação de financiamento não está disponível para esta loja no momento. Se o cliente perguntar sobre financiamento, parcelas ou consórcio, responda educadamente: "Para simulações de financiamento personalizadas, entre em contato diretamente com nossa equipe${loja.telefone ? ` pelo ${loja.telefone}` : ""}. Eles te darão as melhores condições!"`;
+    } else {
+      const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
+      const resultadoSimulacao = await simular({
+        lojaId: veiculo.lojaId,
+        precoVenda: Number(veiculo.precoVenda),
+        entradaPct: entrada_pct,
+        nParcelas: n_parcelas,
+      }).catch((err) => {
+        logger.warn({ err }, "Falha ao simular financiamento");
+        return null;
+      });
+
+      if (resultadoSimulacao) {
+        const textoSimulacao = formatarSimulacaoParaAgente(resultadoSimulacao);
+        systemPrompt += `\n\n${textoSimulacao}\nUse estes valores calculados ao responder sobre financiamento.`;
+        simulacaoInjetada = true;
+      }
     }
   }
 
@@ -615,22 +622,28 @@ router.post("/agente/mensagem/stream", async (req, res): Promise<void> => {
     let systemPrompt = buildSystemPrompt(veiculo, loja);
     let simulacaoInjetada = false;
 
-    if (detectarPedidoFinanciamento(transcricao)) {
-      const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
-      const resultadoSimulacao = await simular({
-        lojaId: veiculo.lojaId,
-        precoVenda: Number(veiculo.precoVenda),
-        entradaPct: entrada_pct,
-        nParcelas: n_parcelas,
-      }).catch((err) => {
-        logger.warn({ err }, "Falha ao simular financiamento");
-        return null;
-      });
+    const planoConfigStream = getPlanoConfig(loja.plano);
 
-      if (resultadoSimulacao) {
-        const textoSimulacao = formatarSimulacaoParaAgente(resultadoSimulacao);
-        systemPrompt += `\n\n${textoSimulacao}\nUse estes valores calculados ao responder sobre financiamento.`;
-        simulacaoInjetada = true;
+    if (detectarPedidoFinanciamento(transcricao)) {
+      if (!planoConfigStream.assistenteFinanciamento) {
+        systemPrompt += `\n\nINSTRUCAO ESPECIAL: O assistente de simulação de financiamento não está disponível para esta loja no momento. Se o cliente perguntar sobre financiamento, parcelas ou consórcio, responda educadamente: "Para simulações de financiamento personalizadas, entre em contato diretamente com nossa equipe${loja.telefone ? ` pelo ${loja.telefone}` : ""}. Eles te darão as melhores condições!"`;
+      } else {
+        const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
+        const resultadoSimulacao = await simular({
+          lojaId: veiculo.lojaId,
+          precoVenda: Number(veiculo.precoVenda),
+          entradaPct: entrada_pct,
+          nParcelas: n_parcelas,
+        }).catch((err) => {
+          logger.warn({ err }, "Falha ao simular financiamento");
+          return null;
+        });
+
+        if (resultadoSimulacao) {
+          const textoSimulacao = formatarSimulacaoParaAgente(resultadoSimulacao);
+          systemPrompt += `\n\n${textoSimulacao}\nUse estes valores calculados ao responder sobre financiamento.`;
+          simulacaoInjetada = true;
+        }
       }
     }
 

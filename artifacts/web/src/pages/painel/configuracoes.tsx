@@ -119,6 +119,22 @@ function StatusMessage({ msg }: { msg: string | null }) {
   );
 }
 
+function LockedSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-10 rounded-xl flex flex-col items-center justify-center gap-2 pointer-events-none">
+        <div className="flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg pointer-events-auto">
+          <svg viewBox="0 0 20 20" className="w-4 h-4 fill-current flex-shrink-0">
+            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/>
+          </svg>
+          {label}
+        </div>
+      </div>
+      <div className="opacity-40 pointer-events-none select-none">{children}</div>
+    </div>
+  );
+}
+
 const TOM_OPTIONS = [
   { value: "profissional_cordial", label: "Profissional e Cordial" },
   { value: "descontraido_amigavel", label: "Descontraído e Amigável" },
@@ -136,6 +152,9 @@ const TOM_DESCRICAO: Record<string, string> = {
 export default function PainelConfiguracoes() {
   const { user, setAuth, token } = useAuth();
   const lojaId = user?.loja_id ?? "";
+  const planoConfig = user?.plano_config;
+  const temPersonalizacaoAvancada = planoConfig?.personalizacao_avancada ?? true;
+  const temFinanciamento = planoConfig?.assistente_financiamento ?? true;
   const qc = useQueryClient();
 
   const [lojaForm, setLojaForm] = useState({
@@ -372,37 +391,73 @@ export default function PainelConfiguracoes() {
               hint="O agente informa ao lead quando a loja está disponível."
             />
 
-            <div className="grid grid-cols-2 gap-3">
-              <ToggleField
-                label="Aceita Troca de Veículo"
-                hint="O agente menciona essa possibilidade ao lead."
-                checked={agenteForm.aceita_troca}
-                onChange={(val) => setAgenteForm((f) => ({ ...f, aceita_troca: val }))}
-              />
-              <InputField
-                label="Bancos Parceiros"
-                value={agenteForm.bancos_parceiros}
-                onChange={setAgente("bancos_parceiros")}
-                placeholder="Ex: Itaú, Santander, BV Financeira"
-                hint="Listados ao simular financiamento."
-              />
-            </div>
-
-            <TextareaField
-              label="Descrição da Garantia"
-              value={agenteForm.descricao_garantia}
-              onChange={setAgente("descricao_garantia")}
-              placeholder="Ex: 90 dias de garantia legal + 6 meses de garantia da loja para motor e câmbio."
-              hint="O agente usa essa descrição ao responder sobre garantia."
-            />
-
-            <TextareaField
-              label="Instruções Especiais"
-              value={agenteForm.instrucoes_especificas}
-              onChange={setAgente("instrucoes_especificas")}
-              placeholder="Ex: Sempre pergunte se o cliente já possui financiamento pré-aprovado. Destaque o programa de revisão gratuita nos primeiros 3 meses."
-              hint="Orientações extras que o agente deve seguir em todas as conversas."
-            />
+            {temPersonalizacaoAvancada ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <ToggleField
+                    label="Aceita Troca de Veículo"
+                    hint="O agente menciona essa possibilidade ao lead."
+                    checked={agenteForm.aceita_troca}
+                    onChange={(val) => setAgenteForm((f) => ({ ...f, aceita_troca: val }))}
+                  />
+                  <InputField
+                    label="Bancos Parceiros"
+                    value={agenteForm.bancos_parceiros}
+                    onChange={setAgente("bancos_parceiros")}
+                    placeholder="Ex: Itaú, Santander, BV Financeira"
+                    hint="Listados ao simular financiamento."
+                  />
+                </div>
+                <TextareaField
+                  label="Descrição da Garantia"
+                  value={agenteForm.descricao_garantia}
+                  onChange={setAgente("descricao_garantia")}
+                  placeholder="Ex: 90 dias de garantia legal + 6 meses de garantia da loja para motor e câmbio."
+                  hint="O agente usa essa descrição ao responder sobre garantia."
+                />
+                <TextareaField
+                  label="Instruções Especiais"
+                  value={agenteForm.instrucoes_especificas}
+                  onChange={setAgente("instrucoes_especificas")}
+                  placeholder="Ex: Sempre pergunte se o cliente já possui financiamento pré-aprovado. Destaque o programa de revisão gratuita nos primeiros 3 meses."
+                  hint="Orientações extras que o agente deve seguir em todas as conversas."
+                />
+              </>
+            ) : (
+              <LockedSection label="Disponível no plano Pro e Full">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ToggleField
+                      label="Aceita Troca de Veículo"
+                      hint="O agente menciona essa possibilidade ao lead."
+                      checked={false}
+                      onChange={() => {}}
+                    />
+                    <InputField
+                      label="Bancos Parceiros"
+                      value=""
+                      onChange={() => {}}
+                      placeholder="Ex: Itaú, Santander, BV Financeira"
+                      hint="Listados ao simular financiamento."
+                    />
+                  </div>
+                  <TextareaField
+                    label="Descrição da Garantia"
+                    value=""
+                    onChange={() => {}}
+                    placeholder="Ex: 90 dias de garantia legal + 6 meses de garantia da loja para motor e câmbio."
+                    hint="O agente usa essa descrição ao responder sobre garantia."
+                  />
+                  <TextareaField
+                    label="Instruções Especiais"
+                    value=""
+                    onChange={() => {}}
+                    placeholder="Ex: Sempre pergunte se o cliente já possui financiamento pré-aprovado."
+                    hint="Orientações extras que o agente deve seguir em todas as conversas."
+                  />
+                </div>
+              </LockedSection>
+            )}
 
             <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
               <span className="font-semibold">Prévia da apresentação: </span>
@@ -423,8 +478,32 @@ export default function PainelConfiguracoes() {
 
         <SectionCard
           title="Condições de Financiamento"
-          subtitle="Tabelas disponíveis para simulação durante a conversa com o comprador"
+          subtitle={temFinanciamento ? "Tabelas disponíveis para simulação durante a conversa com o comprador" : "Disponível nos planos Pro e Full"}
         >
+          {!temFinanciamento ? (
+            <LockedSection label="Disponível no plano Pro e Full">
+              <div className="space-y-4">
+                <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 overflow-hidden mb-4">
+                  <p className="text-sm text-gray-400 p-3 text-center">Nenhuma condição cadastrada</p>
+                </div>
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Adicionar Condição</p>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <InputField label="Banco / Financeira" value="" onChange={() => {}} placeholder="Ex: Itaú, Santander, BV" />
+                      <InputField label="Modalidade" value="" onChange={() => {}} placeholder="CDC, Consórcio, Leasing" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <InputField label="Taxa Mensal (%)" value="" onChange={() => {}} type="number" placeholder="1.59" />
+                      <InputField label="Parcelas Mín." value="" onChange={() => {}} type="number" placeholder="12" />
+                      <InputField label="Parcelas Máx." value="" onChange={() => {}} type="number" placeholder="60" />
+                    </div>
+                    <InputField label="Entrada Mínima (%)" value="" onChange={() => {}} type="number" placeholder="20" />
+                  </div>
+                </div>
+              </div>
+            </LockedSection>
+          ) : (
           <div className="space-y-4">
             <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 overflow-hidden mb-4">
               {financiamentos.length === 0 ? (
@@ -524,6 +603,7 @@ export default function PainelConfiguracoes() {
               </form>
             </div>
           </div>
+          )}
         </SectionCard>
 
         <SectionCard title="Equipe de Vendas" subtitle="Gerencie os usuários que têm acesso ao painel">
