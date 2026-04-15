@@ -82,27 +82,27 @@ export default function PainelCadastro() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Nome Fantasia</label>
-                <input type="text" value={form.nome_fantasia} onChange={set("nome_fantasia")} required placeholder="Auto Center Silva" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={form.nome_fantasia} onChange={set("nome_fantasia")} required placeholder="Auto Center Silva" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Razão Social</label>
-                <input type="text" value={form.razao_social} onChange={set("razao_social")} required placeholder="Silva & Cia Ltda" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={form.razao_social} onChange={set("razao_social")} required placeholder="Silva & Cia Ltda" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">CNPJ</label>
-                <input type="text" value={form.cnpj} onChange={set("cnpj")} placeholder="00.000.000/0001-00" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={form.cnpj} onChange={set("cnpj")} placeholder="00.000.000/0001-00" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Telefone</label>
-                <input type="tel" value={form.telefone} onChange={set("telefone")} placeholder="(11) 99999-9999" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="tel" value={form.telefone} onChange={set("telefone")} placeholder="(11) 99999-9999" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Cidade</label>
-                <input type="text" value={form.cidade} onChange={set("cidade")} placeholder="São Paulo, SP" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={form.cidade} onChange={set("cidade")} placeholder="São Paulo, SP" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Plano</label>
-                <select value={form.plano} onChange={set("plano")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={form.plano} onChange={set("plano")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="starter">Starter</option>
                   <option value="pro">Pro</option>
                   <option value="full">Full</option>
@@ -110,11 +110,11 @@ export default function PainelCadastro() {
               </div>
               <div className="col-span-2">
                 <label className="text-sm font-medium text-gray-700 block mb-1">E-mail</label>
-                <input type="email" value={form.email} onChange={set("email")} required placeholder="dono@loja.com" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="email" value={form.email} onChange={set("email")} required placeholder="dono@loja.com" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="col-span-2">
                 <label className="text-sm font-medium text-gray-700 block mb-1">Senha</label>
-                <input type="password" value={form.senha} onChange={set("senha")} required minLength={6} placeholder="Mínimo 6 caracteres" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="password" value={form.senha} onChange={set("senha")} required minLength={6} placeholder="Mínimo 6 caracteres" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
