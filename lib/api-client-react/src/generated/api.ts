@@ -33,8 +33,6 @@ import type {
   FaturaAtual,
   FecharBillingResponse,
   FinanciamentoResponse,
-  GetAdminLojas200Item,
-  GetAdminLojasLojaId200,
   GetAdminLojasParams,
   GetAdminStats200,
   HealthStatus,
@@ -48,6 +46,8 @@ import type {
   ListLeadsParams,
   ListVeiculosParams,
   LoginRequest,
+  LojaAdmin,
+  LojaAdminDetail,
   LojaPublic,
   MeResponse,
   MensagemAgenteRequest,
@@ -3046,8 +3046,8 @@ export const getGetAdminLojasUrl = (params?: GetAdminLojasParams) => {
 export const getAdminLojas = async (
   params?: GetAdminLojasParams,
   options?: RequestInit,
-): Promise<GetAdminLojas200Item[]> => {
-  return customFetch<GetAdminLojas200Item[]>(getGetAdminLojasUrl(params), {
+): Promise<LojaAdmin[]> => {
+  return customFetch<LojaAdmin[]>(getGetAdminLojasUrl(params), {
     ...options,
     method: "GET",
   });
@@ -3128,14 +3128,11 @@ export const getGetAdminLojasLojaIdUrl = (lojaId: string) => {
 export const getAdminLojasLojaId = async (
   lojaId: string,
   options?: RequestInit,
-): Promise<GetAdminLojasLojaId200> => {
-  return customFetch<GetAdminLojasLojaId200>(
-    getGetAdminLojasLojaIdUrl(lojaId),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
+): Promise<LojaAdminDetail> => {
+  return customFetch<LojaAdminDetail>(getGetAdminLojasLojaIdUrl(lojaId), {
+    ...options,
+    method: "GET",
+  });
 };
 
 export const getGetAdminLojasLojaIdQueryKey = (lojaId: string) => {

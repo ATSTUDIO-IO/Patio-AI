@@ -25,6 +25,19 @@ type PerformanceCidade = {
   leads_30d: number;
   scans_30d: number;
   media_leads_por_loja: number;
+  taxa_conversao_pct: number;
+  duracao_media_segundos: number;
+};
+
+type JornadaLead = {
+  interesse: string;
+  total: number;
+  avg_duracao_segundos: number;
+};
+
+type BenchmarksMercado = {
+  ticket_medio_ativo: number;
+  marcas_mais_cadastradas: { marca: string; total: number }[];
 };
 
 type Resumo = {
@@ -39,6 +52,8 @@ type InteligenciaData = {
   scores_saude: ScoreSaude[];
   sinais_upsell: ScoreSaude[];
   performance_por_cidade: PerformanceCidade[];
+  benchmarks_mercado: BenchmarksMercado;
+  jornada_lead: JornadaLead[];
   resumo: Resumo;
 };
 
@@ -53,6 +68,13 @@ const planoColors: Record<string, string> = {
   pro: "bg-blue-900 text-blue-300",
   full: "bg-violet-900 text-violet-300",
 };
+
+function formatDuracao(segundos: number): string {
+  if (!segundos) return "—";
+  const m = Math.floor(segundos / 60);
+  const s = segundos % 60;
+  return m > 0 ? `${m}m${s}s` : `${s}s`;
+}
 
 export default function AdminInteligencia() {
   const { token } = useAuth();
@@ -166,6 +188,7 @@ export default function AdminInteligencia() {
                         <th className="px-4 py-2 text-right">Lojas</th>
                         <th className="px-4 py-2 text-right">Leads 30d</th>
                         <th className="px-4 py-2 text-right">Méd/Loja</th>
+                        <th className="px-4 py-2 text-right">Dur. Média</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -179,6 +202,7 @@ export default function AdminInteligencia() {
                               {c.media_leads_por_loja}
                             </span>
                           </td>
+                          <td className="px-4 py-2.5 text-right text-gray-400 text-xs">{formatDuracao(c.duracao_media_segundos)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -209,6 +233,85 @@ export default function AdminInteligencia() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-lg">🗺️</span>
+                  <h3 className="text-sm font-semibold text-white">Jornada do Lead por Interesse</h3>
+                </div>
+                <p className="text-xs text-gray-500 mb-4">Duração média das conversas por nível de interesse declarado</p>
+                {dados.jornada_lead.length === 0 ? (
+                  <div className="py-8 text-center text-gray-600 text-sm">Sem dados de jornada ainda</div>
+                ) : (
+                  <div className="space-y-3">
+                    {dados.jornada_lead.map((j) => {
+                      const maxTotal = Math.max(...dados.jornada_lead.map((x) => x.total), 1);
+                      const pct = Math.round((j.total / maxTotal) * 100);
+                      const interesColor = j.interesse === "alto" ? "bg-green-500" : j.interesse === "medio" ? "bg-amber-500" : "bg-gray-500";
+                      return (
+                        <div key={j.interesse} className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-300 capitalize">{j.interesse}</span>
+                            <div className="flex gap-3 text-gray-500">
+                              <span>{j.total} leads</span>
+                              <span className="text-violet-400">{formatDuracao(j.avg_duracao_segundos)}</span>
+                            </div>
+                          </div>
+                          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${interesColor}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-lg">📊</span>
+                  <h3 className="text-sm font-semibold text-white">Benchmarks de Mercado</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                    <div>
+                      <div className="text-xs text-gray-400">Ticket Médio (veículos ativos)</div>
+                      <div className="text-lg font-bold text-white mt-0.5">
+                        R$ {dados.benchmarks_mercado.ticket_medio_ativo.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </div>
+                    </div>
+                    <div className="text-2xl">💰</div>
+                  </div>
+
+                  {dados.benchmarks_mercado.marcas_mais_cadastradas.length > 0 && (
+                    <div>
+                      <div className="text-xs text-gray-400 mb-2">Marcas mais cadastradas</div>
+                      <div className="space-y-1.5">
+                        {dados.benchmarks_mercado.marcas_mais_cadastradas.slice(0, 5).map((m, idx) => {
+                          const maxM = dados.benchmarks_mercado.marcas_mais_cadastradas[0].total;
+                          const pct = Math.round((m.total / maxM) * 100);
+                          return (
+                            <div key={m.marca} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500 w-4">{idx + 1}</span>
+                              <div className="flex-1">
+                                <div className="flex justify-between text-xs mb-0.5">
+                                  <span className="text-gray-300">{m.marca}</span>
+                                  <span className="text-gray-500">{m.total}</span>
+                                </div>
+                                <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

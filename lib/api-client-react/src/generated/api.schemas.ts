@@ -98,8 +98,90 @@ export interface LojaAdmin {
   ultima_fatura_status?: LojaAdminUltimaFaturaStatus;
 }
 
+export type LojaAdminDetailUsuariosItem = {
+  id?: string;
+  nome?: string;
+  email?: string;
+  perfil?: string;
+  criado_em?: string;
+};
+
+export type LojaAdminDetailCiclosBillingItemStatus =
+  (typeof LojaAdminDetailCiclosBillingItemStatus)[keyof typeof LojaAdminDetailCiclosBillingItemStatus];
+
+export const LojaAdminDetailCiclosBillingItemStatus = {
+  aberto: "aberto",
+  pago: "pago",
+  inadimplente: "inadimplente",
+} as const;
+
+export type LojaAdminDetailCiclosBillingItem = {
+  id?: string;
+  mes_ref?: string;
+  valor_total?: number;
+  status?: LojaAdminDetailCiclosBillingItemStatus;
+};
+
+export type LojaAdminDetailNotasItem = {
+  id?: string;
+  conteudo?: string;
+  criado_em?: string;
+};
+
+export type LojaAdminDetailEstoqueItem = {
+  id?: string;
+  placa?: string;
+  marca?: string;
+  modelo?: string;
+  ano?: number;
+  km?: number;
+  preco?: number;
+  status?: string;
+};
+
+export type LojaAdminDetailAnaliseConversas = {
+  total?: number;
+  avg_duracao_segundos?: number;
+  com_lead_gerado?: number;
+  taxa_conversao_pct?: number;
+};
+
+export type LojaAdminDetailInteresseDistribuicaoItem = {
+  interesse?: string;
+  total?: number;
+  has_lead_pct?: number;
+};
+
+export type LojaAdminDetail = LojaAdmin & {
+  usuarios?: LojaAdminDetailUsuariosItem[];
+  ciclos_billing?: LojaAdminDetailCiclosBillingItem[];
+  notas?: LojaAdminDetailNotasItem[];
+  estoque?: LojaAdminDetailEstoqueItem[];
+  analise_conversas?: LojaAdminDetailAnaliseConversas;
+  interesse_distribuicao?: LojaAdminDetailInteresseDistribuicaoItem[];
+  scans_30d?: number;
+};
+
+export type DashboardAdminHistoricoMrrItem = {
+  mes_ref?: string;
+  total?: number;
+};
+
+export type DashboardAdminHistoricoLojasItem = {
+  mes_ref?: string;
+  total?: number;
+};
+
+export type DashboardAdminHistoricoVeiculosItem = {
+  mes_ref?: string;
+  total?: number;
+};
+
 export interface DashboardAdmin {
   mrr: MRRBreakdown;
+  historico_mrr?: DashboardAdminHistoricoMrrItem[];
+  historico_lojas?: DashboardAdminHistoricoLojasItem[];
+  historico_veiculos?: DashboardAdminHistoricoVeiculosItem[];
   total_lojas_ativas: number;
   total_veiculos_ativos: number;
   total_conversas: number;
@@ -1105,10 +1187,6 @@ export const GetAdminLojasAtividade = {
   ativa: "ativa",
   inativa: "inativa",
 } as const;
-
-export type GetAdminLojas200Item = { [key: string]: unknown };
-
-export type GetAdminLojasLojaId200 = { [key: string]: unknown };
 
 export type PatchAdminLojasLojaIdStatusBody = {
   ativo: boolean;

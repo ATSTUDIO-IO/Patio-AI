@@ -6,4 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type GetAdminLojas200Item = { [key: string]: unknown };
+export type DashboardAdminHistoricoLojasItem = {
+  mes_ref?: string;
+  total?: number;
+};

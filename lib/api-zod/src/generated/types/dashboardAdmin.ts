@@ -5,11 +5,17 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { DashboardAdminHistoricoLojasItem } from "./dashboardAdminHistoricoLojasItem";
+import type { DashboardAdminHistoricoMrrItem } from "./dashboardAdminHistoricoMrrItem";
+import type { DashboardAdminHistoricoVeiculosItem } from "./dashboardAdminHistoricoVeiculosItem";
 import type { LojaAdmin } from "./lojaAdmin";
 import type { MRRBreakdown } from "./mRRBreakdown";
 
 export interface DashboardAdmin {
   mrr: MRRBreakdown;
+  historico_mrr?: DashboardAdminHistoricoMrrItem[];
+  historico_lojas?: DashboardAdminHistoricoLojasItem[];
+  historico_veiculos?: DashboardAdminHistoricoVeiculosItem[];
   total_lojas_ativas: number;
   total_veiculos_ativos: number;
   total_conversas: number;

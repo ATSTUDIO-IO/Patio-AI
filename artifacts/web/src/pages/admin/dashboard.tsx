@@ -26,13 +26,27 @@ type MRR = {
   perdido: number;
 };
 
+type HistoricoItem = {
+  mes_ref: string;
+  total: number;
+};
+
 type DashboardData = {
   mrr: MRR;
+  historico_mrr: HistoricoItem[];
+  historico_lojas: HistoricoItem[];
+  historico_veiculos: HistoricoItem[];
   total_lojas_ativas: number;
   total_veiculos_ativos: number;
   total_conversas: number;
   lojas: Loja[];
 };
+
+function formatMes(mesRef: string): string {
+  const [ano, mes] = mesRef.split("-");
+  const nomes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  return `${nomes[parseInt(mes, 10) - 1]}/${ano.slice(2)}`;
+}
 
 export default function AdminDashboard() {
   const { token } = useAuth();
@@ -172,6 +186,27 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-center h-16 text-gray-600 text-sm">Carregando...</div>
                 )}
               </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <BarChart
+                title="MRR — Últimos 6 Meses (R$)"
+                data={data?.historico_mrr ?? []}
+                color="bg-violet-500"
+                formatValue={(v) => `R$ ${v.toLocaleString("pt-BR")}`}
+              />
+              <BarChart
+                title="Lojas Ativas — Histórico"
+                data={data?.historico_lojas ?? []}
+                color="bg-blue-500"
+                formatValue={(v) => `${v} lojas`}
+              />
+              <BarChart
+                title="Veículos Cadastrados — Histórico"
+                data={data?.historico_veiculos ?? []}
+                color="bg-green-500"
+                formatValue={(v) => `${v} veíc.`}
+              />
             </div>
 
             <div>
@@ -343,6 +378,51 @@ function ChurnRiskRow({ label, value, color, icon, total }: { label: string; val
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function BarChart({
+  title,
+  data,
+  color,
+  formatValue,
+}: {
+  title: string;
+  data: { mes_ref: string; total: number }[];
+  color: string;
+  formatValue: (v: number) => string;
+}) {
+  const max = Math.max(...data.map((d) => d.total), 1);
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+      <h3 className="text-xs font-semibold text-gray-400 mb-4 uppercase tracking-wide">{title}</h3>
+      {data.length === 0 ? (
+        <div className="flex items-end gap-1 h-24 items-center justify-center text-gray-600 text-xs">Sem dados</div>
+      ) : (
+        <div className="flex items-end gap-1.5 h-24">
+          {data.map((d) => {
+            const heightPct = Math.max((d.total / max) * 100, 4);
+            return (
+              <div key={d.mes_ref} className="flex-1 flex flex-col items-center gap-1 group relative">
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-700 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                  {formatValue(d.total)}
+                </div>
+                <div className="w-full rounded-t" style={{ height: `${heightPct}%`, backgroundColor: color.replace("bg-", "").replace("-500", "") }}>
+                  <div className={`w-full h-full rounded-t ${color} opacity-80`} />
+                </div>
+                <span className="text-gray-600 text-[9px] leading-none">{formatMes(d.mes_ref)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {data.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-800 flex justify-between">
+          <span className="text-xs text-gray-600">Atual</span>
+          <span className="text-xs font-medium text-white">{formatValue(data[data.length - 1]?.total ?? 0)}</span>
+        </div>
+      )}
     </div>
   );
 }

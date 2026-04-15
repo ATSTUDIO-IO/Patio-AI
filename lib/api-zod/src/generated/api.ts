@@ -998,6 +998,30 @@ export const GetAdminDashboardResponse = zod.object({
     expandido: zod.number(),
     perdido: zod.number(),
   }),
+  historico_mrr: zod
+    .array(
+      zod.object({
+        mes_ref: zod.string().optional(),
+        total: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  historico_lojas: zod
+    .array(
+      zod.object({
+        mes_ref: zod.string().optional(),
+        total: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  historico_veiculos: zod
+    .array(
+      zod.object({
+        mes_ref: zod.string().optional(),
+        total: zod.number().optional(),
+      }),
+    )
+    .optional(),
   total_lojas_ativas: zod.number(),
   total_veiculos_ativos: zod.number(),
   total_conversas: zod.number(),
@@ -1035,7 +1059,26 @@ export const GetAdminLojasQueryParams = zod.object({
   atividade: zod.enum(["ativa", "inativa"]).optional(),
 });
 
-export const GetAdminLojasResponseItem = zod.object({}).passthrough();
+export const GetAdminLojasResponseItem = zod.object({
+  id: zod.string().uuid(),
+  razao_social: zod.string().optional(),
+  nome_fantasia: zod.string(),
+  cnpj: zod.string(),
+  plano: zod.enum(["starter", "pro", "full"]),
+  ativo: zod.boolean(),
+  cidade: zod.string().nullish(),
+  telefone: zod.string().nullish(),
+  email_contato: zod.string().nullish(),
+  criado_em: zod.coerce.date().optional(),
+  veiculos_ativos: zod.number().optional(),
+  total_conversas: zod.number().optional(),
+  total_leads: zod.number().optional(),
+  leads_30d: zod.number().optional(),
+  scans_30d: zod.number().optional(),
+  ultima_fatura_status: zod
+    .enum(["aberto", "pago", "inadimplente", "null"])
+    .nullish(),
+});
 export const GetAdminLojasResponse = zod.array(GetAdminLojasResponseItem);
 
 /**
@@ -1045,7 +1088,93 @@ export const GetAdminLojasLojaIdParams = zod.object({
   lojaId: zod.coerce.string().uuid(),
 });
 
-export const GetAdminLojasLojaIdResponse = zod.object({}).passthrough();
+export const GetAdminLojasLojaIdResponse = zod
+  .object({
+    id: zod.string().uuid(),
+    razao_social: zod.string().optional(),
+    nome_fantasia: zod.string(),
+    cnpj: zod.string(),
+    plano: zod.enum(["starter", "pro", "full"]),
+    ativo: zod.boolean(),
+    cidade: zod.string().nullish(),
+    telefone: zod.string().nullish(),
+    email_contato: zod.string().nullish(),
+    criado_em: zod.coerce.date().optional(),
+    veiculos_ativos: zod.number().optional(),
+    total_conversas: zod.number().optional(),
+    total_leads: zod.number().optional(),
+    leads_30d: zod.number().optional(),
+    scans_30d: zod.number().optional(),
+    ultima_fatura_status: zod
+      .enum(["aberto", "pago", "inadimplente", "null"])
+      .nullish(),
+  })
+  .and(
+    zod.object({
+      usuarios: zod
+        .array(
+          zod.object({
+            id: zod.string().uuid().optional(),
+            nome: zod.string().optional(),
+            email: zod.string().optional(),
+            perfil: zod.string().optional(),
+            criado_em: zod.coerce.date().optional(),
+          }),
+        )
+        .optional(),
+      ciclos_billing: zod
+        .array(
+          zod.object({
+            id: zod.string().uuid().optional(),
+            mes_ref: zod.string().optional(),
+            valor_total: zod.number().optional(),
+            status: zod.enum(["aberto", "pago", "inadimplente"]).optional(),
+          }),
+        )
+        .optional(),
+      notas: zod
+        .array(
+          zod.object({
+            id: zod.string().uuid().optional(),
+            conteudo: zod.string().optional(),
+            criado_em: zod.coerce.date().optional(),
+          }),
+        )
+        .optional(),
+      estoque: zod
+        .array(
+          zod.object({
+            id: zod.string().uuid().optional(),
+            placa: zod.string().optional(),
+            marca: zod.string().optional(),
+            modelo: zod.string().optional(),
+            ano: zod.number().optional(),
+            km: zod.number().optional(),
+            preco: zod.number().optional(),
+            status: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      analise_conversas: zod
+        .object({
+          total: zod.number().optional(),
+          avg_duracao_segundos: zod.number().optional(),
+          com_lead_gerado: zod.number().optional(),
+          taxa_conversao_pct: zod.number().optional(),
+        })
+        .optional(),
+      interesse_distribuicao: zod
+        .array(
+          zod.object({
+            interesse: zod.string().optional(),
+            total: zod.number().optional(),
+            has_lead_pct: zod.number().optional(),
+          }),
+        )
+        .optional(),
+      scans_30d: zod.number().optional(),
+    }),
+  );
 
 /**
  * @summary Toggle store active status

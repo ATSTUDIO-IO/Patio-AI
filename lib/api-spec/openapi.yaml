@@ -1267,7 +1267,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
+                  $ref: "#/components/schemas/LojaAdmin"
         "401":
           description: Unauthorized
         "403":
@@ -1292,7 +1292,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/LojaAdminDetail"
         "404":
           description: Store not found
 
@@ -1562,11 +1562,94 @@ components:
           enum: [aberto, pago, inadimplente, "null"]
       required: [id, nome_fantasia, cnpj, plano, ativo]
 
+    LojaAdminDetail:
+      allOf:
+        - $ref: "#/components/schemas/LojaAdmin"
+        - type: object
+          properties:
+            usuarios:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  nome: { type: string }
+                  email: { type: string }
+                  perfil: { type: string }
+                  criado_em: { type: string, format: date-time }
+            ciclos_billing:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  mes_ref: { type: string }
+                  valor_total: { type: number }
+                  status: { type: string, enum: [aberto, pago, inadimplente] }
+            notas:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  conteudo: { type: string }
+                  criado_em: { type: string, format: date-time }
+            estoque:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  placa: { type: string }
+                  marca: { type: string }
+                  modelo: { type: string }
+                  ano: { type: integer }
+                  km: { type: integer }
+                  preco: { type: number }
+                  status: { type: string }
+            analise_conversas:
+              type: object
+              properties:
+                total: { type: integer }
+                avg_duracao_segundos: { type: number }
+                com_lead_gerado: { type: integer }
+                taxa_conversao_pct: { type: number }
+            interesse_distribuicao:
+              type: array
+              items:
+                type: object
+                properties:
+                  interesse: { type: string }
+                  total: { type: integer }
+                  has_lead_pct: { type: number }
+            scans_30d: { type: integer }
+
     DashboardAdmin:
       type: object
       properties:
         mrr:
           $ref: "#/components/schemas/MRRBreakdown"
+        historico_mrr:
+          type: array
+          items:
+            type: object
+            properties:
+              mes_ref: { type: string }
+              total: { type: number }
+        historico_lojas:
+          type: array
+          items:
+            type: object
+            properties:
+              mes_ref: { type: string }
+              total: { type: integer }
+        historico_veiculos:
+          type: array
+          items:
+            type: object
+            properties:
+              mes_ref: { type: string }
+              total: { type: integer }
         total_lojas_ativas:
           type: integer
         total_veiculos_ativos:

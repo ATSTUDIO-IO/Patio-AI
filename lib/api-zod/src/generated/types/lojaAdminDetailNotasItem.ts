@@ -6,4 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type GetAdminLojasLojaId200 = { [key: string]: unknown };
+export type LojaAdminDetailNotasItem = {
+  id?: string;
+  conteudo?: string;
+  criado_em?: Date;
+};

@@ -188,6 +188,31 @@ router.get(
       }),
     );
 
+    const historicoMrrRaw = await db
+      .select({
+        mes_ref: ciclosBilling.mesRef,
+        total: sql<string>`COALESCE(SUM(${ciclosBilling.valorTotal}), 0)`,
+      })
+      .from(ciclosBilling)
+      .where(sql`${ciclosBilling.mesRef} >= CURRENT_DATE - INTERVAL '6 months'`)
+      .groupBy(ciclosBilling.mesRef)
+      .orderBy(ciclosBilling.mesRef);
+
+    const historicoLojas: { mes_ref: string; total: number }[] = [];
+    const historicoVeiculos: { mes_ref: string; total: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+      const mesRef = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+      const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      const endStr = endOfMonth.toISOString().split("T")[0];
+      const [lojaCount] = await db.select({ total: count() }).from(lojas)
+        .where(and(eq(lojas.ativo, true), sql`${lojas.criadoEm} <= ${endStr}::timestamp`));
+      const [veicCount] = await db.select({ total: count() }).from(veiculos)
+        .where(sql`DATE(${veiculos.criadoEm}) <= ${endStr}::date`);
+      historicoLojas.push({ mes_ref: mesRef, total: lojaCount.total });
+      historicoVeiculos.push({ mes_ref: mesRef, total: veicCount.total });
+    }
+
     res.json({
       mrr: {
         total: mrrAtualTotal,
@@ -195,6 +220,9 @@ router.get(
         expandido: mrrExpandido,
         perdido: mrrPerdido,
       },
+      historico_mrr: historicoMrrRaw.map((r) => ({ mes_ref: r.mes_ref, total: Number(r.total) })),
+      historico_lojas: historicoLojas,
+      historico_veiculos: historicoVeiculos,
       total_lojas_ativas: statsLojas.total,
       total_veiculos_ativos: statsVeiculos.total,
       total_conversas: statsConversas.total,
@@ -666,23 +694,21 @@ router.get(
     const performancePorCidade = await Promise.all(
       Object.entries(porCidade).map(async ([cidade, dados]) => {
         let avgDuration = 0;
-        try {
-          const allVeicIds: string[] = [];
-          for (const lojaId of dados.lojaIds) {
-            const ids = await getVeiculoIdsByLoja(lojaId);
-            allVeicIds.push(...ids);
-          }
-          if (allVeicIds.length > 0) {
-            const [durResult] = await db
-              .select({ avg: sql<string>`ROUND(AVG(${conversas.duracaoSegundos}), 0)` })
-              .from(conversas)
-              .where(and(
-                inArray(conversas.veiculoId, allVeicIds),
-                sql`${conversas.duracaoSegundos} IS NOT NULL`,
-              ));
-            avgDuration = Number(durResult?.avg ?? 0);
-          }
-        } catch {}
+        const allVeicIds: string[] = [];
+        for (const lojaId of dados.lojaIds) {
+          const ids = await getVeiculoIdsByLoja(lojaId);
+          allVeicIds.push(...ids);
+        }
+        if (allVeicIds.length > 0) {
+          const [durResult] = await db
+            .select({ avg: sql<string>`ROUND(AVG(${conversas.duracaoSegundos}), 0)` })
+            .from(conversas)
+            .where(and(
+              inArray(conversas.veiculoId, allVeicIds),
+              sql`${conversas.duracaoSegundos} IS NOT NULL`,
+            ));
+          avgDuration = Number(durResult?.avg ?? 0);
+        }
         return {
           cidade,
           lojas: dados.total,
