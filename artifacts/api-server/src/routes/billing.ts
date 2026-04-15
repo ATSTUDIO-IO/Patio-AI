@@ -60,7 +60,7 @@ function mapEvento(
 router.get(
   "/billing/faturas",
   requireAuth,
-  requirePerfil("dono", "admin_patioai"),
+  requirePerfil("dono"),
   async (req, res): Promise<void> => {
     const lojaId = requireLojaIdDono(req, res);
     if (!lojaId) return;
@@ -79,7 +79,7 @@ router.get(
 router.get(
   "/billing/atual",
   requireAuth,
-  requirePerfil("dono", "admin_patioai"),
+  requirePerfil("dono"),
   async (req, res): Promise<void> => {
     const lojaId = requireLojaIdDono(req, res);
     if (!lojaId) return;
@@ -129,7 +129,7 @@ router.get(
 router.get(
   "/billing/eventos",
   requireAuth,
-  requirePerfil("dono", "admin_patioai"),
+  requirePerfil("dono"),
   async (req, res): Promise<void> => {
     const lojaId = requireLojaIdDono(req, res);
     if (!lojaId) return;

@@ -148,15 +148,48 @@ export default function VeiculoForm() {
                 </select>
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">Descrição para o Agente IA</label>
-              <textarea
-                value={form.descricao_agente ?? ""}
-                onChange={set("descricao_agente")}
-                rows={4}
-                placeholder="Descreva os detalhes que o agente deve mencionar: revisão em dia, único dono, garantia de fábrica, etc."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              />
+            <div className="border-t border-gray-100 pt-4 space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Descrição para o Agente IA
+                </label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Informe tudo que o agente deve saber: diferenciais, revisão em dia, garantia, histórico, etc.
+                </p>
+                <textarea
+                  value={form.descricao_agente ?? ""}
+                  onChange={set("descricao_agente")}
+                  rows={4}
+                  placeholder="Ex: Único dono, revisão feita em junho/2024 na concessionária, 4 pneus novos, IPVA 2025 pago, garantia de fábrica até 2026, sem multas..."
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+              {(form.marca || form.modelo) && (
+                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+                  <p className="text-xs font-semibold text-indigo-700 mb-2 uppercase tracking-wide">
+                    Prévia — Como o agente vai apresentar
+                  </p>
+                  <p className="text-sm text-indigo-900 leading-relaxed">
+                    "Olá! Estou aqui para te apresentar{" "}
+                    {form.marca && form.modelo ? (
+                      <>o <strong>{form.marca} {form.modelo}</strong></>
+                    ) : (
+                      "este veículo"
+                    )}
+                    {form.ano_fabricacao ? ` ${form.ano_fabricacao}` : ""}
+                    {form.cor ? ` na cor ${form.cor}` : ""}
+                    {form.preco_venda && Number(form.preco_venda) > 0
+                      ? `, por ${Number(form.preco_venda).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                      : ""
+                    }
+                    {form.quilometragem ? ` com ${form.quilometragem.toLocaleString("pt-BR")} km rodados` : ""}.
+                    {form.descricao_agente
+                      ? ` ${form.descricao_agente.slice(0, 120)}${form.descricao_agente.length > 120 ? "..." : ""}`
+                      : " Como posso te ajudar?"}
+                    "
+                  </p>
+                </div>
+              )}
             </div>
             <button
               type="submit"

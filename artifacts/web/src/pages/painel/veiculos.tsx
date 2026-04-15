@@ -10,16 +10,29 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   vendido: { label: "Vendido", color: "bg-gray-100 text-gray-600" },
 };
 
-const CAMBIO_LABELS: Record<string, string> = {
-  manual: "Manual", automatico: "Automático", cvt: "CVT", semi_automatico: "Semi-Auto"
-};
-
 const COMB_LABELS: Record<string, string> = {
   flex: "Flex", gasolina: "Gasolina", etanol: "Etanol", diesel: "Diesel", eletrico: "Elétrico", hibrido: "Híbrido"
 };
 
 function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function AgenteStatus({ temDescricao }: { temDescricao: boolean }) {
+  if (temDescricao) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+        Pronto
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block" />
+      Incompleto
+    </span>
+  );
 }
 
 export default function PainelVeiculos() {
@@ -35,11 +48,13 @@ export default function PainelVeiculos() {
     qc.invalidateQueries({ queryKey: ["/veiculos"] });
   };
 
-  const filtrado = veiculos.filter((v) => {
-    const matchStatus = statusFiltro === "todos" || v.status === statusFiltro;
-    const matchBusca = !busca || `${v.marca} ${v.modelo} ${v.placa ?? ""}`.toLowerCase().includes(busca.toLowerCase());
-    return matchStatus && matchBusca;
-  });
+  const filtrado = veiculos
+    .filter((v) => {
+      const matchStatus = statusFiltro === "todos" || v.status === statusFiltro;
+      const matchBusca = !busca || `${v.marca} ${v.modelo} ${v.placa ?? ""}`.toLowerCase().includes(busca.toLowerCase());
+      return matchStatus && matchBusca;
+    })
+    .sort((a, b) => (b.qr_code?.total_scans ?? 0) - (a.qr_code?.total_scans ?? 0));
 
   return (
     <PainelLayout>
@@ -87,52 +102,78 @@ export default function PainelVeiculos() {
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Veículo</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Detalhes</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-500">Info</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Preço</th>
-                  <th className="text-center px-4 py-3 font-medium text-gray-500">KM</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-500">Scans</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-500">Agente</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-500">Status</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">QR</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtrado.map((v) => (
-                  <tr key={v.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{v.marca} {v.modelo}</p>
-                      <p className="text-gray-400 text-xs">{v.ano_fabricacao}/{v.ano_modelo} · {v.placa}</p>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">
-                      <p>{v.combustivel ? COMB_LABELS[v.combustivel] ?? v.combustivel : "—"} · {v.cambio ? CAMBIO_LABELS[v.cambio] ?? v.cambio : "—"}</p>
-                      <p className="text-xs">{v.cor ?? ""}</p>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <p className="font-semibold text-gray-900">{formatBRL(Number(v.preco_venda))}</p>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="text-gray-700">{v.quilometragem?.toLocaleString("pt-BR")} km</span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_LABELS[v.status]?.color ?? "bg-gray-100 text-gray-600"}`}>
-                        {STATUS_LABELS[v.status]?.label ?? v.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 justify-end">
-                        <Link href={`/painel/veiculos/${v.id}/editar`} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">✏️</Link>
-                        <Link href={`/painel/veiculos/${v.id}/qr`} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="QR Code">📱</Link>
-                        {v.status === "ativo" && (
-                          <button onClick={() => handlePatch(v.id, "pausado")} className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors" title="Pausar">⏸️</button>
+                {filtrado.map((v) => {
+                  const scans = v.qr_code?.total_scans ?? 0;
+                  const temQr = !!v.qr_code?.slug;
+                  const temDescricao = !!(v as any).descricao_agente;
+                  return (
+                    <tr key={v.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{v.marca} {v.modelo}</p>
+                        <p className="text-gray-400 text-xs">{v.ano_fabricacao}/{v.ano_modelo} · {v.placa ?? "—"}</p>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        <p>{v.combustivel ? COMB_LABELS[v.combustivel] ?? v.combustivel : "—"}</p>
+                        <p className="text-xs">{v.quilometragem?.toLocaleString("pt-BR")} km</p>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="font-semibold text-gray-900">{formatBRL(Number(v.preco_venda))}</p>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`font-semibold ${scans > 0 ? "text-indigo-600" : "text-gray-400"}`}>
+                          {scans}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <AgenteStatus temDescricao={temDescricao} />
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_LABELS[v.status]?.color ?? "bg-gray-100 text-gray-600"}`}>
+                          {STATUS_LABELS[v.status]?.label ?? v.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {temQr ? (
+                          <Link href={`/painel/veiculos/${v.id}/qr`} title="Ver QR Code">
+                            <div className="w-8 h-8 bg-gray-900 rounded flex items-center justify-center hover:bg-gray-700 transition-colors cursor-pointer">
+                              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white fill-current">
+                                <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm7-2h7v7h-7V3zm2 2v3h3V5h-3zM3 13h7v7H3v-7zm2 2v3h3v-3H5zm11-2h2v2h-2v-2zm-4 0h2v2h-2v-2zm6 4h2v2h-2v-2zm-6 0h2v2h-2v-2zm4-4h2v4h-2v-4zm-4 4h2v4h-2v-4z"/>
+                              </svg>
+                            </div>
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-gray-300">—</span>
                         )}
-                        {v.status === "pausado" && (
-                          <button onClick={() => handlePatch(v.id, "ativo")} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Ativar">▶️</button>
-                        )}
-                        {v.status !== "vendido" && (
-                          <button onClick={() => handlePatch(v.id, "vendido")} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Marcar vendido">✅</button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 justify-end">
+                          <Link href={`/painel/veiculos/${v.id}/editar`} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                            <svg viewBox="0 0 20 20" className="w-4 h-4 fill-current"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12v3h3l-3-3zm-2 4h14v2H3v-2z"/></svg>
+                          </Link>
+                          {v.status === "ativo" && (
+                            <button onClick={() => handlePatch(v.id, "pausado")} className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors text-xs font-medium" title="Pausar">⏸</button>
+                          )}
+                          {v.status === "pausado" && (
+                            <button onClick={() => handlePatch(v.id, "ativo")} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors text-xs font-medium" title="Ativar">▶</button>
+                          )}
+                          {v.status !== "vendido" && (
+                            <button onClick={() => handlePatch(v.id, "vendido")} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs font-medium" title="Vendido">✓</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

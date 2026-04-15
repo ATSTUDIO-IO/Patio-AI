@@ -219,6 +219,8 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
         cidade: lojaData.cidade,
         plano: lojaData.plano,
         ativo: lojaData.ativo,
+        nome_agente: lojaData.nomeAgente,
+        tom_agente: lojaData.tomAgente,
         criado_em: lojaData.criadoEm,
       };
     }

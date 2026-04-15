@@ -165,6 +165,43 @@ router.put(
   },
 );
 
+router.delete(
+  "/financiamentos/:financiamentoId",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = FinanciamentoIdParam.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: formatZodError(params.error) });
+      return;
+    }
+
+    const lojaId = requireLojaId(req, res);
+    if (!lojaId) return;
+
+    const [existing] = await db
+      .select()
+      .from(financiamentos)
+      .where(
+        and(
+          eq(financiamentos.id, params.data.financiamentoId),
+          eq(financiamentos.lojaId, lojaId),
+        ),
+      )
+      .limit(1);
+
+    if (!existing) {
+      res.status(404).json({ error: "Financiamento não encontrado" });
+      return;
+    }
+
+    await db
+      .delete(financiamentos)
+      .where(eq(financiamentos.id, params.data.financiamentoId));
+
+    res.status(204).send();
+  },
+);
+
 router.post(
   "/financiamentos/simular",
   async (req, res): Promise<void> => {

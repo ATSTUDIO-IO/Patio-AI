@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, lt, sql } from "drizzle-orm";
+import { eq, and, lt, sql, gte, inArray } from "drizzle-orm";
 import { db, leads, veiculos, qrcodes, conversas } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
 
@@ -194,6 +194,67 @@ router.get("/alertas", requireAuth, async (req, res): Promise<void> => {
   });
 
   res.json(ordenados);
+});
+
+router.get("/dashboard/metricas", requireAuth, async (req, res): Promise<void> => {
+  const lojaId = requireLojaId(req, res);
+  if (!lojaId) return;
+
+  const veiculosIds = await db
+    .select({ id: veiculos.id })
+    .from(veiculos)
+    .where(eq(veiculos.lojaId, lojaId));
+
+  const ids = veiculosIds.map((v) => v.id);
+
+  if (ids.length === 0) {
+    const dias = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return { data: d.toISOString().slice(0, 10), scans: 0 };
+    });
+    res.json({ scans_hoje: 0, scans_semana: dias });
+    return;
+  }
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const semanaAtras = new Date();
+  semanaAtras.setDate(semanaAtras.getDate() - 6);
+  semanaAtras.setHours(0, 0, 0, 0);
+
+  const rows = await db
+    .select({
+      data: sql<string>`DATE(${conversas.iniciadaEm} AT TIME ZONE 'America/Sao_Paulo')`,
+      scans: sql<number>`COUNT(*)::int`,
+    })
+    .from(conversas)
+    .where(
+      and(
+        inArray(conversas.veiculoId, ids),
+        gte(conversas.iniciadaEm, semanaAtras),
+      ),
+    )
+    .groupBy(sql`DATE(${conversas.iniciadaEm} AT TIME ZONE 'America/Sao_Paulo')`)
+    .orderBy(sql`DATE(${conversas.iniciadaEm} AT TIME ZONE 'America/Sao_Paulo')`);
+
+  const scansPorDia: Record<string, number> = {};
+  for (const r of rows) {
+    scansPorDia[r.data] = r.scans;
+  }
+
+  const scansSemana = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const key = d.toISOString().slice(0, 10);
+    return { data: key, scans: scansPorDia[key] ?? 0 };
+  });
+
+  const hojeStr = hoje.toISOString().slice(0, 10);
+  const scansHoje = scansPorDia[hojeStr] ?? 0;
+
+  res.json({ scans_hoje: scansHoje, scans_semana: scansSemana });
 });
 
 export default router;

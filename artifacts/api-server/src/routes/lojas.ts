@@ -63,6 +63,10 @@ router.put(
     if (body.data.email_contato !== undefined)
       updateData.emailContato = body.data.email_contato;
     if (body.data.cidade !== undefined) updateData.cidade = body.data.cidade;
+    if (body.data.nome_agente !== undefined)
+      updateData.nomeAgente = body.data.nome_agente;
+    if (body.data.tom_agente !== undefined)
+      updateData.tomAgente = body.data.tom_agente;
 
     if (Object.keys(updateData).length === 0) {
       res.status(400).json({ error: "Nenhum campo para atualizar" });
@@ -85,6 +89,8 @@ router.put(
       cidade: lojaAtualizada.cidade,
       plano: lojaAtualizada.plano,
       ativo: lojaAtualizada.ativo,
+      nome_agente: lojaAtualizada.nomeAgente,
+      tom_agente: lojaAtualizada.tomAgente,
       criado_em: lojaAtualizada.criadoEm,
     });
 
@@ -197,6 +203,7 @@ router.get(
         nome: usuarios.nome,
         email: usuarios.email,
         perfil: usuarios.perfil,
+        loja_id: usuarios.lojaId,
         ativo: usuarios.ativo,
         criado_em: usuarios.criadoEm,
       })

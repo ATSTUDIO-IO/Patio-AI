@@ -75,6 +75,10 @@ export interface LojaPublic {
   plano: LojaPublicPlano;
   ativo: boolean;
   /** @nullable */
+  nome_agente?: string | null;
+  /** @nullable */
+  tom_agente?: string | null;
+  /** @nullable */
   criado_em?: string | null;
 }
 
@@ -96,6 +100,8 @@ export interface UpdateLojaRequest {
   email_contato?: string;
   /** @nullable */
   cidade?: string | null;
+  nome_agente?: string;
+  tom_agente?: string;
 }
 
 export interface CreateVendedorRequest {

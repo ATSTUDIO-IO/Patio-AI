@@ -79,6 +79,8 @@ export const GetMeResponse = zod.object({
         cidade: zod.string().nullish(),
         plano: zod.enum(["starter", "pro", "full"]),
         ativo: zod.boolean(),
+        nome_agente: zod.string().nullish(),
+        tom_agente: zod.string().nullish(),
         criado_em: zod.coerce.date().nullish(),
       }),
       zod.null(),
@@ -99,6 +101,8 @@ export const UpdateLojaBody = zod.object({
   telefone: zod.string().nullish(),
   email_contato: zod.string().optional(),
   cidade: zod.string().nullish(),
+  nome_agente: zod.string().optional(),
+  tom_agente: zod.string().optional(),
 });
 
 export const UpdateLojaResponse = zod.object({
@@ -111,6 +115,8 @@ export const UpdateLojaResponse = zod.object({
   cidade: zod.string().nullish(),
   plano: zod.enum(["starter", "pro", "full"]),
   ativo: zod.boolean(),
+  nome_agente: zod.string().nullish(),
+  tom_agente: zod.string().nullish(),
   criado_em: zod.coerce.date().nullish(),
 });
 

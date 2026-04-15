@@ -63,7 +63,7 @@ export default function AdminBilling() {
                 {resultado.map((r) => (
                   <div key={r.loja_id} className="flex items-center justify-between text-xs">
                     <span className="text-gray-400 font-mono">{r.loja_id.slice(0, 8)}…</span>
-                    <span className={r.status === "gerado" ? "text-green-400" : "text-amber-400"}>{r.status}</span>
+                    <span className={r.status === "criado" ? "text-green-400" : "text-amber-400"}>{r.status === "criado" ? "criado" : "já existia"}</span>
                   </div>
                 ))}
               </div>

@@ -12,6 +12,8 @@ export default function PainelCadastro() {
     razao_social: "",
     nome_fantasia: "",
     cnpj: "",
+    telefone: "",
+    cidade: "",
     plano: "starter" as "starter" | "pro" | "full",
     email: "",
     senha: "",
@@ -33,6 +35,8 @@ export default function PainelCadastro() {
           razao_social: form.razao_social,
           nome_fantasia: form.nome_fantasia,
           cnpj: form.cnpj,
+          telefone: form.telefone || undefined,
+          cidade: form.cidade || undefined,
           email: form.email,
           senha: form.senha,
         },
@@ -86,6 +90,14 @@ export default function PainelCadastro() {
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">CNPJ</label>
                 <input type="text" value={form.cnpj} onChange={set("cnpj")} placeholder="00.000.000/0001-00" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Telefone</label>
+                <input type="tel" value={form.telefone} onChange={set("telefone")} placeholder="(11) 99999-9999" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Cidade</label>
+                <input type="text" value={form.cidade} onChange={set("cidade")} placeholder="São Paulo, SP" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Plano</label>
