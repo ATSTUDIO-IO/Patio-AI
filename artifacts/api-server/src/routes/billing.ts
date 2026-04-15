@@ -130,6 +130,8 @@ router.get(
 
     const vencimento = new Date(now.getFullYear(), now.getMonth() + 1, 10);
 
+    const pctCota = Math.round((conversasUsadas / cfg.conversasIncluidas) * 100);
+
     res.json({
       mes_ref: mesRef,
       plano: loja.plano,
@@ -138,6 +140,7 @@ router.get(
       conversas_excedentes: conversasExcedentes,
       buffer_excedente: cfg.bufferExcedente,
       preco_excedente: cfg.precoExcedente,
+      pct_cota: pctCota,
       valor_base: valorBase,
       valor_excedente: valorExcedente,
       valor_total: valorTotal,

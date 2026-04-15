@@ -1090,6 +1090,7 @@ export interface FaturaAtual {
   conversas_excedentes: number;
   buffer_excedente: number;
   preco_excedente: number;
+  pct_cota: number;
   valor_base: number;
   valor_excedente: number;
   valor_total: number;

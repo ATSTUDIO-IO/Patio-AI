@@ -27,7 +27,7 @@ export function PainelLayout({ children }: { children: ReactNode }) {
   const logoutMutation = useLogout();
 
   const isDono = user?.perfil === "dono" || user?.perfil === "admin_patioai";
-  const { data: fatura } = useGetFaturaAtual({ query: { enabled: isDono } });
+  const { data: fatura } = useGetFaturaAtual();
 
   const handleLogout = async () => {
     try { await logoutMutation.mutateAsync(); } catch { }

@@ -32,7 +32,7 @@ export const PLANOS_CONFIG: Record<PlanoKey, PlanoConfig> = {
     precoExcedente: PRECO_EXCEDENTE,
     personalizacaoAvancada: true,
     assistenteFinanciamento: true,
-    consultaDocumental: true,
+    consultaDocumental: false,
     crmRetencaoDias: 30,
   },
   full: {

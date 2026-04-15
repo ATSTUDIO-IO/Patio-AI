@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, asc, count, gte, inArray } from "drizzle-orm";
+import { eq, asc, count, gte, inArray, and } from "drizzle-orm";
 import {
   db,
   qrcodes,

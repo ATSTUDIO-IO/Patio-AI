@@ -99,7 +99,7 @@ export default function PainelDashboard() {
           <StatCard
             label="Fatura Estimada"
             value={fatura ? `R$ ${fatura.valor_total.toFixed(2)}` : "—"}
-            sub={fatura ? `${fatura.veiculos_ativos} veíc. × R$ ${fatura.preco_unitario}/mês` : "carregando..."}
+            sub={fatura ? `${fatura.conversas_usadas}/${fatura.conversas_incluidas} conversas este mês` : "carregando..."}
             color="text-orange-600"
           />
         </div>

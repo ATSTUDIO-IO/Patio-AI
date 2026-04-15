@@ -484,8 +484,11 @@ router.get(
       faturas: faturas.map((f) => ({
         id: f.id,
         mes_ref: f.mesRef,
-        veiculos_ativos: f.veiculosAtivos,
-        preco_unitario: Number(f.precoUnitario),
+        conversas_incluidas: f.conversasIncluidas,
+        conversas_usadas: f.conversasUsadas,
+        conversas_excedentes: f.conversasExcedentes,
+        valor_base: Number(f.valorBase),
+        valor_excedente: Number(f.valorExcedente),
         valor_total: Number(f.valorTotal),
         status: f.status,
         gerado_em: f.geradoEm,
