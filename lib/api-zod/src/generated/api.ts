@@ -81,6 +81,8 @@ export const GetMeResponse = zod.object({
         plano: zod.enum(["starter", "pro", "full"]),
         ativo: zod.boolean(),
         criado_em: zod.coerce.date().nullish(),
+        nome_agente: zod.string().nullish(),
+        tom_agente: zod.string().nullish(),
       }),
       zod.null(),
     ])
@@ -100,6 +102,8 @@ export const UpdateLojaBody = zod.object({
   telefone: zod.string().nullish(),
   email_contato: zod.string().optional(),
   cidade: zod.string().nullish(),
+  nome_agente: zod.string().nullish(),
+  tom_agente: zod.string().nullish(),
 });
 
 export const UpdateLojaResponse = zod.object({
@@ -113,6 +117,8 @@ export const UpdateLojaResponse = zod.object({
   plano: zod.enum(["starter", "pro", "full"]),
   ativo: zod.boolean(),
   criado_em: zod.coerce.date().nullish(),
+  nome_agente: zod.string().nullish(),
+  tom_agente: zod.string().nullish(),
 });
 
 /**
@@ -1122,13 +1128,17 @@ export const GetAdminLojasLojaIdResponse = zod
           }),
         )
         .optional(),
-      ciclos_billing: zod
+      faturas: zod
         .array(
           zod.object({
             id: zod.string().uuid().optional(),
             mes_ref: zod.string().optional(),
+            veiculos_ativos: zod.number().optional(),
+            preco_unitario: zod.number().optional(),
             valor_total: zod.number().optional(),
             status: zod.enum(["aberto", "pago", "inadimplente"]).optional(),
+            gerado_em: zod.coerce.date().optional(),
+            pago_em: zod.coerce.date().nullish(),
           }),
         )
         .optional(),
@@ -1148,9 +1158,10 @@ export const GetAdminLojasLojaIdResponse = zod
             placa: zod.string().optional(),
             marca: zod.string().optional(),
             modelo: zod.string().optional(),
-            ano: zod.number().optional(),
-            km: zod.number().optional(),
-            preco: zod.number().optional(),
+            ano_fabricacao: zod.number().optional(),
+            ano_modelo: zod.number().optional(),
+            quilometragem: zod.number().optional(),
+            preco_venda: zod.number().optional(),
             status: zod.string().optional(),
           }),
         )

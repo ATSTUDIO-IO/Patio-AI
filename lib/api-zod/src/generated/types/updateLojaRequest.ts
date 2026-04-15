@@ -14,4 +14,8 @@ export interface UpdateLojaRequest {
   email_contato?: string;
   /** @nullable */
   cidade?: string | null;
+  /** @nullable */
+  nome_agente?: string | null;
+  /** @nullable */
+  tom_agente?: string | null;
 }

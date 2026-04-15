@@ -1577,15 +1577,19 @@ components:
                   email: { type: string }
                   perfil: { type: string }
                   criado_em: { type: string, format: date-time }
-            ciclos_billing:
+            faturas:
               type: array
               items:
                 type: object
                 properties:
                   id: { type: string, format: uuid }
                   mes_ref: { type: string }
+                  veiculos_ativos: { type: integer }
+                  preco_unitario: { type: number }
                   valor_total: { type: number }
                   status: { type: string, enum: [aberto, pago, inadimplente] }
+                  gerado_em: { type: string, format: date-time }
+                  pago_em: { type: ["string", "null"], format: date-time }
             notas:
               type: array
               items:
@@ -1603,9 +1607,10 @@ components:
                   placa: { type: string }
                   marca: { type: string }
                   modelo: { type: string }
-                  ano: { type: integer }
-                  km: { type: integer }
-                  preco: { type: number }
+                  ano_fabricacao: { type: integer }
+                  ano_modelo: { type: integer }
+                  quilometragem: { type: integer }
+                  preco_venda: { type: number }
                   status: { type: string }
             analise_conversas:
               type: object
@@ -1830,6 +1835,10 @@ components:
         criado_em:
           type: ["string", "null"]
           format: date-time
+        nome_agente:
+          type: ["string", "null"]
+        tom_agente:
+          type: ["string", "null"]
       required:
         - id
         - razao_social
@@ -1874,6 +1883,10 @@ components:
         email_contato:
           type: string
         cidade:
+          type: ["string", "null"]
+        nome_agente:
+          type: ["string", "null"]
+        tom_agente:
           type: ["string", "null"]
 
     CreateVendedorRequest:

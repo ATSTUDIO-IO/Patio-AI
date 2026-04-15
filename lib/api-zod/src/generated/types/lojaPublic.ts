@@ -21,4 +21,8 @@ export interface LojaPublic {
   ativo: boolean;
   /** @nullable */
   criado_em?: Date | null;
+  /** @nullable */
+  nome_agente?: string | null;
+  /** @nullable */
+  tom_agente?: string | null;
 }

@@ -11,8 +11,9 @@ export type LojaAdminDetailEstoqueItem = {
   placa?: string;
   marca?: string;
   modelo?: string;
-  ano?: number;
-  km?: number;
-  preco?: number;
+  ano_fabricacao?: number;
+  ano_modelo?: number;
+  quilometragem?: number;
+  preco_venda?: number;
   status?: string;
 };

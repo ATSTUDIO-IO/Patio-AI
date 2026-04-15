@@ -581,28 +581,37 @@ router.get(
       ? await db.select().from(conversas).where(inArray(conversas.veiculoId, veiculoIds)).orderBy(desc(conversas.iniciadaEm))
       : [];
 
+    function csvField(value: string | number | null | undefined): string {
+      const str = String(value ?? "");
+      const safe = /^[=+\-@|]/.test(str) ? `\t${str}` : str;
+      return `"${safe.replace(/"/g, '""')}"`;
+    }
+    function csvRow(...fields: (string | number | null | undefined)[]): string {
+      return fields.map(csvField).join(",");
+    }
+
     const linhas: string[] = [];
 
     linhas.push("=== VEÍCULOS ===");
     linhas.push("ID,Placa,Marca,Modelo,Ano Fab,Ano Mod,Km,Preço,Status,Criado Em");
     for (const v of veiculosData) {
-      linhas.push([v.id, v.placa, v.marca, v.modelo, v.anoFabricacao, v.anoModelo,
-        v.quilometragem, v.precoVenda, v.status, v.criadoEm?.toISOString() ?? ""].join(","));
+      linhas.push(csvRow(v.id, v.placa, v.marca, v.modelo, v.anoFabricacao, v.anoModelo,
+        v.quilometragem, v.precoVenda, v.status, v.criadoEm?.toISOString() ?? ""));
     }
 
     linhas.push("");
     linhas.push("=== LEADS ===");
     linhas.push("ID,Nome,Telefone,Email,Interesse,Criado Em");
     for (const l of leadsData) {
-      linhas.push([l.id, l.nome ?? "", l.telefone ?? "", l.email ?? "",
-        l.interesse ?? "", l.criadoEm?.toISOString() ?? ""].join(","));
+      linhas.push(csvRow(l.id, l.nome ?? "", l.telefone ?? "", l.email ?? "",
+        l.interesse ?? "", l.criadoEm?.toISOString() ?? ""));
     }
 
     linhas.push("");
     linhas.push("=== CONVERSAS ===");
     linhas.push("ID,Veículo ID,Iniciada Em,Encerrada Em");
     for (const c of conversasData) {
-      linhas.push([c.id, c.veiculoId, c.iniciadaEm?.toISOString() ?? "", c.encerradaEm?.toISOString() ?? ""].join(","));
+      linhas.push(csvRow(c.id, c.veiculoId, c.iniciadaEm?.toISOString() ?? "", c.encerradaEm?.toISOString() ?? ""));
     }
 
     const csv = linhas.join("\n");

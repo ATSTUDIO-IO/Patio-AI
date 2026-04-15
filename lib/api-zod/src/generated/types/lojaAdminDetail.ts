@@ -7,15 +7,15 @@
  */
 import type { LojaAdmin } from "./lojaAdmin";
 import type { LojaAdminDetailAnaliseConversas } from "./lojaAdminDetailAnaliseConversas";
-import type { LojaAdminDetailCiclosBillingItem } from "./lojaAdminDetailCiclosBillingItem";
 import type { LojaAdminDetailEstoqueItem } from "./lojaAdminDetailEstoqueItem";
+import type { LojaAdminDetailFaturasItem } from "./lojaAdminDetailFaturasItem";
 import type { LojaAdminDetailInteresseDistribuicaoItem } from "./lojaAdminDetailInteresseDistribuicaoItem";
 import type { LojaAdminDetailNotasItem } from "./lojaAdminDetailNotasItem";
 import type { LojaAdminDetailUsuariosItem } from "./lojaAdminDetailUsuariosItem";
 
 export type LojaAdminDetail = LojaAdmin & {
   usuarios?: LojaAdminDetailUsuariosItem[];
-  ciclos_billing?: LojaAdminDetailCiclosBillingItem[];
+  faturas?: LojaAdminDetailFaturasItem[];
   notas?: LojaAdminDetailNotasItem[];
   estoque?: LojaAdminDetailEstoqueItem[];
   analise_conversas?: LojaAdminDetailAnaliseConversas;

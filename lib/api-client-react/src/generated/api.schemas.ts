@@ -106,20 +106,25 @@ export type LojaAdminDetailUsuariosItem = {
   criado_em?: string;
 };
 
-export type LojaAdminDetailCiclosBillingItemStatus =
-  (typeof LojaAdminDetailCiclosBillingItemStatus)[keyof typeof LojaAdminDetailCiclosBillingItemStatus];
+export type LojaAdminDetailFaturasItemStatus =
+  (typeof LojaAdminDetailFaturasItemStatus)[keyof typeof LojaAdminDetailFaturasItemStatus];
 
-export const LojaAdminDetailCiclosBillingItemStatus = {
+export const LojaAdminDetailFaturasItemStatus = {
   aberto: "aberto",
   pago: "pago",
   inadimplente: "inadimplente",
 } as const;
 
-export type LojaAdminDetailCiclosBillingItem = {
+export type LojaAdminDetailFaturasItem = {
   id?: string;
   mes_ref?: string;
+  veiculos_ativos?: number;
+  preco_unitario?: number;
   valor_total?: number;
-  status?: LojaAdminDetailCiclosBillingItemStatus;
+  status?: LojaAdminDetailFaturasItemStatus;
+  gerado_em?: string;
+  /** @nullable */
+  pago_em?: string | null;
 };
 
 export type LojaAdminDetailNotasItem = {
@@ -133,9 +138,10 @@ export type LojaAdminDetailEstoqueItem = {
   placa?: string;
   marca?: string;
   modelo?: string;
-  ano?: number;
-  km?: number;
-  preco?: number;
+  ano_fabricacao?: number;
+  ano_modelo?: number;
+  quilometragem?: number;
+  preco_venda?: number;
   status?: string;
 };
 
@@ -154,7 +160,7 @@ export type LojaAdminDetailInteresseDistribuicaoItem = {
 
 export type LojaAdminDetail = LojaAdmin & {
   usuarios?: LojaAdminDetailUsuariosItem[];
-  ciclos_billing?: LojaAdminDetailCiclosBillingItem[];
+  faturas?: LojaAdminDetailFaturasItem[];
   notas?: LojaAdminDetailNotasItem[];
   estoque?: LojaAdminDetailEstoqueItem[];
   analise_conversas?: LojaAdminDetailAnaliseConversas;
@@ -312,6 +318,10 @@ export interface LojaPublic {
   ativo: boolean;
   /** @nullable */
   criado_em?: string | null;
+  /** @nullable */
+  nome_agente?: string | null;
+  /** @nullable */
+  tom_agente?: string | null;
 }
 
 export interface AuthResponse {
@@ -332,6 +342,10 @@ export interface UpdateLojaRequest {
   email_contato?: string;
   /** @nullable */
   cidade?: string | null;
+  /** @nullable */
+  nome_agente?: string | null;
+  /** @nullable */
+  tom_agente?: string | null;
 }
 
 export interface CreateVendedorRequest {
