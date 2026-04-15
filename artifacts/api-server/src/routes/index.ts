@@ -9,6 +9,8 @@ import leadsRouter from "./leads";
 import conversasRouter from "./conversas";
 import alertasRouter from "./alertas";
 import financiamentosRouter from "./financiamentos";
+import billingRouter from "./billing";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -22,5 +24,7 @@ router.use(leadsRouter);
 router.use(conversasRouter);
 router.use(alertasRouter);
 router.use(financiamentosRouter);
+router.use(billingRouter);
+router.use(adminRouter);
 
 export default router;

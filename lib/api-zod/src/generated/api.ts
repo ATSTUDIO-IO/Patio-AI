@@ -130,6 +130,105 @@ export const CreateVendedorBody = zod.object({
 });
 
 /**
+ * @summary List users for the store (owner only)
+ */
+export const ListUsuariosParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+});
+
+export const ListUsuariosResponseItem = zod.object({
+  id: zod.string().uuid(),
+  nome: zod.string(),
+  email: zod.string(),
+  perfil: zod.enum(["dono", "vendedor", "admin_patioai"]),
+  loja_id: zod.string().uuid().nullable(),
+});
+export const ListUsuariosResponse = zod.array(ListUsuariosResponseItem);
+
+/**
+ * @summary Remove a user from the store (owner only)
+ */
+export const DeleteUsuarioParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+  usuarioId: zod.coerce.string().uuid(),
+});
+
+export const DeleteUsuarioResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary List billing cycles for the store (last 12 months)
+ */
+export const ListFaturasResponseItem = zod.object({
+  id: zod.string().uuid(),
+  mes_ref: zod.coerce.date(),
+  veiculos_ativos: zod.number(),
+  preco_unitario: zod.number(),
+  valor_total: zod.number(),
+  status: zod.enum(["aberto", "pago", "inadimplente"]),
+  gerado_em: zod.coerce.date().nullish(),
+  pago_em: zod.coerce.date().nullish(),
+});
+export const ListFaturasResponse = zod.array(ListFaturasResponseItem);
+
+/**
+ * @summary Get current month billing preview (live vehicle count)
+ */
+export const GetFaturaAtualResponse = zod.object({
+  mes_ref: zod.coerce.date(),
+  plano: zod.enum(["starter", "pro", "full"]),
+  veiculos_ativos: zod.number(),
+  preco_unitario: zod.number(),
+  valor_total: zod.number(),
+  status: zod.enum(["aberto", "pago", "inadimplente"]),
+  vencimento: zod.coerce.date(),
+  ciclo_id: zod.string().uuid().nullish(),
+});
+
+/**
+ * @summary List billing events (activations and deactivations)
+ */
+export const listEventosBillingQueryLimitDefault = 50;
+export const listEventosBillingQueryLimitMax = 200;
+
+export const listEventosBillingQueryOffsetDefault = 0;
+
+export const ListEventosBillingQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .max(listEventosBillingQueryLimitMax)
+    .default(listEventosBillingQueryLimitDefault),
+  offset: zod.coerce.number().default(listEventosBillingQueryOffsetDefault),
+});
+
+export const ListEventosBillingResponseItem = zod.object({
+  id: zod.string().uuid(),
+  veiculo_id: zod.string().uuid(),
+  veiculo_descricao: zod.string().nullish(),
+  tipo: zod.enum(["ativacao", "baixa", "pausa"]),
+  ocorrido_em: zod.coerce.date().nullish(),
+  motivo: zod.string().nullish(),
+});
+export const ListEventosBillingResponse = zod.array(
+  ListEventosBillingResponseItem,
+);
+
+/**
+ * @summary Close billing cycle for all stores (admin only)
+ */
+export const FecharBillingResponse = zod.object({
+  mes_ref: zod.coerce.date(),
+  lojas_processadas: zod.number(),
+  resultados: zod.array(
+    zod.object({
+      loja_id: zod.string().uuid(),
+      status: zod.string(),
+    }),
+  ),
+});
+
+/**
  * @summary List all vehicles for the authenticated user's store
  */
 export const ListVeiculosQueryParams = zod.object({

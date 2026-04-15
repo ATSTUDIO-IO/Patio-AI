@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { z } from "zod/v4";
 import { db, lojas, usuarios } from "@workspace/db";
 import {
   UpdateLojaBody,
@@ -166,6 +167,80 @@ router.post(
 
     req.log.info({ lojaId, usuarioId: novoUsuario.id }, "Vendedor criado");
     res.status(201).json(data);
+  },
+);
+
+const ListUsuariosParams = z.object({ lojaId: z.string().uuid() });
+const DeleteUsuarioParams = z.object({
+  lojaId: z.string().uuid(),
+  usuarioId: z.string().uuid(),
+});
+
+router.get(
+  "/lojas/:lojaId/usuarios",
+  requireAuth,
+  requirePerfil("dono", "admin_patioai"),
+  async (req, res): Promise<void> => {
+    const params = ListUsuariosParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "lojaId inválido" });
+      return;
+    }
+    const { lojaId } = params.data;
+    if (req.user!.perfil !== "admin_patioai" && req.user!.loja_id !== lojaId) {
+      res.status(403).json({ error: "Acesso negado a esta loja" });
+      return;
+    }
+    const rows = await db
+      .select({
+        id: usuarios.id,
+        nome: usuarios.nome,
+        email: usuarios.email,
+        perfil: usuarios.perfil,
+        ativo: usuarios.ativo,
+        criado_em: usuarios.criadoEm,
+      })
+      .from(usuarios)
+      .where(eq(usuarios.lojaId, lojaId))
+      .orderBy(usuarios.criadoEm);
+    res.json(rows);
+  },
+);
+
+router.delete(
+  "/lojas/:lojaId/usuarios/:usuarioId",
+  requireAuth,
+  requirePerfil("dono", "admin_patioai"),
+  async (req, res): Promise<void> => {
+    const params = DeleteUsuarioParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Parâmetros inválidos" });
+      return;
+    }
+    const { lojaId, usuarioId } = params.data;
+    if (req.user!.perfil !== "admin_patioai" && req.user!.loja_id !== lojaId) {
+      res.status(403).json({ error: "Acesso negado a esta loja" });
+      return;
+    }
+    if (req.user!.id === usuarioId) {
+      res.status(400).json({ error: "Não é possível remover o próprio usuário" });
+      return;
+    }
+    const [existing] = await db
+      .select({ id: usuarios.id, perfil: usuarios.perfil })
+      .from(usuarios)
+      .where(and(eq(usuarios.id, usuarioId), eq(usuarios.lojaId, lojaId)))
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Usuário não encontrado" });
+      return;
+    }
+    if (existing.perfil === "dono" && req.user!.perfil !== "admin_patioai") {
+      res.status(403).json({ error: "Não é possível remover o dono da loja" });
+      return;
+    }
+    await db.delete(usuarios).where(eq(usuarios.id, usuarioId));
+    res.json({ message: "Usuário removido com sucesso" });
   },
 );
 

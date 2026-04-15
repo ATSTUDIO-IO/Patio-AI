@@ -757,6 +757,98 @@ export interface SimularFinanciamentoResponse {
   descricao: string;
 }
 
+export type CicloBillingStatus =
+  (typeof CicloBillingStatus)[keyof typeof CicloBillingStatus];
+
+export const CicloBillingStatus = {
+  aberto: "aberto",
+  pago: "pago",
+  inadimplente: "inadimplente",
+} as const;
+
+export interface CicloBilling {
+  id: string;
+  mes_ref: string;
+  veiculos_ativos: number;
+  preco_unitario: number;
+  valor_total: number;
+  status: CicloBillingStatus;
+  /** @nullable */
+  gerado_em?: string | null;
+  /** @nullable */
+  pago_em?: string | null;
+}
+
+export type FaturaAtualPlano =
+  (typeof FaturaAtualPlano)[keyof typeof FaturaAtualPlano];
+
+export const FaturaAtualPlano = {
+  starter: "starter",
+  pro: "pro",
+  full: "full",
+} as const;
+
+export type FaturaAtualStatus =
+  (typeof FaturaAtualStatus)[keyof typeof FaturaAtualStatus];
+
+export const FaturaAtualStatus = {
+  aberto: "aberto",
+  pago: "pago",
+  inadimplente: "inadimplente",
+} as const;
+
+export interface FaturaAtual {
+  mes_ref: string;
+  plano: FaturaAtualPlano;
+  veiculos_ativos: number;
+  preco_unitario: number;
+  valor_total: number;
+  status: FaturaAtualStatus;
+  vencimento: string;
+  /** @nullable */
+  ciclo_id?: string | null;
+}
+
+export type EventoBillingTipo =
+  (typeof EventoBillingTipo)[keyof typeof EventoBillingTipo];
+
+export const EventoBillingTipo = {
+  ativacao: "ativacao",
+  baixa: "baixa",
+  pausa: "pausa",
+} as const;
+
+export interface EventoBilling {
+  id: string;
+  veiculo_id: string;
+  /** @nullable */
+  veiculo_descricao?: string | null;
+  tipo: EventoBillingTipo;
+  /** @nullable */
+  ocorrido_em?: string | null;
+  /** @nullable */
+  motivo?: string | null;
+}
+
+export type FecharBillingResponseResultadosItem = {
+  loja_id: string;
+  status: string;
+};
+
+export interface FecharBillingResponse {
+  mes_ref: string;
+  lojas_processadas: number;
+  resultados: FecharBillingResponseResultadosItem[];
+}
+
+export type ListEventosBillingParams = {
+  /**
+   * @maximum 200
+   */
+  limit?: number;
+  offset?: number;
+};
+
 export type ListVeiculosParams = {
   status?: ListVeiculosStatus;
 };

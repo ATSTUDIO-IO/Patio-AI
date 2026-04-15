@@ -12,7 +12,8 @@ PátioAI é uma plataforma SaaS B2B para lojas de veículos seminovos. Cada veí
 - **TypeScript version**: 5.9
 - **API framework**: Express 5 (`artifacts/api-server`)
 - **Frontend público (agente)**: React + Vite (`artifacts/web`, porta 22333, preview `/web`)
-- **Frontend painel lojista**: a criar (Tarefas #6+)
+- **Frontend painel lojista**: React + Vite em `/painel/*` (10 telas, wouter v3, TanStack Query)
+- **Frontend painel admin**: React + Vite em `/admin/*` (3 telas dark-theme)
 - **Database**: PostgreSQL + Drizzle ORM (`lib/db`)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec em `lib/api-spec/openapi.yaml`)
@@ -60,11 +61,11 @@ Todas as tabelas estão em `lib/db/src/schema/` organizadas por domínio:
 |---|--------|--------|
 | 1 | Schema do banco de dados | ✅ Concluído |
 | 2 | Auth e Gestão de Lojas (M1) | ✅ Concluído |
-| 3 | Veículos e QR Code (M2) | ⏳ Pendente |
-| 4 | Agente de Voz IA (M3) | ⏳ Pendente |
-| 5 | CRM e Financiamento (M4+M5) | ⏳ Pendente |
-| 6 | Billing e Painel do Lojista (React) | ⏳ Pendente |
-| 7 | Painel Admin | ⏳ Pendente |
+| 3 | Veículos e QR Code (M2) | ✅ Concluído |
+| 4 | Agente de Voz IA (M3) | ✅ Concluído |
+| 5 | CRM e Financiamento (M4+M5) | ✅ Concluído |
+| 6 | Billing e Painel do Lojista (React) | ✅ Concluído |
+| 7 | Painel Admin PátioAI | ✅ Concluído |
 
 ## Autenticação (M1 — Implementado)
 

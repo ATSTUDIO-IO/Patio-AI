@@ -19,6 +19,7 @@ import type {
 import type {
   Alerta,
   AuthResponse,
+  CicloBilling,
   ConversaDetail,
   ConversaListItem,
   CreateFinanciamentoRequest,
@@ -27,6 +28,9 @@ import type {
   EncerrarSessaoRequest,
   EncerrarSessaoResponse,
   ErrorResponse,
+  EventoBilling,
+  FaturaAtual,
+  FecharBillingResponse,
   FinanciamentoResponse,
   HealthStatus,
   IniciarSessaoRequest,
@@ -34,6 +38,7 @@ import type {
   LeadDetail,
   LeadListItem,
   ListConversasParams,
+  ListEventosBillingParams,
   ListLeadsParams,
   ListVeiculosParams,
   LoginRequest,
@@ -629,6 +634,506 @@ export const useCreateVendedor = <
   TContext
 > => {
   return useMutation(getCreateVendedorMutationOptions(options));
+};
+
+/**
+ * @summary List users for the store (owner only)
+ */
+export const getListUsuariosUrl = (lojaId: string) => {
+  return `/api/lojas/${lojaId}/usuarios`;
+};
+
+export const listUsuarios = async (
+  lojaId: string,
+  options?: RequestInit,
+): Promise<UsuarioPublic[]> => {
+  return customFetch<UsuarioPublic[]>(getListUsuariosUrl(lojaId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListUsuariosQueryKey = (lojaId: string) => {
+  return [`/api/lojas/${lojaId}/usuarios`] as const;
+};
+
+export const getListUsuariosQueryOptions = <
+  TData = Awaited<ReturnType<typeof listUsuarios>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  lojaId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listUsuarios>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListUsuariosQueryKey(lojaId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listUsuarios>>> = ({
+    signal,
+  }) => listUsuarios(lojaId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!lojaId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listUsuarios>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListUsuariosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listUsuarios>>
+>;
+export type ListUsuariosQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List users for the store (owner only)
+ */
+
+export function useListUsuarios<
+  TData = Awaited<ReturnType<typeof listUsuarios>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  lojaId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listUsuarios>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListUsuariosQueryOptions(lojaId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Remove a user from the store (owner only)
+ */
+export const getDeleteUsuarioUrl = (lojaId: string, usuarioId: string) => {
+  return `/api/lojas/${lojaId}/usuarios/${usuarioId}`;
+};
+
+export const deleteUsuario = async (
+  lojaId: string,
+  usuarioId: string,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getDeleteUsuarioUrl(lojaId, usuarioId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteUsuarioMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUsuario>>,
+    TError,
+    { lojaId: string; usuarioId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteUsuario>>,
+  TError,
+  { lojaId: string; usuarioId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteUsuario"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteUsuario>>,
+    { lojaId: string; usuarioId: string }
+  > = (props) => {
+    const { lojaId, usuarioId } = props ?? {};
+
+    return deleteUsuario(lojaId, usuarioId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteUsuarioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteUsuario>>
+>;
+
+export type DeleteUsuarioMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Remove a user from the store (owner only)
+ */
+export const useDeleteUsuario = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUsuario>>,
+    TError,
+    { lojaId: string; usuarioId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteUsuario>>,
+  TError,
+  { lojaId: string; usuarioId: string },
+  TContext
+> => {
+  return useMutation(getDeleteUsuarioMutationOptions(options));
+};
+
+/**
+ * @summary List billing cycles for the store (last 12 months)
+ */
+export const getListFaturasUrl = () => {
+  return `/api/billing/faturas`;
+};
+
+export const listFaturas = async (
+  options?: RequestInit,
+): Promise<CicloBilling[]> => {
+  return customFetch<CicloBilling[]>(getListFaturasUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFaturasQueryKey = () => {
+  return [`/api/billing/faturas`] as const;
+};
+
+export const getListFaturasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFaturas>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFaturas>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListFaturasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listFaturas>>> = ({
+    signal,
+  }) => listFaturas({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFaturas>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFaturasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFaturas>>
+>;
+export type ListFaturasQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List billing cycles for the store (last 12 months)
+ */
+
+export function useListFaturas<
+  TData = Awaited<ReturnType<typeof listFaturas>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFaturas>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFaturasQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get current month billing preview (live vehicle count)
+ */
+export const getGetFaturaAtualUrl = () => {
+  return `/api/billing/atual`;
+};
+
+export const getFaturaAtual = async (
+  options?: RequestInit,
+): Promise<FaturaAtual> => {
+  return customFetch<FaturaAtual>(getGetFaturaAtualUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetFaturaAtualQueryKey = () => {
+  return [`/api/billing/atual`] as const;
+};
+
+export const getGetFaturaAtualQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFaturaAtual>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getFaturaAtual>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetFaturaAtualQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getFaturaAtual>>> = ({
+    signal,
+  }) => getFaturaAtual({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFaturaAtual>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFaturaAtualQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFaturaAtual>>
+>;
+export type GetFaturaAtualQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get current month billing preview (live vehicle count)
+ */
+
+export function useGetFaturaAtual<
+  TData = Awaited<ReturnType<typeof getFaturaAtual>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getFaturaAtual>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFaturaAtualQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List billing events (activations and deactivations)
+ */
+export const getListEventosBillingUrl = (params?: ListEventosBillingParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/billing/eventos?${stringifiedParams}`
+    : `/api/billing/eventos`;
+};
+
+export const listEventosBilling = async (
+  params?: ListEventosBillingParams,
+  options?: RequestInit,
+): Promise<EventoBilling[]> => {
+  return customFetch<EventoBilling[]>(getListEventosBillingUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEventosBillingQueryKey = (
+  params?: ListEventosBillingParams,
+) => {
+  return [`/api/billing/eventos`, ...(params ? [params] : [])] as const;
+};
+
+export const getListEventosBillingQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEventosBilling>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListEventosBillingParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEventosBilling>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListEventosBillingQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listEventosBilling>>
+  > = ({ signal }) => listEventosBilling(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEventosBilling>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEventosBillingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEventosBilling>>
+>;
+export type ListEventosBillingQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List billing events (activations and deactivations)
+ */
+
+export function useListEventosBilling<
+  TData = Awaited<ReturnType<typeof listEventosBilling>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListEventosBillingParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEventosBilling>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEventosBillingQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Close billing cycle for all stores (admin only)
+ */
+export const getFecharBillingUrl = () => {
+  return `/api/billing/fechar`;
+};
+
+export const fecharBilling = async (
+  options?: RequestInit,
+): Promise<FecharBillingResponse> => {
+  return customFetch<FecharBillingResponse>(getFecharBillingUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getFecharBillingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof fecharBilling>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof fecharBilling>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["fecharBilling"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof fecharBilling>>,
+    void
+  > = () => {
+    return fecharBilling(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FecharBillingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof fecharBilling>>
+>;
+
+export type FecharBillingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Close billing cycle for all stores (admin only)
+ */
+export const useFecharBilling = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof fecharBilling>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof fecharBilling>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getFecharBillingMutationOptions(options));
 };
 
 /**

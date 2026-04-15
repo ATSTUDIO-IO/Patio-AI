@@ -28,6 +28,8 @@ tags:
     description: Automated CRM alerts
   - name: financiamentos
     description: Financing tables and simulator
+  - name: billing
+    description: Billing management (cycles, invoices, events)
 paths:
   /healthz:
     get:
@@ -240,6 +242,218 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: listUsuarios
+      tags: [lojas]
+      summary: List users for the store (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lojaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UsuarioPublic"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /lojas/{lojaId}/usuarios/{usuarioId}:
+    delete:
+      operationId: deleteUsuario
+      tags: [lojas]
+      summary: Remove a user from the store (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lojaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: usuarioId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: User removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /billing/faturas:
+    get:
+      operationId: listFaturas
+      tags: [billing]
+      summary: List billing cycles for the store (last 12 months)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of billing cycles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CicloBilling"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (dono only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /billing/atual:
+    get:
+      operationId: getFaturaAtual
+      tags: [billing]
+      summary: Get current month billing preview (live vehicle count)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current billing preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FaturaAtual"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (dono only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /billing/eventos:
+    get:
+      operationId: listEventosBilling
+      tags: [billing]
+      summary: List billing events (activations and deactivations)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of billing events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventoBilling"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (dono only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /billing/fechar:
+    post:
+      operationId: fecharBilling
+      tags: [billing]
+      summary: Close billing cycle for all stores (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Billing cycles created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FecharBillingResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (admin only)
           content:
             application/json:
               schema:
@@ -1965,3 +2179,118 @@ components:
         - taxa_mensal
         - valor_parcela
         - descricao
+
+    CicloBilling:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        mes_ref:
+          type: string
+          format: date
+        veiculos_ativos:
+          type: integer
+        preco_unitario:
+          type: number
+        valor_total:
+          type: number
+        status:
+          type: string
+          enum: [aberto, pago, inadimplente]
+        gerado_em:
+          type: ["string", "null"]
+          format: date-time
+        pago_em:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - id
+        - mes_ref
+        - veiculos_ativos
+        - preco_unitario
+        - valor_total
+        - status
+
+    FaturaAtual:
+      type: object
+      properties:
+        mes_ref:
+          type: string
+          format: date
+        plano:
+          type: string
+          enum: [starter, pro, full]
+        veiculos_ativos:
+          type: integer
+        preco_unitario:
+          type: number
+        valor_total:
+          type: number
+        status:
+          type: string
+          enum: [aberto, pago, inadimplente]
+        vencimento:
+          type: string
+          format: date
+        ciclo_id:
+          type: ["string", "null"]
+          format: uuid
+      required:
+        - mes_ref
+        - plano
+        - veiculos_ativos
+        - preco_unitario
+        - valor_total
+        - status
+        - vencimento
+
+    EventoBilling:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        veiculo_id:
+          type: string
+          format: uuid
+        veiculo_descricao:
+          type: ["string", "null"]
+        tipo:
+          type: string
+          enum: [ativacao, baixa, pausa]
+        ocorrido_em:
+          type: ["string", "null"]
+          format: date-time
+        motivo:
+          type: ["string", "null"]
+      required:
+        - id
+        - veiculo_id
+        - tipo
+
+    FecharBillingResponse:
+      type: object
+      properties:
+        mes_ref:
+          type: string
+          format: date
+        lojas_processadas:
+          type: integer
+        resultados:
+          type: array
+          items:
+            type: object
+            properties:
+              loja_id:
+                type: string
+                format: uuid
+              status:
+                type: string
+            required:
+              - loja_id
+              - status
+      required:
+        - mes_ref
+        - lojas_processadas
+        - resultados
