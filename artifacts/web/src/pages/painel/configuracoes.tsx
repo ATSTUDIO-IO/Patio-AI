@@ -34,7 +34,7 @@ function InputField({
       <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
       <input
         {...props}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
@@ -52,7 +52,7 @@ function SelectField({
       <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
       <select
         {...props}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
       >
         {children}
       </select>

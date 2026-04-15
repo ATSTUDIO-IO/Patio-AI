@@ -97,39 +97,39 @@ export default function VeiculoForm() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Placa *</label>
-                <input type="text" value={form.placa} onChange={set("placa")} required placeholder="ABC-1234" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={form.placa} onChange={set("placa")} required placeholder="ABC-1234" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Cor</label>
-                <input type="text" value={form.cor ?? ""} onChange={set("cor")} placeholder="Prata" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={form.cor ?? ""} onChange={set("cor")} placeholder="Prata" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Marca *</label>
-                <input type="text" value={form.marca} onChange={set("marca")} required placeholder="Toyota" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={form.marca} onChange={set("marca")} required placeholder="Toyota" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Modelo *</label>
-                <input type="text" value={form.modelo} onChange={set("modelo")} required placeholder="Corolla" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" value={form.modelo} onChange={set("modelo")} required placeholder="Corolla" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Ano Fabricação *</label>
-                <input type="number" value={form.ano_fabricacao} onChange={set("ano_fabricacao")} required min={1990} max={2030} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="number" value={form.ano_fabricacao} onChange={set("ano_fabricacao")} required min={1990} max={2030} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Ano Modelo *</label>
-                <input type="number" value={form.ano_modelo} onChange={set("ano_modelo")} required min={1990} max={2031} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="number" value={form.ano_modelo} onChange={set("ano_modelo")} required min={1990} max={2031} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Preço (R$) *</label>
-                <input type="number" value={Number(form.preco_venda)} onChange={(e) => setForm(f => ({ ...f, preco_venda: e.target.value }))} required min={0} step={100} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="number" value={Number(form.preco_venda)} onChange={(e) => setForm(f => ({ ...f, preco_venda: e.target.value }))} required min={0} step={100} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Quilometragem</label>
-                <input type="number" value={form.quilometragem} onChange={set("quilometragem")} min={0} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="number" value={form.quilometragem} onChange={set("quilometragem")} min={0} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Combustível</label>
-                <select value={form.combustivel ?? "flex"} onChange={set("combustivel")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={form.combustivel ?? "flex"} onChange={set("combustivel")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="flex">Flex</option>
                   <option value="gasolina">Gasolina</option>
                   <option value="etanol">Etanol</option>
@@ -140,7 +140,7 @@ export default function VeiculoForm() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Câmbio</label>
-                <select value={form.cambio ?? "manual"} onChange={set("cambio")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={form.cambio ?? "manual"} onChange={set("cambio")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="manual">Manual</option>
                   <option value="automatico">Automático</option>
                   <option value="cvt">CVT</option>
@@ -161,7 +161,7 @@ export default function VeiculoForm() {
                   onChange={set("descricao_agente")}
                   rows={4}
                   placeholder="Ex: Único dono, revisão feita em junho/2024 na concessionária, 4 pneus novos, IPVA 2025 pago, garantia de fábrica até 2026, sem multas..."
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
               </div>
               {(form.marca || form.modelo) && (
