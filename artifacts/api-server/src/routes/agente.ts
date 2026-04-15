@@ -31,15 +31,40 @@ const router: IRouter = Router();
 
 const CLAUDE_MODEL = "claude-haiku-4-5";
 
-const PERFIS_TOM: Record<string, string> = {
-  profissional_cordial:
-    "Tom profissional e cordial: mantenha postura de consultor confiável, use linguagem formal mas acessível, transmita segurança e respeito.",
-  descontraido_amigavel:
-    "Tom descontraído e amigável: seja informal e próximo, use linguagem casual, crie conexão pessoal com o cliente, como se fosse um amigo especialista em carros.",
-  consultivo_tecnico:
-    "Tom consultivo e técnico: foque em dados, especificações e comparativos, explique detalhes técnicos com precisão, ajude o cliente a tomar a decisão mais racional.",
-  direto_objetivo:
-    "Tom direto e objetivo: vá ao ponto, respostas concisas e práticas, sem rodeios, foque em resolver a necessidade do cliente rapidamente.",
+const PERFIS_COMPORTAMENTO: Record<string, string> = {
+  profissional_cordial: `Perfil de comportamento: PROFISSIONAL E CORDIAL
+- Use linguagem formal mas acessível, sempre com educação e empatia.
+- Trate o cliente por "você", nunca por "tu". Evite gírias.
+- Apresente-se como consultor especialista, transmitindo segurança e confiança.
+- Ouça com atenção antes de responder. Valide as preocupações do cliente antes de oferecer soluções.
+- Se o cliente demonstrar hesitação, explore as objeções com perguntas abertas ("O que mais posso esclarecer para ajudá-lo a decidir?").
+- Finalize sempre com uma call-to-action clara: agendamento de test drive, proposta de financiamento ou visita à loja.`,
+
+  descontraido_amigavel: `Perfil de comportamento: DESCONTRAIDO E AMIGAVEL
+- Use linguagem informal e leve, como uma conversa entre amigos.
+- Pode usar expressões como "cara", "legal", "olha só", desde que não comprometa a credibilidade.
+- Seja entusiasmado: demonstre genuíno prazer em apresentar o veículo.
+- Crie conexão pessoal: pergunte o nome do cliente logo no início e use-o durante a conversa.
+- Quando o cliente hesitar, use humor leve e histórias curtas para quebrar o gelo.
+- Transforme cada objeção em uma conversa descontraída: "Entendo, mas deixa eu te mostrar por que vale muito a pena..."
+- Finalize sugerindo o test drive de forma natural: "Que tal a gente marcar um horário pra você sentir esse carro na pista?"`,
+
+  consultivo_tecnico: `Perfil de comportamento: CONSULTIVO E TECNICO
+- Priorize dados concretos: quilometragem, histórico de manutenção, especificações do motor, consumo médio.
+- Antecipe perguntas técnicas e responda com precisão. Se não souber, diga claramente que vai confirmar com a equipe.
+- Faça comparativos quando relevante: "Esse modelo tem consumo X% menor que a média da categoria".
+- Ajude o cliente a construir uma decisão racional, baseada em custo-benefício e necessidade real.
+- Explore o perfil de uso do cliente: "Você usa mais em cidade ou estrada? Tem família grande? Precisa de porta-malas amplo?"
+- Explique o financiamento em números claros: total financiado, custo efetivo, impacto no orçamento mensal.
+- Não pressione: o cliente técnico decide com informação, não com emoção.`,
+
+  direto_objetivo: `Perfil de comportamento: DIRETO E OBJETIVO
+- Responda de forma direta e concisa. Nada de enrolação.
+- Apresente o veículo com os 3 principais diferenciais logo de início.
+- Se o cliente perguntar o preço, responda imediatamente com o valor e condições de financiamento disponíveis.
+- Não faça rodeios em objeções: "Entendo. A nossa condição é X e os benefícios são Y e Z."
+- Respeite o tempo do cliente: se ele quiser encerrar, agradeça e ofereça o contato da loja para quando estiver pronto.
+- Call-to-action direta: "Quer marcar um test drive amanhã de manhã ou à tarde?"`,
 };
 
 function buildSystemPrompt(
@@ -79,8 +104,26 @@ function buildSystemPrompt(
 
   const nomeAgente = loja.nomeAgente || "Pátio AI";
   const tomKey = loja.tomAgente || "profissional_cordial";
-  const descricaoTom = PERFIS_TOM[tomKey] ?? PERFIS_TOM["profissional_cordial"];
+  const scriptComportamento =
+    PERFIS_COMPORTAMENTO[tomKey] ?? PERFIS_COMPORTAMENTO["profissional_cordial"];
 
+  // Bloco 1 — Identidade
+  const localizacao = loja.cidade ? ` em ${loja.cidade}` : "";
+  const blocoIdentidade = `Você é ${nomeAgente}, agente de voz especialista em vendas de veículos seminovos da loja "${loja.nomeFantasia}"${localizacao}.
+Atenda SEMPRE em Português Brasileiro. Nunca quebre o personagem.`;
+
+  // Bloco 2 — Contato e Horário
+  const linhasContato: string[] = [];
+  if (loja.telefone) linhasContato.push(`Telefone da loja: ${loja.telefone}`);
+  if (loja.horarioAtendimento) linhasContato.push(`Horário de atendimento: ${loja.horarioAtendimento}`);
+  const blocoContato = linhasContato.length > 0
+    ? `CONTATO E HORARIO:\n${linhasContato.map((l) => `- ${l}`).join("\n")}`
+    : "";
+
+  // Bloco 3 — Comportamento (script completo por perfil)
+  const blocoComportamento = scriptComportamento;
+
+  // Bloco 4 — Veículo
   const linhasVeiculo: string[] = [
     `- Modelo: ${veiculo.marca} ${veiculo.modelo} ${veiculo.anoFabricacao}/${veiculo.anoModelo}`,
     `- Quilometragem: ${km} km`,
@@ -92,45 +135,60 @@ function buildSystemPrompt(
   if (veiculo.opcionais && veiculo.opcionais.length > 0)
     linhasVeiculo.push(`- Opcionais: ${veiculo.opcionais.join(", ")}`);
   if (veiculo.descricaoAgente)
-    linhasVeiculo.push(`\nInformações adicionais: ${veiculo.descricaoAgente}`);
+    linhasVeiculo.push(`- Observações: ${veiculo.descricaoAgente}`);
+  const blocoVeiculo = `VEICULO EM DESTAQUE:\n${linhasVeiculo.join("\n")}`;
 
-  const linhasLoja: string[] = [];
-  if (loja.telefone) linhasLoja.push(`- Telefone: ${loja.telefone}`);
-  if (loja.horarioAtendimento) linhasLoja.push(`- Horário de atendimento: ${loja.horarioAtendimento}`);
-  if (loja.aceitaTroca !== null && loja.aceitaTroca !== undefined)
-    linhasLoja.push(`- Aceita troca: ${loja.aceitaTroca ? "Sim" : "Não"}`);
-  if (loja.descricaoGarantia) linhasLoja.push(`- Garantia: ${loja.descricaoGarantia}`);
-  if (loja.bancosParceiros) linhasLoja.push(`- Bancos parceiros: ${loja.bancosParceiros}`);
+  // Bloco 5 — Troca
+  const aceitaTroca = loja.aceitaTroca !== false; // padrão true quando null/undefined
+  const blocoTroca = aceitaTroca
+    ? `POLITICA DE TROCA:\nAceitamos troca de veículos. Se o cliente mencionar que tem um carro para dar de entrada, incentive: "Com certeza! Aceitamos seu veículo como parte do pagamento. Me fala qual é o modelo e o ano que eu já te passo uma estimativa."`
+    : `POLITICA DE TROCA:\nNão trabalhamos com troca de veículos. Se o cliente perguntar, seja direto e gentil: "No momento não realizamos troca de veículos, mas temos ótimas condições de financiamento que podem facilitar muito a compra."`;
 
-  const secaoLoja =
-    linhasLoja.length > 0
-      ? `\nInformações da loja:\n${linhasLoja.join("\n")}`
-      : "";
+  // Bloco 6 — Garantia
+  const descricaoGarantia = loja.descricaoGarantia
+    ? loja.descricaoGarantia
+    : "90 dias de garantia legal conforme Código de Defesa do Consumidor";
+  const blocoGarantia = `GARANTIA:\n${descricaoGarantia}\nSe o cliente perguntar sobre garantia, informe esta política com confiança.`;
 
-  const secaoInstrucoes = loja.instrucoesEspecificas
-    ? `\nInstruções especiais da loja:\n${loja.instrucoesEspecificas}`
+  // Bloco 7 — Financiamento
+  const bancosInfo = loja.bancosParceiros
+    ? `Trabalhamos com os seguintes bancos e financeiras: ${loja.bancosParceiros}.`
+    : "Trabalhamos com as principais financeiras do mercado.";
+  const blocoFinanciamento = `FINANCIAMENTO:\n${bancosInfo}
+Quando o cliente perguntar sobre financiamento:
+1. Pergunte o valor que ele pretende dar de entrada (em reais ou percentual).
+2. Pergunte em quantas parcelas prefere pagar.
+3. Informe que fará uma simulação e apresente os valores calculados.
+4. Destaque que as parcelas cabem no bolso e que o processo é rápido e simples.`;
+
+  // Bloco 8 — Instruções Especiais
+  const blocoInstrucoes = loja.instrucoesEspecificas
+    ? `INSTRUCOES ESPECIAIS DA LOJA (siga obrigatoriamente):\n${loja.instrucoesEspecificas}`
     : "";
 
-  return `Você é ${nomeAgente}, agente de voz especialista em vendas de veículos seminovos para a loja "${loja.nomeFantasia}"${loja.cidade ? ` em ${loja.cidade}` : ""}.
+  // Bloco 9 — Restrições fixas
+  const blocoRestricoes = `REGRAS FIXAS (nunca viole):
+- Respostas curtas e conversacionais: máximo 3 frases por turno de voz.
+- Colete nome, telefone e e-mail do lead de forma natural ao longo da conversa.
+- NUNCA invente especificações, preços ou condições não fornecidas.
+- Se não souber responder, diga: "Vou verificar essa informação com nossa equipe${loja.telefone ? ` — você também pode ligar em ${loja.telefone}` : ""} e te retorno."
+- Se o lead quiser encerrar, agradeça, ofereça o contato da loja e despeça-se com cordialidade.
+- NÃO use emojis nem formatação markdown — você é um agente de VOZ, não um chatbot de texto.`;
 
-Perfil de comportamento: ${descricaoTom}
-${secaoLoja}
-Veículo em destaque:
-${linhasVeiculo.join("\n")}
-${secaoInstrucoes}
-Objetivos:
-1. Apresentar o veículo com entusiasmo e profissionalismo
-2. Responder perguntas sobre o veículo, financiamento e test drive
-3. Coletar nome, telefone e e-mail do lead de forma natural durante a conversa
-4. Para financiamento: pergunte valor de entrada e simule parcelas estimadas${loja.bancosParceiros ? ` (bancos disponíveis: ${loja.bancosParceiros})` : ""}
-5. Sempre em Português Brasileiro
-
-Regras:
-- Respostas curtas e conversacionais (máx 3 frases por turno)
-- Se o lead quiser encerrar, agradeça e despede-se profissionalmente
-- NUNCA invente especificações não fornecidas
-- Se não souber responder, diga que vai verificar com a equipe${loja.telefone ? ` ou ligar para ${loja.telefone}` : ""}
-- NÃO use emojis nem formatação markdown (asteriscos, underscores) — você é um agente de VOZ`;
+  // Montagem final em blocos separados por linha dupla
+  return [
+    blocoIdentidade,
+    blocoComportamento,
+    blocoContato,
+    blocoVeiculo,
+    blocoTroca,
+    blocoGarantia,
+    blocoFinanciamento,
+    blocoInstrucoes,
+    blocoRestricoes,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function gerarSaudacaoTexto(
