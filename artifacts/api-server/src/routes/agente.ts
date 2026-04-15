@@ -500,7 +500,7 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
 
   if (detectarPedidoFinanciamento(transcricao)) {
     if (!planoConfig.assistenteFinanciamento) {
-      systemPrompt += `\n\nINSTRUCAO ESPECIAL: O assistente de simulação de financiamento não está disponível para esta loja no momento. Se o cliente perguntar sobre financiamento, parcelas ou consórcio, responda educadamente: "Para simulações de financiamento personalizadas, entre em contato diretamente com nossa equipe${loja.telefone ? ` pelo ${loja.telefone}` : ""}. Eles te darão as melhores condições!"`;
+      systemPrompt += `\n\nINSTRUCAO ESPECIAL: O assistente de simulação de financiamento não está disponível no plano atual desta loja. Se o cliente perguntar sobre financiamento, parcelas, consórcio ou condições de pagamento, responda educadamente: "Nosso simulador de financiamento está disponível no plano Pro e Full. Para condições personalizadas, fale diretamente com nossa equipe${loja.telefone ? ` pelo ${loja.telefone}` : ""} e teremos prazer em ajudar!"`;
     } else {
       const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
       const resultadoSimulacao = await simular({
@@ -626,7 +626,7 @@ router.post("/agente/mensagem/stream", async (req, res): Promise<void> => {
 
     if (detectarPedidoFinanciamento(transcricao)) {
       if (!planoConfigStream.assistenteFinanciamento) {
-        systemPrompt += `\n\nINSTRUCAO ESPECIAL: O assistente de simulação de financiamento não está disponível para esta loja no momento. Se o cliente perguntar sobre financiamento, parcelas ou consórcio, responda educadamente: "Para simulações de financiamento personalizadas, entre em contato diretamente com nossa equipe${loja.telefone ? ` pelo ${loja.telefone}` : ""}. Eles te darão as melhores condições!"`;
+        systemPrompt += `\n\nINSTRUCAO ESPECIAL: O assistente de simulação de financiamento não está disponível no plano atual desta loja. Se o cliente perguntar sobre financiamento, parcelas, consórcio ou condições de pagamento, responda educadamente: "Nosso simulador de financiamento está disponível no plano Pro e Full. Para condições personalizadas, fale diretamente com nossa equipe${loja.telefone ? ` pelo ${loja.telefone}` : ""} e teremos prazer em ajudar!"`;
       } else {
         const { entrada_pct, n_parcelas } = extrairEntradaEParcelas(transcricao);
         const resultadoSimulacao = await simular({

@@ -424,15 +424,15 @@ export default function PainelConfiguracoes() {
                 />
               </>
             ) : (
-              <LockedSection label="Disponível no plano Pro e Full">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <ToggleField
-                      label="Aceita Troca de Veículo"
-                      hint="O agente menciona essa possibilidade ao lead."
-                      checked={false}
-                      onChange={() => {}}
-                    />
+              <>
+                <ToggleField
+                  label="Aceita Troca de Veículo"
+                  hint="O agente menciona essa possibilidade ao lead."
+                  checked={agenteForm.aceita_troca}
+                  onChange={(val) => setAgenteForm((f) => ({ ...f, aceita_troca: val }))}
+                />
+                <LockedSection label="Disponível no plano Pro e Full">
+                  <div className="space-y-4">
                     <InputField
                       label="Bancos Parceiros"
                       value=""
@@ -440,23 +440,23 @@ export default function PainelConfiguracoes() {
                       placeholder="Ex: Itaú, Santander, BV Financeira"
                       hint="Listados ao simular financiamento."
                     />
+                    <TextareaField
+                      label="Descrição da Garantia"
+                      value=""
+                      onChange={() => {}}
+                      placeholder="Ex: 90 dias de garantia legal + 6 meses de garantia da loja para motor e câmbio."
+                      hint="O agente usa essa descrição ao responder sobre garantia."
+                    />
+                    <TextareaField
+                      label="Instruções Especiais"
+                      value=""
+                      onChange={() => {}}
+                      placeholder="Ex: Sempre pergunte se o cliente já possui financiamento pré-aprovado."
+                      hint="Orientações extras que o agente deve seguir em todas as conversas."
+                    />
                   </div>
-                  <TextareaField
-                    label="Descrição da Garantia"
-                    value=""
-                    onChange={() => {}}
-                    placeholder="Ex: 90 dias de garantia legal + 6 meses de garantia da loja para motor e câmbio."
-                    hint="O agente usa essa descrição ao responder sobre garantia."
-                  />
-                  <TextareaField
-                    label="Instruções Especiais"
-                    value=""
-                    onChange={() => {}}
-                    placeholder="Ex: Sempre pergunte se o cliente já possui financiamento pré-aprovado."
-                    hint="Orientações extras que o agente deve seguir em todas as conversas."
-                  />
-                </div>
-              </LockedSection>
+                </LockedSection>
+              </>
             )}
 
             <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
