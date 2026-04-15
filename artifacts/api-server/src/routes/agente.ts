@@ -84,7 +84,8 @@ Regras:
 - Respostas curtas e conversacionais (máx 3 frases por turno)
 - Se o lead quiser encerrar, agradeça e despede-se profissionalmente
 - NUNCA invente especificações não fornecidas
-- Se não souber responder, diga que vai verificar com a equipe${loja.telefone ? ` ou ligar para ${loja.telefone}` : ""}`;
+- Se não souber responder, diga que vai verificar com a equipe${loja.telefone ? ` ou ligar para ${loja.telefone}` : ""}
+- NÃO use emojis nem formatação markdown (asteriscos, underscores) — você é um agente de VOZ`;
 }
 
 function gerarSaudacaoTexto(
@@ -139,9 +140,22 @@ function extrairEntradaEParcelas(texto: string): {
   return { entrada_pct, n_parcelas };
 }
 
+function limparParaTTS(texto: string): string {
+  return texto
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, "")
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, "$1")
+    .replace(/_{1,2}([^_]+)_{1,2}/g, "$1")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/~~([^~]+)~~/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 async function gerarAudioBase64(texto: string): Promise<string> {
   try {
-    const buf = await textToSpeech(texto, "nova", "mp3");
+    const textoLimpo = limparParaTTS(texto);
+    const buf = await textToSpeech(textoLimpo, "nova", "mp3");
     return buf.toString("base64");
   } catch (err) {
     logger.warn({ err }, "Falha ao gerar áudio TTS");
