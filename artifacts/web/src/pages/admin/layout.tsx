@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 const navItems = [
   { href: "/admin", label: "Visão Geral", icon: "📊" },
   { href: "/admin/lojas", label: "Lojas", icon: "🏪" },
+  { href: "/admin/inteligencia", label: "Inteligência", icon: "🧠" },
   { href: "/admin/billing", label: "Billing", icon: "💰" },
 ];
 

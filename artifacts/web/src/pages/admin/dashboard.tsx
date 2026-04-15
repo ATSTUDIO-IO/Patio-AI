@@ -14,7 +14,9 @@ type Loja = {
   cidade: string | null;
   veiculos_ativos: number;
   total_conversas: number;
+  total_leads: number;
   total_usuarios: number;
+  ultima_fatura_status: string | null;
 };
 
 type Stats = {
@@ -22,6 +24,7 @@ type Stats = {
   total_veiculos_ativos: number;
   total_conversas: number;
   receita_total: number;
+  mrr_mes_atual: number;
 };
 
 export default function AdminDashboard() {
@@ -112,11 +115,19 @@ export default function AdminDashboard() {
               <StatCard label="Veículos Ativos" value={stats?.total_veiculos_ativos ?? 0} icon="🚗" color="blue" />
               <StatCard label="Conversas" value={stats?.total_conversas ?? 0} icon="💬" color="green" />
               <StatCard
-                label="Receita Total"
-                value={`R$ ${(stats?.receita_total ?? 0).toLocaleString("pt-BR")}`}
+                label="MRR (Mês Atual)"
+                value={`R$ ${(stats?.mrr_mes_atual ?? 0).toLocaleString("pt-BR")}`}
                 icon="💰"
                 color="amber"
               />
+            </div>
+            <div className="flex justify-end">
+              <Link
+                href="/admin/inteligencia"
+                className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Ver análise de risco de churn e inteligência →
+              </Link>
             </div>
 
             <div>

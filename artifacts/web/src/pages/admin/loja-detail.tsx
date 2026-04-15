@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useParams } from "wouter";
 import { AdminLayout, AdminPageHeader } from "./layout";
 import { useAuth } from "@/hooks/use-auth";
@@ -22,6 +22,13 @@ type Fatura = {
   pago_em: string | null;
 };
 
+type Nota = {
+  id: string;
+  conteudo: string;
+  criado_em: string;
+  admin_id: string;
+};
+
 type LojaDetail = {
   id: string;
   razao_social: string;
@@ -35,14 +42,23 @@ type LojaDetail = {
   criado_em: string;
   veiculos_ativos: number;
   total_conversas: number;
+  total_leads: number;
+  leads_30d: number;
   usuarios: Usuario[];
   faturas: Fatura[];
+  notas: Nota[];
 };
 
 const planoColors: Record<string, string> = {
   starter: "bg-gray-700 text-gray-300",
   pro: "bg-blue-900 text-blue-300",
   full: "bg-violet-900 text-violet-300",
+};
+
+const statusFaturaColors: Record<string, string> = {
+  aberto: "text-amber-400",
+  pago: "text-green-400",
+  inadimplente: "text-red-400",
 };
 
 export default function AdminLojaDetail() {
@@ -52,6 +68,14 @@ export default function AdminLojaDetail() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
+  const [changingPlano, setChangingPlano] = useState(false);
+  const [showPlanoModal, setShowPlanoModal] = useState(false);
+  const [novoPlano, setNovoPlano] = useState<"starter" | "pro" | "full">("starter");
+  const [novaNota, setNovaNota] = useState("");
+  const [savingNota, setSavingNota] = useState(false);
+  const [markingPago, setMarkingPago] = useState<string | null>(null);
+  const [exportando, setExportando] = useState(false);
+  const notaRef = useRef<HTMLTextAreaElement>(null);
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -61,7 +85,9 @@ export default function AdminLojaDetail() {
     try {
       const resp = await fetch(`/api/admin/lojas/${id}`, { headers });
       if (!resp.ok) throw new Error("Loja não encontrada");
-      setLoja(await resp.json());
+      const data: LojaDetail = await resp.json();
+      setLoja(data);
+      setNovoPlano(data.plano as "starter" | "pro" | "full");
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro desconhecido");
     } finally {
@@ -89,6 +115,80 @@ export default function AdminLojaDetail() {
     }
   }
 
+  async function alterarPlano() {
+    if (!loja) return;
+    setChangingPlano(true);
+    try {
+      const resp = await fetch(`/api/admin/lojas/${loja.id}/plano`, {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ plano: novoPlano }),
+      });
+      if (!resp.ok) throw new Error("Falha ao alterar plano");
+      setShowPlanoModal(false);
+      await carregar();
+    } catch {
+      alert("Erro ao alterar plano");
+    } finally {
+      setChangingPlano(false);
+    }
+  }
+
+  async function marcarPago(cicloId: string) {
+    setMarkingPago(cicloId);
+    try {
+      const resp = await fetch(`/api/admin/billing/${cicloId}/pago`, {
+        method: "PATCH",
+        headers,
+      });
+      if (!resp.ok) throw new Error("Falha ao marcar como pago");
+      await carregar();
+    } catch {
+      alert("Erro ao marcar fatura como paga");
+    } finally {
+      setMarkingPago(null);
+    }
+  }
+
+  async function adicionarNota() {
+    if (!loja || !novaNota.trim()) return;
+    setSavingNota(true);
+    try {
+      const resp = await fetch(`/api/admin/lojas/${loja.id}/notas`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ conteudo: novaNota.trim() }),
+      });
+      if (!resp.ok) throw new Error("Falha ao salvar nota");
+      setNovaNota("");
+      await carregar();
+    } catch {
+      alert("Erro ao salvar nota");
+    } finally {
+      setSavingNota(false);
+    }
+  }
+
+  async function exportarCSV() {
+    if (!loja) return;
+    setExportando(true);
+    try {
+      const resp = await fetch(`/api/admin/lojas/${loja.id}/exportar`, { headers });
+      if (!resp.ok) throw new Error("Falha ao exportar");
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `patioai_${loja.nome_fantasia.replace(/\s+/g, "_")}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Erro ao exportar dados");
+    } finally {
+      setExportando(false);
+    }
+  }
+
   if (loading) {
     return (
       <AdminLayout>
@@ -102,7 +202,7 @@ export default function AdminLojaDetail() {
       <AdminLayout>
         <div className="p-8">
           <div className="p-4 bg-red-900/30 border border-red-800 rounded-xl text-red-300 text-sm">{erro ?? "Loja não encontrada"}</div>
-          <Link href="/admin/lojas" className="mt-4 inline-block text-violet-400 hover:text-violet-300 text-sm">← Voltar</Link>
+          <Link href="/admin" className="mt-4 inline-block text-violet-400 hover:text-violet-300 text-sm">← Voltar</Link>
         </div>
       </AdminLayout>
     );
@@ -114,8 +214,21 @@ export default function AdminLojaDetail() {
         title={loja.nome_fantasia}
         subtitle={loja.cnpj}
         actions={
-          <div className="flex items-center gap-3">
-            <Link href="/admin" className="text-sm text-gray-400 hover:text-white transition-colors">← Painel</Link>
+          <div className="flex items-center gap-2">
+            <Link href="/admin" className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-2">← Painel</Link>
+            <button
+              onClick={exportarCSV}
+              disabled={exportando}
+              className="px-3 py-2 text-sm text-gray-300 hover:text-white border border-gray-700 rounded-xl transition-colors disabled:opacity-50"
+            >
+              {exportando ? "Exportando..." : "Exportar CSV"}
+            </button>
+            <button
+              onClick={() => setShowPlanoModal(true)}
+              className="px-3 py-2 text-sm text-blue-300 hover:text-blue-200 border border-blue-800 rounded-xl transition-colors"
+            >
+              Alterar Plano
+            </button>
             <button
               onClick={toggleStatus}
               disabled={toggling}
@@ -125,69 +238,129 @@ export default function AdminLojaDetail() {
                   : "bg-green-900/40 text-green-300 hover:bg-green-900/60 border border-green-800"
               }`}
             >
-              {toggling ? "..." : loja.ativo ? "Suspender Loja" : "Reativar Loja"}
+              {toggling ? "..." : loja.ativo ? "Suspender" : "Reativar"}
             </button>
           </div>
         }
       />
 
+      {showPlanoModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-80 space-y-4">
+            <h3 className="text-white font-semibold text-base">Alterar Plano</h3>
+            <p className="text-xs text-gray-400">Plano atual: <span className="text-white">{loja.plano}</span></p>
+            <select
+              value={novoPlano}
+              onChange={(e) => setNovoPlano(e.target.value as "starter" | "pro" | "full")}
+              className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm"
+            >
+              <option value="starter">Starter — R$ 30/veíc/mês</option>
+              <option value="pro">Pro — R$ 50/veíc/mês</option>
+              <option value="full">Full — R$ 75/veíc/mês</option>
+            </select>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPlanoModal(false)}
+                className="flex-1 py-2 text-sm text-gray-400 border border-gray-700 rounded-xl hover:text-white transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={alterarPlano}
+                disabled={changingPlano || novoPlano === loja.plano}
+                className="flex-1 py-2 text-sm bg-violet-600 hover:bg-violet-700 text-white rounded-xl transition-colors disabled:opacity-50"
+              >
+                {changingPlano ? "Salvando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="p-8 space-y-6">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
+          <MiniStat label="Veículos Ativos" value={loja.veiculos_ativos} icon="🚗" />
+          <MiniStat label="Total Leads" value={loja.total_leads} icon="👥" />
+          <MiniStat label="Leads (30d)" value={loja.leads_30d} icon="📈" />
+          <MiniStat label="Conversas" value={loja.total_conversas} icon="💬" />
+        </div>
+
+        <div className="grid grid-cols-3 gap-6">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
             <div className="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wider">Informações</div>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Razão Social</span>
-                <span className="text-white">{loja.razao_social}</span>
-              </div>
-              <div className="flex justify-between">
+              <InfoRow label="Razão Social" value={loja.razao_social} />
+              <div className="flex justify-between items-center">
                 <span className="text-gray-400">Plano</span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${planoColors[loja.plano] ?? "bg-gray-700 text-gray-300"}`}>
                   {loja.plano}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-gray-400">Status</span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${loja.ativo ? "bg-green-900 text-green-300" : "bg-red-900 text-red-300"}`}>
                   {loja.ativo ? "Ativa" : "Suspensa"}
                 </span>
               </div>
-              {loja.cidade && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Cidade</span>
-                  <span className="text-white">{loja.cidade}</span>
-                </div>
-              )}
-              {loja.email_contato && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">E-mail</span>
-                  <span className="text-white text-xs">{loja.email_contato}</span>
-                </div>
-              )}
-              {loja.telefone && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Telefone</span>
-                  <span className="text-white">{loja.telefone}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-gray-400">Cadastrado em</span>
-                <span className="text-white text-xs">{new Date(loja.criado_em).toLocaleDateString("pt-BR")}</span>
-              </div>
+              {loja.cidade && <InfoRow label="Cidade" value={loja.cidade} />}
+              {loja.email_contato && <InfoRow label="E-mail" value={loja.email_contato} small />}
+              {loja.telefone && <InfoRow label="Telefone" value={loja.telefone} />}
+              <InfoRow label="Cadastrado em" value={new Date(loja.criado_em).toLocaleDateString("pt-BR")} />
             </div>
           </div>
 
-          <div className="col-span-2 grid grid-cols-3 gap-3">
-            <MiniStat label="Veículos Ativos" value={loja.veiculos_ativos} icon="🚗" />
-            <MiniStat label="Conversas" value={loja.total_conversas} icon="💬" />
-            <MiniStat label="Usuários" value={loja.usuarios.length} icon="👤" />
+          <div className="col-span-2 bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white">Faturas</h3>
+              <span className="text-xs text-gray-500">{loja.faturas.length} registros</span>
+            </div>
+            {loja.faturas.length === 0 ? (
+              <div className="px-5 py-8 text-center text-gray-500 text-sm">Nenhuma fatura gerada</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800 text-gray-400 text-xs">
+                    <th className="px-4 py-2 text-left">Mês</th>
+                    <th className="px-4 py-2 text-right">Veíc.</th>
+                    <th className="px-4 py-2 text-right">Valor</th>
+                    <th className="px-4 py-2 text-center">Status</th>
+                    <th className="px-4 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loja.faturas.map((f) => (
+                    <tr key={f.id} className="border-b border-gray-800/50">
+                      <td className="px-4 py-2.5 text-white">{f.mes_ref.slice(0, 7)}</td>
+                      <td className="px-4 py-2.5 text-right text-gray-300">{f.veiculos_ativos}</td>
+                      <td className="px-4 py-2.5 text-right font-medium text-white">R$ {f.valor_total.toLocaleString("pt-BR")}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className={`text-xs font-medium ${statusFaturaColors[f.status] ?? "text-gray-400"}`}>
+                          {f.status === "aberto" ? "Em aberto" : f.status === "pago" ? "Pago" : "Inadimplente"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        {f.status !== "pago" && (
+                          <button
+                            onClick={() => marcarPago(f.id)}
+                            disabled={markingPago === f.id}
+                            className="text-xs text-green-400 hover:text-green-300 transition-colors disabled:opacity-50"
+                          >
+                            {markingPago === f.id ? "..." : "Marcar Pago"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-6">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-800">
-              <h3 className="text-sm font-semibold text-white">Equipe</h3>
+              <h3 className="text-sm font-semibold text-white">Equipe ({loja.usuarios.length})</h3>
             </div>
             {loja.usuarios.length === 0 ? (
               <div className="px-5 py-8 text-center text-gray-500 text-sm">Nenhum usuário</div>
@@ -214,32 +387,45 @@ export default function AdminLojaDetail() {
             )}
           </div>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col">
             <div className="px-5 py-4 border-b border-gray-800">
-              <h3 className="text-sm font-semibold text-white">Faturas Recentes</h3>
+              <h3 className="text-sm font-semibold text-white">Notas Internas ({loja.notas.length})</h3>
             </div>
-            {loja.faturas.length === 0 ? (
-              <div className="px-5 py-8 text-center text-gray-500 text-sm">Nenhuma fatura gerada</div>
-            ) : (
-              <table className="w-full text-sm">
-                <tbody>
-                  {loja.faturas.map((f) => (
-                    <tr key={f.id} className="border-b border-gray-800/50">
-                      <td className="px-5 py-3">
-                        <div className="text-white text-sm">{f.mes_ref.slice(0, 7)}</div>
-                        <div className="text-xs text-gray-500">{f.veiculos_ativos} veíc. × R$ {f.preco_unitario}</div>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="text-white font-medium">R$ {f.valor_total.toLocaleString("pt-BR")}</div>
-                        <span className={`text-xs ${f.status === "pago" ? "text-green-400" : f.status === "fechado" ? "text-amber-400" : "text-gray-400"}`}>
-                          {f.status}
-                        </span>
-                      </td>
-                    </tr>
+            <div className="flex-1 overflow-y-auto max-h-48">
+              {loja.notas.length === 0 ? (
+                <div className="px-5 py-6 text-center text-gray-500 text-sm">Nenhuma nota registrada</div>
+              ) : (
+                <div className="divide-y divide-gray-800/50">
+                  {loja.notas.map((n) => (
+                    <div key={n.id} className="px-5 py-3">
+                      <p className="text-sm text-gray-200 whitespace-pre-wrap">{n.conteudo}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(n.criado_em).toLocaleString("pt-BR")}
+                      </p>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            )}
+                </div>
+              )}
+            </div>
+            <div className="px-4 py-3 border-t border-gray-800">
+              <div className="flex gap-2">
+                <textarea
+                  ref={notaRef}
+                  value={novaNota}
+                  onChange={(e) => setNovaNota(e.target.value)}
+                  placeholder="Adicionar nota interna..."
+                  rows={2}
+                  className="flex-1 bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-violet-600"
+                />
+                <button
+                  onClick={adicionarNota}
+                  disabled={savingNota || !novaNota.trim()}
+                  className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-xl transition-colors disabled:opacity-50 self-end"
+                >
+                  {savingNota ? "..." : "Salvar"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -255,6 +441,15 @@ function MiniStat({ label, value, icon }: { label: string; value: number; icon: 
         <div className="text-xl font-bold text-white">{value}</div>
         <div className="text-xs text-gray-400">{label}</div>
       </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value, small }: { label: string; value: string; small?: boolean }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="text-gray-400">{label}</span>
+      <span className={`text-white ${small ? "text-xs" : ""}`}>{value}</span>
     </div>
   );
 }

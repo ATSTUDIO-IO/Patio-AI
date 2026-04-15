@@ -18,6 +18,7 @@ import PainelConfiguracoes from "@/pages/painel/configuracoes";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminLojaDetail from "@/pages/admin/loja-detail";
 import AdminBilling from "@/pages/admin/billing";
+import AdminInteligencia from "@/pages/admin/inteligencia";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/admin" component={() => <AdminRoute component={AdminDashboard} />} />
       <Route path="/admin/lojas" component={() => <AdminRoute component={AdminDashboard} />} />
       <Route path="/admin/lojas/:id" component={() => <AdminRoute component={AdminLojaDetail} />} />
+      <Route path="/admin/inteligencia" component={() => <AdminRoute component={AdminInteligencia} />} />
       <Route path="/admin/billing" component={() => <AdminRoute component={AdminBilling} />} />
       <Route component={NotFound} />
     </Switch>
