@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { RegisterRequestPlano } from "./registerRequestPlano";
 
 export interface RegisterRequest {
   razao_social: string;
@@ -17,4 +18,5 @@ export interface RegisterRequest {
   telefone?: string | null;
   /** @nullable */
   cidade?: string | null;
+  plano?: RegisterRequestPlano;
 }

@@ -34,6 +34,25 @@ type InteresseDist = {
   total: number;
 };
 
+type VeiculoEstoque = {
+  id: string;
+  placa: string;
+  marca: string;
+  modelo: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+  quilometragem: number;
+  preco_venda: number;
+  status: string;
+};
+
+type AnaliseConversas = {
+  total: number;
+  avg_duracao_segundos: number;
+  com_lead_gerado: number;
+  taxa_conversao_pct: number;
+};
+
 type LojaDetail = {
   id: string;
   razao_social: string;
@@ -54,6 +73,8 @@ type LojaDetail = {
   faturas: Fatura[];
   notas: Nota[];
   interesse_distribuicao: InteresseDist[];
+  estoque: VeiculoEstoque[];
+  analise_conversas: AnaliseConversas;
 };
 
 const planoColors: Record<string, string> = {
@@ -399,6 +420,74 @@ export default function AdminLojaDetail() {
                 </span>
               </div>
             )}
+          </div>
+        )}
+
+        {(loja.estoque ?? []).length > 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white">Estoque ({loja.estoque.length})</h3>
+            </div>
+            <div className="overflow-x-auto max-h-60 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-gray-900">
+                  <tr className="border-b border-gray-800 text-gray-400">
+                    <th className="px-4 py-2 text-left">Veículo</th>
+                    <th className="px-4 py-2 text-right">Km</th>
+                    <th className="px-4 py-2 text-right">Preço</th>
+                    <th className="px-4 py-2 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loja.estoque.map((v) => (
+                    <tr key={v.id} className="border-b border-gray-800/40">
+                      <td className="px-4 py-2">
+                        <div className="text-white">{v.marca} {v.modelo}</div>
+                        <div className="text-gray-500">{v.ano_fabricacao}/{v.ano_modelo} · {v.placa}</div>
+                      </td>
+                      <td className="px-4 py-2 text-right text-gray-300">{(v.quilometragem ?? 0).toLocaleString("pt-BR")} km</td>
+                      <td className="px-4 py-2 text-right text-white font-medium">R$ {(v.preco_venda ?? 0).toLocaleString("pt-BR")}</td>
+                      <td className="px-4 py-2 text-center">
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                          v.status === "ativo" ? "bg-green-900 text-green-300" :
+                          v.status === "vendido" ? "bg-gray-700 text-gray-300" : "bg-red-900 text-red-300"
+                        }`}>
+                          {v.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {loja.analise_conversas && (
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+            <h3 className="text-sm font-semibold text-white mb-4">Análise de Conversas do Agente de Voz</h3>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white">{loja.analise_conversas.total}</div>
+                <div className="text-xs text-gray-400 mt-1">Total de Conversas</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-400">
+                  {loja.analise_conversas.avg_duracao_segundos > 0
+                    ? `${Math.round(loja.analise_conversas.avg_duracao_segundos / 60)}min`
+                    : "—"}
+                </div>
+                <div className="text-xs text-gray-400 mt-1">Duração Média</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-400">{loja.analise_conversas.com_lead_gerado}</div>
+                <div className="text-xs text-gray-400 mt-1">Leads Gerados</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-violet-400">{loja.analise_conversas.taxa_conversao_pct}%</div>
+                <div className="text-xs text-gray-400 mt-1">Taxa de Conversão</div>
+              </div>
+            </div>
           </div>
         )}
 

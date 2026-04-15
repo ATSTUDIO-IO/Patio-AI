@@ -1227,22 +1227,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  mrr:
-                    type: object
-                    properties:
-                      total: { type: number }
-                      novo: { type: number }
-                      expandido: { type: number }
-                      perdido: { type: number }
-                  total_lojas_ativas: { type: integer }
-                  total_veiculos_ativos: { type: integer }
-                  total_conversas: { type: integer }
-                  lojas:
-                    type: array
-                    items:
-                      type: object
+                $ref: "#/components/schemas/DashboardAdmin"
         "401":
           description: Unauthorized
         "403":
@@ -1457,7 +1442,7 @@ paths:
   /admin/inteligencia:
     get:
       tags: [Admin]
-      summary: Store health scores, churn risk, upsell signals, city performance, and market benchmarks
+      summary: Store health scores, churn risk, upsell signals, city performance (with avg duration), market benchmarks, and lead journey patterns
       security:
         - bearerAuth: []
       responses:
@@ -1466,58 +1451,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  scores_saude:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        loja_id: { type: string, format: uuid }
-                        nome_fantasia: { type: string }
-                        plano: { type: string }
-                        score: { type: integer, minimum: 0, maximum: 100 }
-                        risco_churn:
-                          type: string
-                          enum: [alto, medio, baixo]
-                        leads_30d: { type: integer }
-                        scans_30d: { type: integer }
-                        pagamento_em_dia: { type: boolean }
-                        elegivel_upsell: { type: boolean }
-                  sinais_upsell:
-                    type: array
-                    items:
-                      type: object
-                  performance_por_cidade:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        cidade: { type: string }
-                        lojas: { type: integer }
-                        leads_30d: { type: integer }
-                        scans_30d: { type: integer }
-                        taxa_conversao_pct: { type: integer }
-                  benchmarks_mercado:
-                    type: object
-                    properties:
-                      marcas_mais_cadastradas:
-                        type: array
-                        items:
-                          type: object
-                      ticket_medio_ativo: { type: number }
-                  jornada_lead:
-                    type: array
-                    items:
-                      type: object
-                  resumo:
-                    type: object
-                    properties:
-                      total_lojas: { type: integer }
-                      risco_alto: { type: integer }
-                      risco_medio: { type: integer }
-                      risco_baixo: { type: integer }
-                      total_elegivel_upsell: { type: integer }
+                $ref: "#/components/schemas/InteligenciaAdmin"
         "401":
           description: Unauthorized
         "403":
@@ -1531,6 +1465,174 @@ components:
       bearerFormat: JWT
 
   schemas:
+    ScoreSaude:
+      type: object
+      properties:
+        loja_id:
+          type: string
+          format: uuid
+        nome_fantasia:
+          type: string
+        plano:
+          type: string
+          enum: [starter, pro, full]
+        cidade:
+          type: ["string", "null"]
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        risco_churn:
+          type: string
+          enum: [alto, medio, baixo]
+        veiculos_ativos:
+          type: integer
+        leads_30d:
+          type: integer
+        scans_30d:
+          type: integer
+        total_leads:
+          type: integer
+        active_users:
+          type: integer
+        pagamento_em_dia:
+          type: boolean
+        elegivel_upsell:
+          type: boolean
+        mrr_potencial_upsell:
+          type: number
+      required:
+        - loja_id
+        - nome_fantasia
+        - plano
+        - score
+        - risco_churn
+        - leads_30d
+        - scans_30d
+        - pagamento_em_dia
+        - elegivel_upsell
+
+    MRRBreakdown:
+      type: object
+      properties:
+        total: { type: number }
+        novo: { type: number }
+        expandido: { type: number }
+        perdido: { type: number }
+      required: [total, novo, expandido, perdido]
+
+    LojaAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        razao_social:
+          type: string
+        nome_fantasia:
+          type: string
+        cnpj:
+          type: string
+        plano:
+          type: string
+          enum: [starter, pro, full]
+        ativo:
+          type: boolean
+        cidade:
+          type: ["string", "null"]
+        telefone:
+          type: ["string", "null"]
+        email_contato:
+          type: ["string", "null"]
+        criado_em:
+          type: string
+          format: date-time
+        veiculos_ativos:
+          type: integer
+        total_conversas:
+          type: integer
+        total_leads:
+          type: integer
+        leads_30d:
+          type: integer
+        scans_30d:
+          type: integer
+        ultima_fatura_status:
+          type: ["string", "null"]
+          enum: [aberto, pago, inadimplente, "null"]
+      required: [id, nome_fantasia, cnpj, plano, ativo]
+
+    DashboardAdmin:
+      type: object
+      properties:
+        mrr:
+          $ref: "#/components/schemas/MRRBreakdown"
+        total_lojas_ativas:
+          type: integer
+        total_veiculos_ativos:
+          type: integer
+        total_conversas:
+          type: integer
+        lojas:
+          type: array
+          items:
+            $ref: "#/components/schemas/LojaAdmin"
+      required: [mrr, total_lojas_ativas, total_veiculos_ativos, total_conversas, lojas]
+
+    InteligenciaAdmin:
+      type: object
+      properties:
+        scores_saude:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreSaude"
+        sinais_upsell:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreSaude"
+        performance_por_cidade:
+          type: array
+          items:
+            type: object
+            properties:
+              cidade: { type: string }
+              lojas: { type: integer }
+              leads_30d: { type: integer }
+              scans_30d: { type: integer }
+              media_leads_por_loja: { type: integer }
+              taxa_conversao_pct: { type: integer }
+              duracao_media_segundos: { type: number }
+        benchmarks_mercado:
+          type: object
+          properties:
+            marcas_mais_cadastradas:
+              type: array
+              items:
+                type: object
+                properties:
+                  marca: { type: string }
+                  total: { type: integer }
+            ticket_medio_ativo:
+              type: number
+        jornada_lead:
+          type: array
+          items:
+            type: object
+            properties:
+              interesse: { type: string }
+              total: { type: integer }
+              avg_duracao_segundos: { type: number }
+        resumo:
+          type: object
+          properties:
+            total_lojas: { type: integer }
+            risco_alto: { type: integer }
+            risco_medio: { type: integer }
+            risco_baixo: { type: integer }
+            total_elegivel_upsell: { type: integer }
+          required: [total_lojas, risco_alto, risco_medio, risco_baixo, total_elegivel_upsell]
+      required: [scores_saude, sinais_upsell, performance_por_cidade, benchmarks_mercado, jornada_lead, resumo]
+
     HealthStatus:
       type: object
       properties:

@@ -126,17 +126,26 @@ router.get(
       .select({ lojaId: ciclosBilling.lojaId, valor: ciclosBilling.valorTotal })
       .from(ciclosBilling)
       .where(eq(ciclosBilling.mesRef, mesRefAtual));
-    const ciclosAnterior = await db
-      .select({ lojaId: ciclosBilling.lojaId })
+    const ciclosAnteriorLista = await db
+      .select({ lojaId: ciclosBilling.lojaId, valor: ciclosBilling.valorTotal })
       .from(ciclosBilling)
       .where(eq(ciclosBilling.mesRef, anoMesAnterior));
 
-    const lojaIdsAnterior = new Set(ciclosAnterior.map((c) => c.lojaId));
+    const valorAnteriorPorLoja = new Map(ciclosAnteriorLista.map((c) => [c.lojaId, Number(c.valor)]));
+    const lojaIdsAnterior = new Set(ciclosAnteriorLista.map((c) => c.lojaId));
+
     const mrrNovo = ciclosAtual
       .filter((c) => !lojaIdsAnterior.has(c.lojaId))
       .reduce((s, c) => s + Number(c.valor), 0);
-    const mrrExpandido = 0;
-    const mrrPerdido = mrrAnterior - mrrAtualTotal > 0 ? mrrAnterior - mrrAtualTotal : 0;
+
+    const mrrExpandido = ciclosAtual
+      .filter((c) => lojaIdsAnterior.has(c.lojaId) && Number(c.valor) > (valorAnteriorPorLoja.get(c.lojaId) ?? 0))
+      .reduce((s, c) => s + Number(c.valor) - (valorAnteriorPorLoja.get(c.lojaId) ?? 0), 0);
+
+    const lojaIdsAtual = new Set(ciclosAtual.map((c) => c.lojaId));
+    const mrrPerdido = ciclosAnteriorLista
+      .filter((c) => !lojaIdsAtual.has(c.lojaId))
+      .reduce((s, c) => s + Number(c.valor), 0);
 
     const todasLojas = await db
       .select({
@@ -337,6 +346,47 @@ router.get(
       {} as Record<string, number>,
     );
 
+    const estoqueVeiculos = await db
+      .select({
+        id: veiculos.id,
+        placa: veiculos.placa,
+        marca: veiculos.marca,
+        modelo: veiculos.modelo,
+        ano_fabricacao: veiculos.anoFabricacao,
+        ano_modelo: veiculos.anoModelo,
+        quilometragem: veiculos.quilometragem,
+        preco_venda: veiculos.precoVenda,
+        status: veiculos.status,
+        criado_em: veiculos.criadoEm,
+      })
+      .from(veiculos)
+      .where(eq(veiculos.lojaId, lojaId))
+      .orderBy(desc(veiculos.criadoEm))
+      .limit(50);
+
+    let analise_conversas = {
+      total: totalConversas,
+      avg_duracao_segundos: 0,
+      com_lead_gerado: 0,
+      taxa_conversao_pct: 0,
+    };
+    if (veiculoIds.length > 0) {
+      const [durResult] = await db
+        .select({ avg: sql<string>`ROUND(AVG(${conversas.duracaoSegundos}), 0)` })
+        .from(conversas)
+        .where(and(inArray(conversas.veiculoId, veiculoIds), sql`${conversas.duracaoSegundos} IS NOT NULL`));
+      const [comLeadResult] = await db
+        .select({ total: count() })
+        .from(conversas)
+        .where(and(inArray(conversas.veiculoId, veiculoIds), sql`${conversas.leadId} IS NOT NULL`));
+      analise_conversas = {
+        total: totalConversas,
+        avg_duracao_segundos: Number(durResult?.avg ?? 0),
+        com_lead_gerado: comLeadResult.total,
+        taxa_conversao_pct: totalConversas > 0 ? Math.round((comLeadResult.total / totalConversas) * 100) : 0,
+      };
+    }
+
     res.json({
       id: loja.id,
       razao_social: loja.razaoSocial,
@@ -366,6 +416,18 @@ router.get(
       })),
       notas,
       interesse_distribuicao: Object.entries(interesseDist).map(([interesse, total]) => ({ interesse, total })),
+      estoque: estoqueVeiculos.map((v) => ({
+        id: v.id,
+        placa: v.placa,
+        marca: v.marca,
+        modelo: v.modelo,
+        ano_fabricacao: v.ano_fabricacao,
+        ano_modelo: v.ano_modelo,
+        quilometragem: v.quilometragem,
+        preco_venda: Number(v.preco_venda),
+        status: v.status,
+      })),
+      analise_conversas,
     });
   },
 );
@@ -591,26 +653,49 @@ router.get(
     const porCidade = scores.reduce(
       (acc, s) => {
         const cidade = s.cidade ?? "Não informada";
-        if (!acc[cidade]) acc[cidade] = { total: 0, leads: 0, scans: 0 };
+        if (!acc[cidade]) acc[cidade] = { total: 0, leads: 0, scans: 0, lojaIds: [] };
         acc[cidade].total++;
         acc[cidade].leads += s.leads_30d;
         acc[cidade].scans += s.scans_30d;
+        acc[cidade].lojaIds.push(s.loja_id);
         return acc;
       },
-      {} as Record<string, { total: number; leads: number; scans: number }>,
+      {} as Record<string, { total: number; leads: number; scans: number; lojaIds: string[] }>,
     );
 
-    const performancePorCidade = Object.entries(porCidade)
-      .map(([cidade, dados]) => ({
-        cidade,
-        lojas: dados.total,
-        leads_30d: dados.leads,
-        scans_30d: dados.scans,
-        media_leads_por_loja: dados.total > 0 ? Math.round(dados.leads / dados.total) : 0,
-        taxa_conversao_pct: dados.scans > 0 ? Math.round((dados.leads / dados.scans) * 100) : 0,
-      }))
-      .sort((a, b) => b.leads_30d - a.leads_30d)
-      .slice(0, 10);
+    const performancePorCidade = await Promise.all(
+      Object.entries(porCidade).map(async ([cidade, dados]) => {
+        let avgDuration = 0;
+        try {
+          const allVeicIds: string[] = [];
+          for (const lojaId of dados.lojaIds) {
+            const ids = await getVeiculoIdsByLoja(lojaId);
+            allVeicIds.push(...ids);
+          }
+          if (allVeicIds.length > 0) {
+            const [durResult] = await db
+              .select({ avg: sql<string>`ROUND(AVG(${conversas.duracaoSegundos}), 0)` })
+              .from(conversas)
+              .where(and(
+                inArray(conversas.veiculoId, allVeicIds),
+                sql`${conversas.duracaoSegundos} IS NOT NULL`,
+              ));
+            avgDuration = Number(durResult?.avg ?? 0);
+          }
+        } catch {}
+        return {
+          cidade,
+          lojas: dados.total,
+          leads_30d: dados.leads,
+          scans_30d: dados.scans,
+          media_leads_por_loja: dados.total > 0 ? Math.round(dados.leads / dados.total) : 0,
+          taxa_conversao_pct: dados.scans > 0 ? Math.round((dados.leads / dados.scans) * 100) : 0,
+          duracao_media_segundos: avgDuration,
+        };
+      }),
+    );
+    performancePorCidade.sort((a, b) => b.leads_30d - a.leads_30d);
+    const performancePorCidadeTop = performancePorCidade.slice(0, 10);
 
     const benchmarks = await db
       .select({ marca: veiculos.marca, total: count() })
@@ -625,8 +710,13 @@ router.get(
       .where(eq(veiculos.status, "ativo"));
 
     const leadsJornada = await db
-      .select({ interesse: leads.interesse, total: count() })
+      .select({
+        interesse: leads.interesse,
+        total: count(),
+        avg_duracao: sql<string>`ROUND(AVG(${conversas.duracaoSegundos}), 0)`,
+      })
       .from(leads)
+      .leftJoin(conversas, eq(conversas.leadId, leads.id))
       .groupBy(leads.interesse)
       .orderBy(desc(count()))
       .limit(10);
@@ -634,12 +724,16 @@ router.get(
     res.json({
       scores_saude: scores,
       sinais_upsell: sinaisUpsell,
-      performance_por_cidade: performancePorCidade,
+      performance_por_cidade: performancePorCidadeTop,
       benchmarks_mercado: {
         marcas_mais_cadastradas: benchmarks.map((b) => ({ marca: b.marca, total: b.total })),
         ticket_medio_ativo: Number(ticketMedioResult[0]?.media ?? 0),
       },
-      jornada_lead: leadsJornada.map((l) => ({ interesse: l.interesse ?? "Não informado", total: l.total })),
+      jornada_lead: leadsJornada.map((l) => ({
+        interesse: l.interesse ?? "Não informado",
+        total: l.total,
+        avg_duracao_segundos: Number(l.avg_duracao ?? 0),
+      })),
       resumo: {
         total_lojas: scores.length,
         risco_alto: scores.filter((s) => s.risco_churn === "alto").length,

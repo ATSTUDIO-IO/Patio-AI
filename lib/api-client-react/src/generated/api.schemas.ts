@@ -5,6 +5,150 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type ScoreSaudePlano =
+  (typeof ScoreSaudePlano)[keyof typeof ScoreSaudePlano];
+
+export const ScoreSaudePlano = {
+  starter: "starter",
+  pro: "pro",
+  full: "full",
+} as const;
+
+export type ScoreSaudeRiscoChurn =
+  (typeof ScoreSaudeRiscoChurn)[keyof typeof ScoreSaudeRiscoChurn];
+
+export const ScoreSaudeRiscoChurn = {
+  alto: "alto",
+  medio: "medio",
+  baixo: "baixo",
+} as const;
+
+export interface ScoreSaude {
+  loja_id: string;
+  nome_fantasia: string;
+  plano: ScoreSaudePlano;
+  /** @nullable */
+  cidade?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  score: number;
+  risco_churn: ScoreSaudeRiscoChurn;
+  veiculos_ativos?: number;
+  leads_30d: number;
+  scans_30d: number;
+  total_leads?: number;
+  active_users?: number;
+  pagamento_em_dia: boolean;
+  elegivel_upsell: boolean;
+  mrr_potencial_upsell?: number;
+}
+
+export interface MRRBreakdown {
+  total: number;
+  novo: number;
+  expandido: number;
+  perdido: number;
+}
+
+export type LojaAdminPlano =
+  (typeof LojaAdminPlano)[keyof typeof LojaAdminPlano];
+
+export const LojaAdminPlano = {
+  starter: "starter",
+  pro: "pro",
+  full: "full",
+} as const;
+
+/**
+ * @nullable
+ */
+export type LojaAdminUltimaFaturaStatus =
+  | (typeof LojaAdminUltimaFaturaStatus)[keyof typeof LojaAdminUltimaFaturaStatus]
+  | null;
+
+export const LojaAdminUltimaFaturaStatus = {
+  aberto: "aberto",
+  pago: "pago",
+  inadimplente: "inadimplente",
+  null: "null",
+} as const;
+
+export interface LojaAdmin {
+  id: string;
+  razao_social?: string;
+  nome_fantasia: string;
+  cnpj: string;
+  plano: LojaAdminPlano;
+  ativo: boolean;
+  /** @nullable */
+  cidade?: string | null;
+  /** @nullable */
+  telefone?: string | null;
+  /** @nullable */
+  email_contato?: string | null;
+  criado_em?: string;
+  veiculos_ativos?: number;
+  total_conversas?: number;
+  total_leads?: number;
+  leads_30d?: number;
+  scans_30d?: number;
+  /** @nullable */
+  ultima_fatura_status?: LojaAdminUltimaFaturaStatus;
+}
+
+export interface DashboardAdmin {
+  mrr: MRRBreakdown;
+  total_lojas_ativas: number;
+  total_veiculos_ativos: number;
+  total_conversas: number;
+  lojas: LojaAdmin[];
+}
+
+export type InteligenciaAdminPerformancePorCidadeItem = {
+  cidade?: string;
+  lojas?: number;
+  leads_30d?: number;
+  scans_30d?: number;
+  media_leads_por_loja?: number;
+  taxa_conversao_pct?: number;
+  duracao_media_segundos?: number;
+};
+
+export type InteligenciaAdminBenchmarksMercadoMarcasMaisCadastradasItem = {
+  marca?: string;
+  total?: number;
+};
+
+export type InteligenciaAdminBenchmarksMercado = {
+  marcas_mais_cadastradas?: InteligenciaAdminBenchmarksMercadoMarcasMaisCadastradasItem[];
+  ticket_medio_ativo?: number;
+};
+
+export type InteligenciaAdminJornadaLeadItem = {
+  interesse?: string;
+  total?: number;
+  avg_duracao_segundos?: number;
+};
+
+export type InteligenciaAdminResumo = {
+  total_lojas: number;
+  risco_alto: number;
+  risco_medio: number;
+  risco_baixo: number;
+  total_elegivel_upsell: number;
+};
+
+export interface InteligenciaAdmin {
+  scores_saude: ScoreSaude[];
+  sinais_upsell: ScoreSaude[];
+  performance_por_cidade: InteligenciaAdminPerformancePorCidadeItem[];
+  benchmarks_mercado: InteligenciaAdminBenchmarksMercado;
+  jornada_lead: InteligenciaAdminJornadaLeadItem[];
+  resumo: InteligenciaAdminResumo;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -17,6 +161,15 @@ export interface MessageResponse {
   message: string;
 }
 
+export type RegisterRequestPlano =
+  (typeof RegisterRequestPlano)[keyof typeof RegisterRequestPlano];
+
+export const RegisterRequestPlano = {
+  starter: "starter",
+  pro: "pro",
+  full: "full",
+} as const;
+
 export interface RegisterRequest {
   razao_social: string;
   nome_fantasia: string;
@@ -28,7 +181,7 @@ export interface RegisterRequest {
   telefone?: string | null;
   /** @nullable */
   cidade?: string | null;
-  plano?: "starter" | "pro" | "full";
+  plano?: RegisterRequestPlano;
 }
 
 export interface LoginRequest {
@@ -76,10 +229,6 @@ export interface LojaPublic {
   plano: LojaPublicPlano;
   ativo: boolean;
   /** @nullable */
-  nome_agente?: string | null;
-  /** @nullable */
-  tom_agente?: string | null;
-  /** @nullable */
   criado_em?: string | null;
 }
 
@@ -101,8 +250,6 @@ export interface UpdateLojaRequest {
   email_contato?: string;
   /** @nullable */
   cidade?: string | null;
-  nome_agente?: string;
-  tom_agente?: string;
 }
 
 export interface CreateVendedorRequest {
@@ -917,4 +1064,81 @@ export type ListConversasParams = {
    * @minimum 0
    */
   offset?: number;
+};
+
+export type GetAdminStats200 = {
+  total_lojas_ativas?: number;
+  total_veiculos_ativos?: number;
+  total_conversas?: number;
+  receita_total?: number;
+  mrr_mes_atual?: number;
+};
+
+export type GetAdminLojasParams = {
+  plano?: GetAdminLojasPlano;
+  status?: GetAdminLojasStatus;
+  cidade?: string;
+  atividade?: GetAdminLojasAtividade;
+};
+
+export type GetAdminLojasPlano =
+  (typeof GetAdminLojasPlano)[keyof typeof GetAdminLojasPlano];
+
+export const GetAdminLojasPlano = {
+  starter: "starter",
+  pro: "pro",
+  full: "full",
+} as const;
+
+export type GetAdminLojasStatus =
+  (typeof GetAdminLojasStatus)[keyof typeof GetAdminLojasStatus];
+
+export const GetAdminLojasStatus = {
+  ativa: "ativa",
+  inativa: "inativa",
+} as const;
+
+export type GetAdminLojasAtividade =
+  (typeof GetAdminLojasAtividade)[keyof typeof GetAdminLojasAtividade];
+
+export const GetAdminLojasAtividade = {
+  ativa: "ativa",
+  inativa: "inativa",
+} as const;
+
+export type GetAdminLojas200Item = { [key: string]: unknown };
+
+export type GetAdminLojasLojaId200 = { [key: string]: unknown };
+
+export type PatchAdminLojasLojaIdStatusBody = {
+  ativo: boolean;
+};
+
+export type PatchAdminLojasLojaIdPlanoBodyPlano =
+  (typeof PatchAdminLojasLojaIdPlanoBodyPlano)[keyof typeof PatchAdminLojasLojaIdPlanoBodyPlano];
+
+export const PatchAdminLojasLojaIdPlanoBodyPlano = {
+  starter: "starter",
+  pro: "pro",
+  full: "full",
+} as const;
+
+export type PatchAdminLojasLojaIdPlanoBody = {
+  plano: PatchAdminLojasLojaIdPlanoBodyPlano;
+};
+
+export type PostAdminLojasLojaIdNotasBody = {
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  conteudo: string;
+};
+
+export type PatchAdminBillingCicloIdPago200 = {
+  id?: string;
+  mes_ref?: string;
+  status?: string;
+  pago_em?: string;
+  valor_total?: number;
 };

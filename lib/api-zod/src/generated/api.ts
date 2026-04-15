@@ -80,8 +80,6 @@ export const GetMeResponse = zod.object({
         cidade: zod.string().nullish(),
         plano: zod.enum(["starter", "pro", "full"]),
         ativo: zod.boolean(),
-        nome_agente: zod.string().nullish(),
-        tom_agente: zod.string().nullish(),
         criado_em: zod.coerce.date().nullish(),
       }),
       zod.null(),
@@ -102,8 +100,6 @@ export const UpdateLojaBody = zod.object({
   telefone: zod.string().nullish(),
   email_contato: zod.string().optional(),
   cidade: zod.string().nullish(),
-  nome_agente: zod.string().optional(),
-  tom_agente: zod.string().optional(),
 });
 
 export const UpdateLojaResponse = zod.object({
@@ -116,8 +112,6 @@ export const UpdateLojaResponse = zod.object({
   cidade: zod.string().nullish(),
   plano: zod.enum(["starter", "pro", "full"]),
   ativo: zod.boolean(),
-  nome_agente: zod.string().nullish(),
-  tom_agente: zod.string().nullish(),
   criado_em: zod.coerce.date().nullish(),
 });
 
@@ -981,4 +975,221 @@ export const GetVeiculoPublicoResponse = zod.object({
     ])
     .optional(),
   mensagem: zod.string().nullish(),
+});
+
+/**
+ * @summary Admin platform stats
+ */
+export const GetAdminStatsResponse = zod.object({
+  total_lojas_ativas: zod.number().optional(),
+  total_veiculos_ativos: zod.number().optional(),
+  total_conversas: zod.number().optional(),
+  receita_total: zod.number().optional(),
+  mrr_mes_atual: zod.number().optional(),
+});
+
+/**
+ * @summary Admin dashboard with MRR breakdown and store list
+ */
+export const GetAdminDashboardResponse = zod.object({
+  mrr: zod.object({
+    total: zod.number(),
+    novo: zod.number(),
+    expandido: zod.number(),
+    perdido: zod.number(),
+  }),
+  total_lojas_ativas: zod.number(),
+  total_veiculos_ativos: zod.number(),
+  total_conversas: zod.number(),
+  lojas: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      razao_social: zod.string().optional(),
+      nome_fantasia: zod.string(),
+      cnpj: zod.string(),
+      plano: zod.enum(["starter", "pro", "full"]),
+      ativo: zod.boolean(),
+      cidade: zod.string().nullish(),
+      telefone: zod.string().nullish(),
+      email_contato: zod.string().nullish(),
+      criado_em: zod.coerce.date().optional(),
+      veiculos_ativos: zod.number().optional(),
+      total_conversas: zod.number().optional(),
+      total_leads: zod.number().optional(),
+      leads_30d: zod.number().optional(),
+      scans_30d: zod.number().optional(),
+      ultima_fatura_status: zod
+        .enum(["aberto", "pago", "inadimplente", "null"])
+        .nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary List all stores with optional filters
+ */
+export const GetAdminLojasQueryParams = zod.object({
+  plano: zod.enum(["starter", "pro", "full"]).optional(),
+  status: zod.enum(["ativa", "inativa"]).optional(),
+  cidade: zod.coerce.string().optional(),
+  atividade: zod.enum(["ativa", "inativa"]).optional(),
+});
+
+export const GetAdminLojasResponseItem = zod.object({}).passthrough();
+export const GetAdminLojasResponse = zod.array(GetAdminLojasResponseItem);
+
+/**
+ * @summary Get store detail including users, invoices, notes, analytics
+ */
+export const GetAdminLojasLojaIdParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+});
+
+export const GetAdminLojasLojaIdResponse = zod.object({}).passthrough();
+
+/**
+ * @summary Toggle store active status
+ */
+export const PatchAdminLojasLojaIdStatusParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+});
+
+export const PatchAdminLojasLojaIdStatusBody = zod.object({
+  ativo: zod.boolean(),
+});
+
+/**
+ * @summary Change store subscription plan
+ */
+export const PatchAdminLojasLojaIdPlanoParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+});
+
+export const PatchAdminLojasLojaIdPlanoBody = zod.object({
+  plano: zod.enum(["starter", "pro", "full"]),
+});
+
+/**
+ * @summary Add internal note to a store
+ */
+export const PostAdminLojasLojaIdNotasParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+});
+
+export const postAdminLojasLojaIdNotasBodyConteudoMax = 2000;
+
+export const PostAdminLojasLojaIdNotasBody = zod.object({
+  conteudo: zod.string().min(1).max(postAdminLojasLojaIdNotasBodyConteudoMax),
+});
+
+/**
+ * @summary Export store data as CSV (vehicles, leads, conversations)
+ */
+export const GetAdminLojasLojaIdExportarParams = zod.object({
+  lojaId: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Mark a billing cycle as paid
+ */
+export const PatchAdminBillingCicloIdPagoParams = zod.object({
+  cicloId: zod.coerce.string().uuid(),
+});
+
+export const PatchAdminBillingCicloIdPagoResponse = zod.object({
+  id: zod.string().uuid().optional(),
+  mes_ref: zod.string().optional(),
+  status: zod.string().optional(),
+  pago_em: zod.coerce.date().optional(),
+  valor_total: zod.number().optional(),
+});
+
+/**
+ * @summary Store health scores, churn risk, upsell signals, city performance (with avg duration), market benchmarks, and lead journey patterns
+ */
+export const getAdminInteligenciaResponseScoresSaudeItemScoreMin = 0;
+export const getAdminInteligenciaResponseScoresSaudeItemScoreMax = 100;
+
+export const getAdminInteligenciaResponseSinaisUpsellItemScoreMin = 0;
+export const getAdminInteligenciaResponseSinaisUpsellItemScoreMax = 100;
+
+export const GetAdminInteligenciaResponse = zod.object({
+  scores_saude: zod.array(
+    zod.object({
+      loja_id: zod.string().uuid(),
+      nome_fantasia: zod.string(),
+      plano: zod.enum(["starter", "pro", "full"]),
+      cidade: zod.string().nullish(),
+      score: zod
+        .number()
+        .min(getAdminInteligenciaResponseScoresSaudeItemScoreMin)
+        .max(getAdminInteligenciaResponseScoresSaudeItemScoreMax),
+      risco_churn: zod.enum(["alto", "medio", "baixo"]),
+      veiculos_ativos: zod.number().optional(),
+      leads_30d: zod.number(),
+      scans_30d: zod.number(),
+      total_leads: zod.number().optional(),
+      active_users: zod.number().optional(),
+      pagamento_em_dia: zod.boolean(),
+      elegivel_upsell: zod.boolean(),
+      mrr_potencial_upsell: zod.number().optional(),
+    }),
+  ),
+  sinais_upsell: zod.array(
+    zod.object({
+      loja_id: zod.string().uuid(),
+      nome_fantasia: zod.string(),
+      plano: zod.enum(["starter", "pro", "full"]),
+      cidade: zod.string().nullish(),
+      score: zod
+        .number()
+        .min(getAdminInteligenciaResponseSinaisUpsellItemScoreMin)
+        .max(getAdminInteligenciaResponseSinaisUpsellItemScoreMax),
+      risco_churn: zod.enum(["alto", "medio", "baixo"]),
+      veiculos_ativos: zod.number().optional(),
+      leads_30d: zod.number(),
+      scans_30d: zod.number(),
+      total_leads: zod.number().optional(),
+      active_users: zod.number().optional(),
+      pagamento_em_dia: zod.boolean(),
+      elegivel_upsell: zod.boolean(),
+      mrr_potencial_upsell: zod.number().optional(),
+    }),
+  ),
+  performance_por_cidade: zod.array(
+    zod.object({
+      cidade: zod.string().optional(),
+      lojas: zod.number().optional(),
+      leads_30d: zod.number().optional(),
+      scans_30d: zod.number().optional(),
+      media_leads_por_loja: zod.number().optional(),
+      taxa_conversao_pct: zod.number().optional(),
+      duracao_media_segundos: zod.number().optional(),
+    }),
+  ),
+  benchmarks_mercado: zod.object({
+    marcas_mais_cadastradas: zod
+      .array(
+        zod.object({
+          marca: zod.string().optional(),
+          total: zod.number().optional(),
+        }),
+      )
+      .optional(),
+    ticket_medio_ativo: zod.number().optional(),
+  }),
+  jornada_lead: zod.array(
+    zod.object({
+      interesse: zod.string().optional(),
+      total: zod.number().optional(),
+      avg_duracao_segundos: zod.number().optional(),
+    }),
+  ),
+  resumo: zod.object({
+    total_lojas: zod.number(),
+    risco_alto: zod.number(),
+    risco_medio: zod.number(),
+    risco_baixo: zod.number(),
+    total_elegivel_upsell: zod.number(),
+  }),
 });

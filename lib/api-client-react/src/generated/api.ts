@@ -25,6 +25,7 @@ import type {
   CreateFinanciamentoRequest,
   CreateVeiculoRequest,
   CreateVendedorRequest,
+  DashboardAdmin,
   EncerrarSessaoRequest,
   EncerrarSessaoResponse,
   ErrorResponse,
@@ -32,9 +33,14 @@ import type {
   FaturaAtual,
   FecharBillingResponse,
   FinanciamentoResponse,
+  GetAdminLojas200Item,
+  GetAdminLojasLojaId200,
+  GetAdminLojasParams,
+  GetAdminStats200,
   HealthStatus,
   IniciarSessaoRequest,
   IniciarSessaoResponse,
+  InteligenciaAdmin,
   LeadDetail,
   LeadListItem,
   ListConversasParams,
@@ -47,9 +53,13 @@ import type {
   MensagemAgenteRequest,
   MensagemAgenteResponse,
   MessageResponse,
+  PatchAdminBillingCicloIdPago200,
+  PatchAdminLojasLojaIdPlanoBody,
+  PatchAdminLojasLojaIdStatusBody,
   PatchLeadStatusRequest,
   PatchLeadStatusResponse,
   PatchStatusRequest,
+  PostAdminLojasLojaIdNotasBody,
   RegisterRequest,
   SimularFinanciamentoRequest,
   SimularFinanciamentoResponse,
@@ -2856,6 +2866,860 @@ export function useGetVeiculoPublico<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetVeiculoPublicoQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Admin platform stats
+ */
+export const getGetAdminStatsUrl = () => {
+  return `/api/admin/stats`;
+};
+
+export const getAdminStats = async (
+  options?: RequestInit,
+): Promise<GetAdminStats200> => {
+  return customFetch<GetAdminStats200>(getGetAdminStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminStatsQueryKey = () => {
+  return [`/api/admin/stats`] as const;
+};
+
+export const getGetAdminStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminStats>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminStats>>> = ({
+    signal,
+  }) => getAdminStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminStats>>
+>;
+export type GetAdminStatsQueryError = ErrorType<void>;
+
+/**
+ * @summary Admin platform stats
+ */
+
+export function useGetAdminStats<
+  TData = Awaited<ReturnType<typeof getAdminStats>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Admin dashboard with MRR breakdown and store list
+ */
+export const getGetAdminDashboardUrl = () => {
+  return `/api/admin/dashboard`;
+};
+
+export const getAdminDashboard = async (
+  options?: RequestInit,
+): Promise<DashboardAdmin> => {
+  return customFetch<DashboardAdmin>(getGetAdminDashboardUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminDashboardQueryKey = () => {
+  return [`/api/admin/dashboard`] as const;
+};
+
+export const getGetAdminDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminDashboard>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminDashboardQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAdminDashboard>>
+  > = ({ signal }) => getAdminDashboard({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminDashboard>>
+>;
+export type GetAdminDashboardQueryError = ErrorType<void>;
+
+/**
+ * @summary Admin dashboard with MRR breakdown and store list
+ */
+
+export function useGetAdminDashboard<
+  TData = Awaited<ReturnType<typeof getAdminDashboard>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminDashboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all stores with optional filters
+ */
+export const getGetAdminLojasUrl = (params?: GetAdminLojasParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/lojas?${stringifiedParams}`
+    : `/api/admin/lojas`;
+};
+
+export const getAdminLojas = async (
+  params?: GetAdminLojasParams,
+  options?: RequestInit,
+): Promise<GetAdminLojas200Item[]> => {
+  return customFetch<GetAdminLojas200Item[]>(getGetAdminLojasUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminLojasQueryKey = (params?: GetAdminLojasParams) => {
+  return [`/api/admin/lojas`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetAdminLojasQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminLojas>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetAdminLojasParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdminLojas>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminLojasQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminLojas>>> = ({
+    signal,
+  }) => getAdminLojas(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminLojas>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminLojasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminLojas>>
+>;
+export type GetAdminLojasQueryError = ErrorType<void>;
+
+/**
+ * @summary List all stores with optional filters
+ */
+
+export function useGetAdminLojas<
+  TData = Awaited<ReturnType<typeof getAdminLojas>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetAdminLojasParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdminLojas>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminLojasQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get store detail including users, invoices, notes, analytics
+ */
+export const getGetAdminLojasLojaIdUrl = (lojaId: string) => {
+  return `/api/admin/lojas/${lojaId}`;
+};
+
+export const getAdminLojasLojaId = async (
+  lojaId: string,
+  options?: RequestInit,
+): Promise<GetAdminLojasLojaId200> => {
+  return customFetch<GetAdminLojasLojaId200>(
+    getGetAdminLojasLojaIdUrl(lojaId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetAdminLojasLojaIdQueryKey = (lojaId: string) => {
+  return [`/api/admin/lojas/${lojaId}`] as const;
+};
+
+export const getGetAdminLojasLojaIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminLojasLojaId>>,
+  TError = ErrorType<void>,
+>(
+  lojaId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdminLojasLojaId>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAdminLojasLojaIdQueryKey(lojaId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAdminLojasLojaId>>
+  > = ({ signal }) =>
+    getAdminLojasLojaId(lojaId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!lojaId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminLojasLojaId>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminLojasLojaIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminLojasLojaId>>
+>;
+export type GetAdminLojasLojaIdQueryError = ErrorType<void>;
+
+/**
+ * @summary Get store detail including users, invoices, notes, analytics
+ */
+
+export function useGetAdminLojasLojaId<
+  TData = Awaited<ReturnType<typeof getAdminLojasLojaId>>,
+  TError = ErrorType<void>,
+>(
+  lojaId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdminLojasLojaId>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminLojasLojaIdQueryOptions(lojaId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Toggle store active status
+ */
+export const getPatchAdminLojasLojaIdStatusUrl = (lojaId: string) => {
+  return `/api/admin/lojas/${lojaId}/status`;
+};
+
+export const patchAdminLojasLojaIdStatus = async (
+  lojaId: string,
+  patchAdminLojasLojaIdStatusBody: PatchAdminLojasLojaIdStatusBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getPatchAdminLojasLojaIdStatusUrl(lojaId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(patchAdminLojasLojaIdStatusBody),
+  });
+};
+
+export const getPatchAdminLojasLojaIdStatusMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchAdminLojasLojaIdStatus>>,
+    TError,
+    { lojaId: string; data: BodyType<PatchAdminLojasLojaIdStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof patchAdminLojasLojaIdStatus>>,
+  TError,
+  { lojaId: string; data: BodyType<PatchAdminLojasLojaIdStatusBody> },
+  TContext
+> => {
+  const mutationKey = ["patchAdminLojasLojaIdStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof patchAdminLojasLojaIdStatus>>,
+    { lojaId: string; data: BodyType<PatchAdminLojasLojaIdStatusBody> }
+  > = (props) => {
+    const { lojaId, data } = props ?? {};
+
+    return patchAdminLojasLojaIdStatus(lojaId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PatchAdminLojasLojaIdStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchAdminLojasLojaIdStatus>>
+>;
+export type PatchAdminLojasLojaIdStatusMutationBody =
+  BodyType<PatchAdminLojasLojaIdStatusBody>;
+export type PatchAdminLojasLojaIdStatusMutationError = ErrorType<void>;
+
+/**
+ * @summary Toggle store active status
+ */
+export const usePatchAdminLojasLojaIdStatus = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchAdminLojasLojaIdStatus>>,
+    TError,
+    { lojaId: string; data: BodyType<PatchAdminLojasLojaIdStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof patchAdminLojasLojaIdStatus>>,
+  TError,
+  { lojaId: string; data: BodyType<PatchAdminLojasLojaIdStatusBody> },
+  TContext
+> => {
+  return useMutation(getPatchAdminLojasLojaIdStatusMutationOptions(options));
+};
+
+/**
+ * @summary Change store subscription plan
+ */
+export const getPatchAdminLojasLojaIdPlanoUrl = (lojaId: string) => {
+  return `/api/admin/lojas/${lojaId}/plano`;
+};
+
+export const patchAdminLojasLojaIdPlano = async (
+  lojaId: string,
+  patchAdminLojasLojaIdPlanoBody: PatchAdminLojasLojaIdPlanoBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getPatchAdminLojasLojaIdPlanoUrl(lojaId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(patchAdminLojasLojaIdPlanoBody),
+  });
+};
+
+export const getPatchAdminLojasLojaIdPlanoMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchAdminLojasLojaIdPlano>>,
+    TError,
+    { lojaId: string; data: BodyType<PatchAdminLojasLojaIdPlanoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof patchAdminLojasLojaIdPlano>>,
+  TError,
+  { lojaId: string; data: BodyType<PatchAdminLojasLojaIdPlanoBody> },
+  TContext
+> => {
+  const mutationKey = ["patchAdminLojasLojaIdPlano"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof patchAdminLojasLojaIdPlano>>,
+    { lojaId: string; data: BodyType<PatchAdminLojasLojaIdPlanoBody> }
+  > = (props) => {
+    const { lojaId, data } = props ?? {};
+
+    return patchAdminLojasLojaIdPlano(lojaId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PatchAdminLojasLojaIdPlanoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchAdminLojasLojaIdPlano>>
+>;
+export type PatchAdminLojasLojaIdPlanoMutationBody =
+  BodyType<PatchAdminLojasLojaIdPlanoBody>;
+export type PatchAdminLojasLojaIdPlanoMutationError = ErrorType<void>;
+
+/**
+ * @summary Change store subscription plan
+ */
+export const usePatchAdminLojasLojaIdPlano = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchAdminLojasLojaIdPlano>>,
+    TError,
+    { lojaId: string; data: BodyType<PatchAdminLojasLojaIdPlanoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof patchAdminLojasLojaIdPlano>>,
+  TError,
+  { lojaId: string; data: BodyType<PatchAdminLojasLojaIdPlanoBody> },
+  TContext
+> => {
+  return useMutation(getPatchAdminLojasLojaIdPlanoMutationOptions(options));
+};
+
+/**
+ * @summary Add internal note to a store
+ */
+export const getPostAdminLojasLojaIdNotasUrl = (lojaId: string) => {
+  return `/api/admin/lojas/${lojaId}/notas`;
+};
+
+export const postAdminLojasLojaIdNotas = async (
+  lojaId: string,
+  postAdminLojasLojaIdNotasBody: PostAdminLojasLojaIdNotasBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getPostAdminLojasLojaIdNotasUrl(lojaId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(postAdminLojasLojaIdNotasBody),
+  });
+};
+
+export const getPostAdminLojasLojaIdNotasMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAdminLojasLojaIdNotas>>,
+    TError,
+    { lojaId: string; data: BodyType<PostAdminLojasLojaIdNotasBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postAdminLojasLojaIdNotas>>,
+  TError,
+  { lojaId: string; data: BodyType<PostAdminLojasLojaIdNotasBody> },
+  TContext
+> => {
+  const mutationKey = ["postAdminLojasLojaIdNotas"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postAdminLojasLojaIdNotas>>,
+    { lojaId: string; data: BodyType<PostAdminLojasLojaIdNotasBody> }
+  > = (props) => {
+    const { lojaId, data } = props ?? {};
+
+    return postAdminLojasLojaIdNotas(lojaId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostAdminLojasLojaIdNotasMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postAdminLojasLojaIdNotas>>
+>;
+export type PostAdminLojasLojaIdNotasMutationBody =
+  BodyType<PostAdminLojasLojaIdNotasBody>;
+export type PostAdminLojasLojaIdNotasMutationError = ErrorType<void>;
+
+/**
+ * @summary Add internal note to a store
+ */
+export const usePostAdminLojasLojaIdNotas = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postAdminLojasLojaIdNotas>>,
+    TError,
+    { lojaId: string; data: BodyType<PostAdminLojasLojaIdNotasBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof postAdminLojasLojaIdNotas>>,
+  TError,
+  { lojaId: string; data: BodyType<PostAdminLojasLojaIdNotasBody> },
+  TContext
+> => {
+  return useMutation(getPostAdminLojasLojaIdNotasMutationOptions(options));
+};
+
+/**
+ * @summary Export store data as CSV (vehicles, leads, conversations)
+ */
+export const getGetAdminLojasLojaIdExportarUrl = (lojaId: string) => {
+  return `/api/admin/lojas/${lojaId}/exportar`;
+};
+
+export const getAdminLojasLojaIdExportar = async (
+  lojaId: string,
+  options?: RequestInit,
+): Promise<string> => {
+  return customFetch<string>(getGetAdminLojasLojaIdExportarUrl(lojaId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminLojasLojaIdExportarQueryKey = (lojaId: string) => {
+  return [`/api/admin/lojas/${lojaId}/exportar`] as const;
+};
+
+export const getGetAdminLojasLojaIdExportarQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminLojasLojaIdExportar>>,
+  TError = ErrorType<void>,
+>(
+  lojaId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdminLojasLojaIdExportar>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAdminLojasLojaIdExportarQueryKey(lojaId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAdminLojasLojaIdExportar>>
+  > = ({ signal }) =>
+    getAdminLojasLojaIdExportar(lojaId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!lojaId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminLojasLojaIdExportar>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminLojasLojaIdExportarQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminLojasLojaIdExportar>>
+>;
+export type GetAdminLojasLojaIdExportarQueryError = ErrorType<void>;
+
+/**
+ * @summary Export store data as CSV (vehicles, leads, conversations)
+ */
+
+export function useGetAdminLojasLojaIdExportar<
+  TData = Awaited<ReturnType<typeof getAdminLojasLojaIdExportar>>,
+  TError = ErrorType<void>,
+>(
+  lojaId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdminLojasLojaIdExportar>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminLojasLojaIdExportarQueryOptions(
+    lojaId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Mark a billing cycle as paid
+ */
+export const getPatchAdminBillingCicloIdPagoUrl = (cicloId: string) => {
+  return `/api/admin/billing/${cicloId}/pago`;
+};
+
+export const patchAdminBillingCicloIdPago = async (
+  cicloId: string,
+  options?: RequestInit,
+): Promise<PatchAdminBillingCicloIdPago200> => {
+  return customFetch<PatchAdminBillingCicloIdPago200>(
+    getPatchAdminBillingCicloIdPagoUrl(cicloId),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getPatchAdminBillingCicloIdPagoMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchAdminBillingCicloIdPago>>,
+    TError,
+    { cicloId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof patchAdminBillingCicloIdPago>>,
+  TError,
+  { cicloId: string },
+  TContext
+> => {
+  const mutationKey = ["patchAdminBillingCicloIdPago"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof patchAdminBillingCicloIdPago>>,
+    { cicloId: string }
+  > = (props) => {
+    const { cicloId } = props ?? {};
+
+    return patchAdminBillingCicloIdPago(cicloId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PatchAdminBillingCicloIdPagoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchAdminBillingCicloIdPago>>
+>;
+
+export type PatchAdminBillingCicloIdPagoMutationError = ErrorType<void>;
+
+/**
+ * @summary Mark a billing cycle as paid
+ */
+export const usePatchAdminBillingCicloIdPago = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchAdminBillingCicloIdPago>>,
+    TError,
+    { cicloId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof patchAdminBillingCicloIdPago>>,
+  TError,
+  { cicloId: string },
+  TContext
+> => {
+  return useMutation(getPatchAdminBillingCicloIdPagoMutationOptions(options));
+};
+
+/**
+ * @summary Store health scores, churn risk, upsell signals, city performance (with avg duration), market benchmarks, and lead journey patterns
+ */
+export const getGetAdminInteligenciaUrl = () => {
+  return `/api/admin/inteligencia`;
+};
+
+export const getAdminInteligencia = async (
+  options?: RequestInit,
+): Promise<InteligenciaAdmin> => {
+  return customFetch<InteligenciaAdmin>(getGetAdminInteligenciaUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminInteligenciaQueryKey = () => {
+  return [`/api/admin/inteligencia`] as const;
+};
+
+export const getGetAdminInteligenciaQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminInteligencia>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminInteligencia>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminInteligenciaQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAdminInteligencia>>
+  > = ({ signal }) => getAdminInteligencia({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminInteligencia>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminInteligenciaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminInteligencia>>
+>;
+export type GetAdminInteligenciaQueryError = ErrorType<void>;
+
+/**
+ * @summary Store health scores, churn risk, upsell signals, city performance (with avg duration), market benchmarks, and lead journey patterns
+ */
+
+export function useGetAdminInteligencia<
+  TData = Awaited<ReturnType<typeof getAdminInteligencia>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminInteligencia>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminInteligenciaQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

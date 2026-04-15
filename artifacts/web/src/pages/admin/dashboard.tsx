@@ -41,6 +41,8 @@ export default function AdminDashboard() {
   const [erro, setErro] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const [churnData, setChurnData] = useState<{ risco_alto: number; risco_medio: number; risco_baixo: number } | null>(null);
+
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "ativa" | "inativa">("todas");
   const [filtroPlano, setFiltroPlano] = useState<"" | "starter" | "pro" | "full">("");
   const [filtroCidade, setFiltroCidade] = useState("");
@@ -58,13 +60,15 @@ export default function AdminDashboard() {
       if (filtroCidade.trim()) params.set("cidade", filtroCidade.trim());
       if (filtroAtividade) params.set("atividade", filtroAtividade);
 
-      const [dashResp, lojasResp] = await Promise.all([
+      const [dashResp, lojasResp, intResp] = await Promise.all([
         fetch("/api/admin/dashboard", { headers }),
         fetch(`/api/admin/lojas?${params.toString()}`, { headers }),
+        fetch("/api/admin/inteligencia", { headers }),
       ]);
       if (!dashResp.ok) throw new Error("Erro ao carregar dashboard");
-      const [dashData, lojasData] = await Promise.all([dashResp.json(), lojasResp.json()]);
+      const [dashData, lojasData, intData] = await Promise.all([dashResp.json(), lojasResp.json(), intResp.ok ? intResp.json() : null]);
       setData({ ...dashData, lojas: lojasData });
+      if (intData?.resumo) setChurnData(intData.resumo);
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro desconhecido");
     } finally {
@@ -135,18 +139,38 @@ export default function AdminDashboard() {
               <StatCard label="Conversas" value={data?.total_conversas ?? 0} icon="💬" color="green" />
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-white">MRR — Mês Atual</h2>
-                <Link href="/admin/inteligencia" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
-                  Ver inteligência de churn →
-                </Link>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold text-white">MRR — Mês Atual</h2>
+                  <Link href="/admin/inteligencia" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                    Ver inteligência →
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <MRRCard label="Total" value={mrr?.total ?? 0} color="text-white" />
+                  <MRRCard label="Novo" value={mrr?.novo ?? 0} color="text-green-400" prefix="+" />
+                  <MRRCard label="Expansão" value={mrr?.expandido ?? 0} color="text-blue-400" prefix="+" />
+                  <MRRCard label="Perdido" value={mrr?.perdido ?? 0} color="text-red-400" prefix="-" />
+                </div>
               </div>
-              <div className="grid grid-cols-4 gap-4">
-                <MRRCard label="Total" value={mrr?.total ?? 0} color="text-white" />
-                <MRRCard label="Novo" value={mrr?.novo ?? 0} color="text-green-400" prefix="+" />
-                <MRRCard label="Expansão" value={mrr?.expandido ?? 0} color="text-blue-400" prefix="+" />
-                <MRRCard label="Perdido" value={mrr?.perdido ?? 0} color="text-red-400" prefix="-" />
+
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold text-white">Risco de Churn</h2>
+                  <Link href="/admin/inteligencia" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                    Detalhes →
+                  </Link>
+                </div>
+                {churnData ? (
+                  <div className="space-y-3">
+                    <ChurnRiskRow label="Risco Alto" value={churnData.risco_alto} color="text-red-400" icon="🔴" total={data?.total_lojas_ativas ?? 1} />
+                    <ChurnRiskRow label="Risco Médio" value={churnData.risco_medio} color="text-yellow-400" icon="🟡" total={data?.total_lojas_ativas ?? 1} />
+                    <ChurnRiskRow label="Risco Baixo" value={churnData.risco_baixo} color="text-green-400" icon="🟢" total={data?.total_lojas_ativas ?? 1} />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-16 text-gray-600 text-sm">Carregando...</div>
+                )}
               </div>
             </div>
 
@@ -298,6 +322,27 @@ function MRRCard({ label, value, color, prefix = "" }: { label: string; value: n
         {prefix}R$ {value.toLocaleString("pt-BR")}
       </div>
       <div className="text-xs text-gray-500 mt-1">{label}</div>
+    </div>
+  );
+}
+
+function ChurnRiskRow({ label, value, color, icon, total }: { label: string; value: number; color: string; icon: string; total: number }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-sm">{icon}</span>
+      <div className="flex-1">
+        <div className="flex justify-between text-xs mb-0.5">
+          <span className={color}>{label}</span>
+          <span className="text-gray-400">{value} lojas ({pct}%)</span>
+        </div>
+        <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full ${icon === "🔴" ? "bg-red-500" : icon === "🟡" ? "bg-yellow-500" : "bg-green-500"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
