@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, financiamentos, veiculos, qrcodes } from "@workspace/db";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requirePerfil } from "../middlewares/auth";
 import { formatZodError } from "../lib/errors";
 import { simular } from "../lib/simulator";
 
@@ -77,6 +77,7 @@ router.get(
 router.post(
   "/financiamentos",
   requireAuth,
+  requirePerfil("dono", "admin_patioai"),
   async (req, res): Promise<void> => {
     const lojaId = requireLojaId(req, res);
     if (!lojaId) return;
@@ -108,6 +109,7 @@ router.post(
 router.put(
   "/financiamentos/:financiamentoId",
   requireAuth,
+  requirePerfil("dono", "admin_patioai"),
   async (req, res): Promise<void> => {
     const params = FinanciamentoIdParam.safeParse(req.params);
     if (!params.success) {
@@ -168,6 +170,7 @@ router.put(
 router.delete(
   "/financiamentos/:financiamentoId",
   requireAuth,
+  requirePerfil("dono", "admin_patioai"),
   async (req, res): Promise<void> => {
     const params = FinanciamentoIdParam.safeParse(req.params);
     if (!params.success) {

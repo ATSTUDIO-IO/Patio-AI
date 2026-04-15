@@ -39,6 +39,7 @@ export default function PainelCadastro() {
           cidade: form.cidade || undefined,
           email: form.email,
           senha: form.senha,
+          plano: form.plano,
         },
       });
       const loginResp = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.senha } });

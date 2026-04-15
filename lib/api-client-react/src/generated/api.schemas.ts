@@ -28,6 +28,7 @@ export interface RegisterRequest {
   telefone?: string | null;
   /** @nullable */
   cidade?: string | null;
+  plano?: "starter" | "pro" | "full";
 }
 
 export interface LoginRequest {

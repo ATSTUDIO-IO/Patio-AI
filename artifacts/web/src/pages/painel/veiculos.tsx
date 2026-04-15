@@ -115,7 +115,7 @@ export default function PainelVeiculos() {
                 {filtrado.map((v) => {
                   const scans = v.qr_code?.total_scans ?? 0;
                   const temQr = !!v.qr_code?.slug;
-                  const temDescricao = !!(v as any).descricao_agente;
+                  const temDescricao = !!v.descricao_agente;
                   return (
                     <tr key={v.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">

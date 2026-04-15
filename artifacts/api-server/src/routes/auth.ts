@@ -21,7 +21,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     return;
   }
 
-  const { razao_social, nome_fantasia, cnpj, email, senha, telefone, cidade } =
+  const { razao_social, nome_fantasia, cnpj, email, senha, telefone, cidade, plano } =
     parsed.data;
 
   const cnpjNormalizado = cnpj.replace(/\D/g, "");
@@ -60,7 +60,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
         emailContato: email.toLowerCase(),
         telefone: telefone ?? null,
         cidade: cidade ?? null,
-        plano: "starter",
+        plano: plano ?? "starter",
         ativo: true,
       })
       .returning();

@@ -28,6 +28,7 @@ export const RegisterLojaBody = zod.object({
   senha: zod.string().min(registerLojaBodySenhaMin),
   telefone: zod.string().nullish(),
   cidade: zod.string().nullish(),
+  plano: zod.enum(["starter", "pro", "full"]).optional(),
 });
 
 /**

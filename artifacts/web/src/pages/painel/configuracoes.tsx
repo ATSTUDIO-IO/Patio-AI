@@ -10,7 +10,7 @@ import {
   useCreateFinanciamento,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { UsuarioPublic } from "@workspace/api-client-react";
+import type { UsuarioPublic, FinanciamentoResponse, CreateFinanciamentoRequestModalidade } from "@workspace/api-client-react";
 
 function SectionCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
@@ -78,14 +78,14 @@ export default function PainelConfiguracoes() {
 
   const [lojaForm, setLojaForm] = useState({
     nome_fantasia: user?.loja?.nome_fantasia ?? "",
-    telefone: (user?.loja as any)?.telefone ?? "",
-    email_contato: (user?.loja as any)?.email_contato ?? "",
-    cidade: (user?.loja as any)?.cidade ?? "",
+    telefone: user?.loja?.telefone ?? "",
+    email_contato: user?.loja?.email_contato ?? "",
+    cidade: user?.loja?.cidade ?? "",
   });
 
   const [agenteForm, setAgenteForm] = useState({
-    nome_agente: (user?.loja as any)?.nome_agente ?? "Agente PátioAI",
-    tom_agente: (user?.loja as any)?.tom_agente ?? "amigável e profissional",
+    nome_agente: user?.loja?.nome_agente ?? "Agente PátioAI",
+    tom_agente: user?.loja?.tom_agente ?? "amigável e profissional",
   });
 
   const [vendedorForm, setVendedorForm] = useState({ nome: "", email: "", senha: "" });
@@ -319,7 +319,7 @@ export default function PainelConfiguracoes() {
             <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 overflow-hidden mb-4">
               {financiamentos.length === 0 ? (
                 <p className="text-sm text-gray-400 p-3 text-center">Nenhuma condição cadastrada</p>
-              ) : (financiamentos as any[]).map((f) => (
+              ) : (financiamentos as FinanciamentoResponse[]).map((f) => (
                 <div key={f.id} className="flex items-center justify-between p-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">
@@ -353,7 +353,7 @@ export default function PainelConfiguracoes() {
                   <SelectField
                     label="Modalidade"
                     value={financForm.modalidade}
-                    onChange={(e) => setFinancForm((f) => ({ ...f, modalidade: e.target.value as any }))}
+                    onChange={(e) => setFinancForm((f) => ({ ...f, modalidade: e.target.value as CreateFinanciamentoRequestModalidade }))}
                   >
                     <option value="CDC">CDC (Crédito Direto ao Consumidor)</option>
                     <option value="consorcio">Consórcio</option>

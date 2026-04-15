@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, count, desc, sql, inArray } from "drizzle-orm";
+import { eq, count, desc, sql, inArray, and } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, lojas, usuarios, veiculos, conversas, ciclosBilling } from "@workspace/db";
 import { requireAuth, requirePerfil } from "../middlewares/auth";
@@ -81,7 +81,7 @@ router.get(
         const [{ veiculosAtivos }] = await db
           .select({ veiculosAtivos: count() })
           .from(veiculos)
-          .where(eq(veiculos.lojaId, loja.id));
+          .where(and(eq(veiculos.lojaId, loja.id), eq(veiculos.status, "ativo")));
 
         const totalConversas = await countConversasByLoja(loja.id);
 
@@ -124,7 +124,7 @@ router.get(
     const [{ veiculosAtivos }] = await db
       .select({ veiculosAtivos: count() })
       .from(veiculos)
-      .where(eq(veiculos.lojaId, lojaId));
+      .where(and(eq(veiculos.lojaId, lojaId), eq(veiculos.status, "ativo")));
 
     const totalConversas = await countConversasByLoja(lojaId);
 

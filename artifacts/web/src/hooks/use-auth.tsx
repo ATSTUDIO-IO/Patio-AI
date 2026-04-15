@@ -14,6 +14,11 @@ export type UserInfo = {
     id: string;
     nome_fantasia: string;
     plano: string;
+    telefone?: string | null;
+    email_contato?: string;
+    cidade?: string | null;
+    nome_agente?: string | null;
+    tom_agente?: string | null;
   };
 };
 
