@@ -41,6 +41,7 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={() => <Redirect to="/painel" />} />
       <Route path="/v/:slug" component={AgenteVoz} />
       <Route path="/painel/login" component={PainelLogin} />
       <Route path="/painel/cadastro" component={PainelCadastro} />
