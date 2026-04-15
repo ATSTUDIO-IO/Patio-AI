@@ -439,6 +439,25 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
   });
 });
 
+async function verificarQuotaMes(lojaId: string, plano: string): Promise<boolean> {
+  const cfg = getPlanoConfig(plano);
+  const inicioMes = getInicioMesAtual();
+  const veiculosIdsDaLoja = await db
+    .select({ id: veiculos.id })
+    .from(veiculos)
+    .where(eq(veiculos.lojaId, lojaId));
+  const idsLoja = veiculosIdsDaLoja.map((v) => v.id);
+  if (idsLoja.length === 0) return false;
+  const veiculoFilter = idsLoja.length === 1
+    ? eq(conversas.veiculoId, idsLoja[0])
+    : inArray(conversas.veiculoId, idsLoja);
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(conversas)
+    .where(and(veiculoFilter, gte(conversas.iniciadaEm, inicioMes)));
+  return total >= cfg.conversasIncluidas + cfg.bufferExcedente;
+}
+
 async function resolveConversaComSlug(
   conversaId: string,
   slug: string,
@@ -517,6 +536,14 @@ router.post("/agente/mensagem", async (req, res): Promise<void> => {
 
   if (conversa.encerradaEm) {
     res.status(400).json({ error: "Sessão já encerrada" });
+    return;
+  }
+
+  const quotaBloqueada = await verificarQuotaMes(loja.id, loja.plano);
+  if (quotaBloqueada) {
+    const msgBloqueioBilling = `Nosso assistente de atendimento está temporariamente indisponível por limite mensal de conversas.${loja.telefone ? ` Entre em contato pelo ${loja.telefone}.` : " Entre em contato diretamente com a loja."}`;
+    const audioBloqueioBilling = await gerarAudioBase64(msgBloqueioBilling);
+    res.json({ bloqueado: true, motivo: "cota_esgotada", mensagem: msgBloqueioBilling, audio_base64: audioBloqueioBilling });
     return;
   }
 
@@ -645,6 +672,15 @@ router.post("/agente/mensagem/stream", async (req, res): Promise<void> => {
 
     if (conversa.encerradaEm) {
       sendEvent({ type: "error", mensagem: "Sessão já encerrada" });
+      res.end();
+      return;
+    }
+
+    const quotaBloqueadaStream = await verificarQuotaMes(loja.id, loja.plano);
+    if (quotaBloqueadaStream) {
+      const msgBloqueioStream = `Nosso assistente de atendimento está temporariamente indisponível por limite mensal de conversas.${loja.telefone ? ` Entre em contato pelo ${loja.telefone}.` : " Entre em contato diretamente com a loja."}`;
+      const audioBloqueioStream = await gerarAudioBase64(msgBloqueioStream);
+      sendEvent({ type: "bloqueio", motivo: "cota_esgotada", mensagem: msgBloqueioStream, audio_base64: audioBloqueioStream });
       res.end();
       return;
     }

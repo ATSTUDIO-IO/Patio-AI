@@ -12,8 +12,8 @@ type Alerta = {
     | "veiculo_sem_scans"
     | "scans_sem_lead"
     | "lead_financiamento_pendente"
-    | "cota_conversas_80"
-    | "cota_conversas_limite";
+    | "cota_80pct"
+    | "cota_esgotada";
   prioridade: "alta" | "media";
   titulo: string;
   descricao: string;
@@ -210,7 +210,7 @@ router.get("/alertas", requireAuth, async (req, res): Promise<void> => {
 
       if (totalConv >= cota) {
         alertas.push({
-          tipo: "cota_conversas_limite",
+          tipo: "cota_esgotada",
           prioridade: "alta",
           titulo: "Cota de conversas atingida",
           descricao: `Você usou ${totalConv} de ${cota} conversas incluídas no plano ${lojaData.plano}. O agente pode ser bloqueado em até ${planoConfig.bufferExcedente} conversas adicionais.`,
@@ -223,7 +223,7 @@ router.get("/alertas", requireAuth, async (req, res): Promise<void> => {
         });
       } else if (pct >= 80) {
         alertas.push({
-          tipo: "cota_conversas_80",
+          tipo: "cota_80pct",
           prioridade: "media",
           titulo: "80% da cota de conversas utilizada",
           descricao: `Você utilizou ${totalConv} de ${cota} conversas incluídas no mês (${Math.round(pct)}%). Conversas acima da cota custam R$0,75 cada.`,
