@@ -221,6 +221,12 @@ export default function AgenteVoz() {
     setEstado("iniciando");
     try {
       const sessao = await iniciarSessao(slug, true);
+      if (sessao.bloqueado) {
+        setMensagens([{ papel: "agente", texto: sessao.mensagem }]);
+        if (sessao.audio_base64) playAudio(sessao.audio_base64);
+        setEstado("encerrado");
+        return;
+      }
       setConversaId(sessao.conversa_id);
       setVeiculo(sessao.veiculo);
       setLoja(sessao.loja);
@@ -394,6 +400,12 @@ export default function AgenteVoz() {
             setEstado("pronto");
           }
         },
+        onBloqueio: (mensagem, audioBase64) => {
+          setTextoAgenteAtual(null);
+          setMensagens((prev) => [...prev, { papel: "agente", texto: mensagem }]);
+          if (audioBase64) playAudio(audioBase64);
+          setEstado("encerrado");
+        },
         onError: (mensagem) => {
           setTextoAgenteAtual(null);
           setErro(mensagem);
@@ -406,7 +418,7 @@ export default function AgenteVoz() {
       setErro(msg);
       setEstado("pronto");
     }
-  }, [estado, slug, conversaId, onAudioChunk, resetAudioQueue, float32ToWavBase64]);
+  }, [estado, slug, conversaId, onAudioChunk, resetAudioQueue, float32ToWavBase64, playAudio]);
 
   const sessaoEncerradaRef = useRef(false);
 

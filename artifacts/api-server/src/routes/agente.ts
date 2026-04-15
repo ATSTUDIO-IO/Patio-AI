@@ -409,6 +409,7 @@ router.post("/agente/sessao", async (req, res): Promise<void> => {
   ]);
 
   res.status(201).json({
+    bloqueado: false,
     conversa_id: conversa.id,
     veiculo: {
       id: veiculo.id,

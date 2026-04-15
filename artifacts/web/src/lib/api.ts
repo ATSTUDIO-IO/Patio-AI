@@ -30,13 +30,21 @@ export type LojaPublica = {
   telefone: string | null;
 };
 
-export type IniciarSessaoResponse = {
-  conversa_id: string;
-  veiculo: VeiculoPublico;
-  loja: LojaPublica;
-  saudacao_audio: string;
-  saudacao_texto: string;
-};
+export type IniciarSessaoResponse =
+  | {
+      bloqueado: false;
+      conversa_id: string;
+      veiculo: VeiculoPublico;
+      loja: LojaPublica;
+      saudacao_audio: string;
+      saudacao_texto: string;
+    }
+  | {
+      bloqueado: true;
+      conversa_id: null;
+      mensagem: string;
+      audio_base64: string;
+    };
 
 export type MensagemAgenteResponse = {
   texto_usuario: string;
@@ -57,6 +65,7 @@ export type StreamMensagemCallbacks = {
   onAudioChunk?: (index: number, audioBase64: string, texto: string) => void;
   onDone?: (encerrar: boolean, textoCompleto: string) => void;
   onError?: (mensagem: string) => void;
+  onBloqueio?: (mensagem: string, audioBase64: string) => void;
 };
 
 export async function getVeiculoPublico(slug: string): Promise<{
@@ -181,6 +190,9 @@ export async function enviarMensagemStream(
           );
         } else if (type === "done") {
           callbacks.onDone?.(event.encerrar as boolean, event.texto_completo as string);
+        } else if (type === "bloqueio") {
+          callbacks.onBloqueio?.(event.mensagem as string, event.audio_base64 as string);
+          return;
         } else if (type === "error") {
           callbacks.onError?.(event.mensagem as string);
           return;
