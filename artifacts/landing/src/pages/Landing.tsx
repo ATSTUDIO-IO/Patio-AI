@@ -3,6 +3,7 @@ import { motion, useInView, useAnimation } from "framer-motion";
 import { CheckCircle2, ChevronRight, QrCode, Smartphone, MessageSquare, CarFront, Zap, Clock, ShieldCheck, Mail, Phone, ExternalLink, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatIA } from "@/components/ChatIA";
+import { trackCTAClick, trackPlanClick, trackDemoClick, trackSectionView } from "@/lib/analytics";
 
 // Number Counter Animation Hook
 function AnimatedCounter({ value, duration = 2 }: { value: number, duration?: number }) {
@@ -31,8 +32,22 @@ function AnimatedCounter({ value, duration = 2 }: { value: number, duration?: nu
   return <span ref={ref}>{count.toLocaleString('pt-BR')}</span>;
 }
 
+function useSectionTracking(sectionName: string) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-20%" });
+  useEffect(() => {
+    if (isInView) trackSectionView(sectionName);
+  }, [isInView, sectionName]);
+  return ref;
+}
+
 export default function Landing() {
   const painelUrl = "/painel/cadastro";
+
+  const heroRef = useSectionTracking("hero");
+  const comoFuncionaRef = useSectionTracking("como_funciona");
+  const diferenciaisRef = useSectionTracking("diferenciais");
+  const planosRef = useSectionTracking("planos");
 
   const staggerContainer = {
     hidden: { opacity: 0 },
@@ -69,7 +84,7 @@ export default function Landing() {
             
             <div className="flex items-center gap-4">
               <a href="/painel/login" className="text-sm font-medium text-indigo-primary hover:text-indigo-800 transition-colors hidden sm:block">Login</a>
-              <a href={painelUrl} className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-indigo-primary hover:bg-indigo-900 rounded-lg transition-all shadow-sm hover:shadow-md">
+              <a href={painelUrl} onClick={() => trackCTAClick("navbar")} className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-indigo-primary hover:bg-indigo-900 rounded-lg transition-all shadow-sm hover:shadow-md">
                 Começar grátis
               </a>
             </div>
@@ -78,7 +93,7 @@ export default function Landing() {
       </nav>
 
       {/* 2. HERO */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-indigo-primary flex items-center justify-center min-h-[90vh]">
+      <section ref={heroRef} className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-indigo-primary flex items-center justify-center min-h-[90vh]">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div 
@@ -135,10 +150,10 @@ export default function Landing() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <a href={painelUrl} className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] hover:-translate-y-1">
+            <a href={painelUrl} onClick={() => trackCTAClick("hero")} className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] hover:-translate-y-1">
               Começar grátis
             </a>
-            <a href="#demo" className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-transparent border-2 border-white/20 hover:border-white/40 hover:bg-white/5 rounded-xl transition-all">
+            <a href="#demo" onClick={() => trackDemoClick()} className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-transparent border-2 border-white/20 hover:border-white/40 hover:bg-white/5 rounded-xl transition-all">
               Ver demo
             </a>
           </motion.div>
@@ -178,7 +193,7 @@ export default function Landing() {
       </section>
 
       {/* 4. COMO FUNCIONA */}
-      <section id="como-funciona" className="py-24 bg-gray-50">
+      <section id="como-funciona" ref={comoFuncionaRef} className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-indigo-primary mb-6">Como uma máquina de vendas funciona</h2>
@@ -258,7 +273,7 @@ export default function Landing() {
                   <span className="text-gray-700 font-medium">Extrai nome e contato sutilmente</span>
                 </li>
               </ul>
-              <a href={painelUrl} className="inline-flex items-center font-bold text-indigo-primary hover:text-cyan-accent transition-colors">
+              <a href={painelUrl} onClick={() => trackCTAClick("demo_section")} className="inline-flex items-center font-bold text-indigo-primary hover:text-cyan-accent transition-colors">
                 Criar conta para testar <ChevronRight className="w-5 h-5 ml-1" />
               </a>
             </motion.div>
@@ -366,7 +381,7 @@ export default function Landing() {
       </section>
 
       {/* 5. DIFERENCIAIS */}
-      <section id="diferenciais" className="py-24 bg-gray-50 border-y border-gray-200">
+      <section id="diferenciais" ref={diferenciaisRef} className="py-24 bg-gray-50 border-y border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-indigo-primary mb-6">Tudo que sua loja precisa</h2>
@@ -420,7 +435,7 @@ export default function Landing() {
       </section>
 
       {/* 7. PLANOS */}
-      <section id="planos" className="py-24 bg-white">
+      <section id="planos" ref={planosRef} className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-indigo-primary mb-6">Preços simples, sem surpresa</h2>
@@ -442,7 +457,7 @@ export default function Landing() {
                 <li className="flex items-center gap-3 opacity-50"><Minus className="w-5 h-5 text-gray-400" /><span className="text-gray-500">Financiamento IA</span></li>
                 <li className="flex items-center gap-3 opacity-50"><Minus className="w-5 h-5 text-gray-400" /><span className="text-gray-500">Personalização</span></li>
               </ul>
-              <a href={painelUrl} className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors">
+              <a href={painelUrl} onClick={() => trackPlanClick("starter")} className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors">
                 Começar agora
               </a>
             </div>
@@ -465,7 +480,7 @@ export default function Landing() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent" /><span className="text-white">Personalização</span></li>
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent" /><span className="text-white">Suporte Prioritário</span></li>
               </ul>
-              <a href={painelUrl} className="w-full block text-center px-6 py-3 rounded-xl bg-cyan-accent text-indigo-primary font-bold hover:bg-cyan-400 transition-colors shadow-lg">
+              <a href={painelUrl} onClick={() => trackPlanClick("pro")} className="w-full block text-center px-6 py-3 rounded-xl bg-cyan-accent text-indigo-primary font-bold hover:bg-cyan-400 transition-colors shadow-lg">
                 Começar agora
               </a>
             </div>
@@ -486,7 +501,7 @@ export default function Landing() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Suporte Prioritário</span></li>
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Consulta Documental</span></li>
               </ul>
-              <a href={painelUrl} className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors">
+              <a href={painelUrl} onClick={() => trackPlanClick("full")} className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors">
                 Começar agora
               </a>
             </div>
@@ -508,7 +523,7 @@ export default function Landing() {
           </p>
           
           <div className="flex flex-col items-center justify-center">
-            <a href={painelUrl} className="inline-flex items-center justify-center px-10 py-5 text-lg font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-[0_0_30px_rgba(6,182,212,0.5)] hover:shadow-[0_0_40px_rgba(6,182,212,0.7)] hover:-translate-y-1 w-full sm:w-auto">
+            <a href={painelUrl} onClick={() => trackCTAClick("cta_final")} className="inline-flex items-center justify-center px-10 py-5 text-lg font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-[0_0_30px_rgba(6,182,212,0.5)] hover:shadow-[0_0_40px_rgba(6,182,212,0.7)] hover:-translate-y-1 w-full sm:w-auto">
               Criar conta grátis
             </a>
             <p className="mt-4 text-sm text-gray-400 flex items-center gap-2">
