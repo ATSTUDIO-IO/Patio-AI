@@ -11,6 +11,10 @@ interface Message {
   content: string;
 }
 
+function generateSessionId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function ChatIA() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -22,6 +26,7 @@ export function ChatIA() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const sessionIdRef = useRef<string>(generateSessionId());
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -41,7 +46,10 @@ export function ChatIA() {
     try {
       const response = await fetch('/api/landing/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-id': sessionIdRef.current,
+        },
         body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
 

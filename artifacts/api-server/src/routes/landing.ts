@@ -7,6 +7,25 @@ const router: IRouter = Router();
 const CLAUDE_MODEL = "claude-haiku-4-5";
 const MAX_MENSAGENS_SESSAO = 20;
 
+const sessionCounts = new Map<string, number>();
+const SESSION_TTL_MS = 60 * 60 * 1000; // 1 hora
+const sessionTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function trackSession(sessionId: string): number {
+  const count = (sessionCounts.get(sessionId) ?? 0) + 1;
+  sessionCounts.set(sessionId, count);
+  const existing = sessionTimers.get(sessionId);
+  if (existing) clearTimeout(existing);
+  sessionTimers.set(
+    sessionId,
+    setTimeout(() => {
+      sessionCounts.delete(sessionId);
+      sessionTimers.delete(sessionId);
+    }, SESSION_TTL_MS),
+  );
+  return count;
+}
+
 const SYSTEM_PROMPT_VENDAS = `Você é um consultor de vendas especialista do PátioAI — uma plataforma SaaS B2B que transforma lojas de veículos seminovos com um agente de voz com IA.
 
 SOBRE O PÁTIOAI:
@@ -29,7 +48,7 @@ SEU OBJETIVO:
 1. Responder dúvidas sobre o PátioAI com entusiasmo e clareza
 2. Coletar de forma natural: NOME, E-MAIL e TELEFONE do visitante
 3. Indicar o melhor plano para o tamanho da loja (pergunte quantos veículos têm no pátio)
-4. Converter para: "Quer começar seu teste grátis agora? Acesse pátioai.com/cadastro"
+4. Converter para: "Quer começar seu teste grátis agora? Acesse /painel/cadastro e crie sua conta em menos de 5 minutos"
 
 REGRAS:
 - Responda SEMPRE em Português Brasileiro
@@ -48,7 +67,19 @@ router.post("/landing/chat", async (req, res): Promise<void> => {
       return;
     }
 
-    if (messages.length > MAX_MENSAGENS_SESSAO) {
+    const sessionId = typeof req.headers["x-session-id"] === "string"
+      ? req.headers["x-session-id"].trim()
+      : null;
+
+    if (sessionId) {
+      const count = trackSession(sessionId);
+      if (count > MAX_MENSAGENS_SESSAO) {
+        res.status(429).json({
+          error: "Limite de mensagens por sessão atingido. Por favor, entre em contato diretamente.",
+        });
+        return;
+      }
+    } else if (messages.length > MAX_MENSAGENS_SESSAO) {
       res.status(429).json({
         error: "Limite de mensagens por sessão atingido. Por favor, entre em contato diretamente.",
       });
