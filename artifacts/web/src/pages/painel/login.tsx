@@ -44,16 +44,16 @@ export default function PainelLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 to-indigo-950 flex items-center justify-center p-6">
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "linear-gradient(135deg, #0E0C2E 0%, #1E1B4B 60%, #1a2060 100%)" }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">P</div>
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-600 flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold shadow-lg">P</div>
           <h1 className="text-2xl font-bold text-white">Pátio AI</h1>
           <p className="text-white/50 text-sm mt-1">Painel do Lojista</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-xl">
-          <h2 className="text-gray-900 font-semibold text-lg mb-5">Entrar na conta</h2>
+        <div className="bg-white rounded-2xl p-6 shadow-2xl">
+          <h2 className="text-slate-900 font-semibold text-lg mb-5">Entrar na conta</h2>
 
           {erro && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
@@ -63,39 +63,40 @@ export default function PainelLogin() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">E-mail</label>
+              <label className="text-sm font-medium text-slate-700 block mb-1">E-mail</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="seu@email.com"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">Senha</label>
+              <label className="text-sm font-medium text-slate-700 block mb-1">Senha</label>
               <input
                 type="password"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               />
             </div>
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors disabled:opacity-60"
+              className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-all disabled:opacity-60 hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #1E1B4B, #312E81)" }}
             >
               {loginMutation.isPending ? "Entrando..." : "Entrar"}
             </button>
           </form>
 
-          <p className="text-center text-gray-500 text-sm mt-5">
+          <p className="text-center text-slate-500 text-sm mt-5">
             Ainda não tem conta?{" "}
-            <Link href="/painel/cadastro" className="text-blue-600 font-medium hover:underline">Cadastrar loja</Link>
+            <Link href="/painel/cadastro" className="text-indigo-600 font-medium hover:underline">Cadastrar loja</Link>
           </p>
         </div>
       </div>
