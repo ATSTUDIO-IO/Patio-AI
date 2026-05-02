@@ -141,14 +141,8 @@ export default function VeiculoDetalhe() {
   const veiculoId = params.id ?? "";
 
   const { data: veiculo, isLoading } = useGetVeiculo(veiculoId);
-  const { data: leads = [] } = useListLeads(
-    { veiculo_id: veiculoId, limit: 50 },
-    { query: { enabled: !!veiculoId } },
-  );
-  const { data: conversas = [] } = useListConversas(
-    { veiculo_id: veiculoId, limit: 50 },
-    { query: { enabled: !!veiculoId } },
-  );
+  const { data: leads = [] } = useListLeads({ veiculo_id: veiculoId, limit: 50 });
+  const { data: conversas = [] } = useListConversas({ veiculo_id: veiculoId, limit: 50 });
 
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
 
@@ -693,8 +687,8 @@ export default function VeiculoDetalhe() {
                           <p className="text-xs font-medium text-gray-700">
                             {c.lead.nome ?? "Anônimo"}
                           </p>
-                          <p className="text-xs text-gray-400">
-                            {c.lead.telefone ?? "—"}
+                          <p className="text-xs text-gray-400 capitalize">
+                            Interesse {c.lead.interesse}
                           </p>
                         </div>
                       )}
