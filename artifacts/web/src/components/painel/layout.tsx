@@ -44,7 +44,7 @@ export function PainelLayout({ children }: { children: ReactNode }) {
       <aside className="w-60 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-10">
         <div className="p-5 border-b border-sidebar-border/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sidebar-primary to-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-bold shadow">P</div>
+            <img src="/favicon.svg" alt="PátioAI" className="w-8 h-8 rounded-lg shadow" />
             <div>
               <p className="font-bold text-sidebar-foreground text-sm leading-none">Pátio AI</p>
               <p className="text-sidebar-foreground/50 text-xs truncate max-w-[120px]">{user?.loja?.nome_fantasia ?? "Painel"}</p>

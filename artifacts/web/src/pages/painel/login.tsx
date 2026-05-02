@@ -47,7 +47,7 @@ export default function PainelLogin() {
     <div className="min-h-screen bg-login-gradient flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sidebar-primary to-primary flex items-center justify-center mx-auto mb-4 text-sidebar-primary-foreground text-2xl font-bold shadow-lg">P</div>
+          <img src="/favicon.svg" alt="PátioAI" className="w-14 h-14 rounded-2xl shadow-lg mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-sidebar-foreground">Pátio AI</h1>
           <p className="text-sidebar-foreground/50 text-sm mt-1">Painel do Lojista</p>
         </div>
