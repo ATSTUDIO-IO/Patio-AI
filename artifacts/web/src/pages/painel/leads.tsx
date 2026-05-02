@@ -5,7 +5,7 @@ import { useListLeads, usePatchLeadStatus } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const STATUS_INFO: Record<string, { label: string; color: string }> = {
-  novo: { label: "Novo", color: "bg-blue-100 text-blue-700" },
+  novo: { label: "Novo", color: "bg-indigo-100 text-indigo-700" },
   em_contato: { label: "Em contato", color: "bg-yellow-100 text-yellow-700" },
   ganho: { label: "Ganho", color: "bg-green-100 text-green-700" },
   perdido: { label: "Perdido", color: "bg-red-100 text-red-700" },
@@ -63,12 +63,12 @@ export default function PainelLeads() {
             placeholder="Buscar por nome, telefone ou e-mail..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           />
           <select
             value={statusFiltro}
             onChange={(e) => setStatusFiltro(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           >
             <option value="todos">Todos</option>
             {Object.entries(STATUS_INFO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -125,7 +125,7 @@ export default function PainelLeads() {
                       {timeAgo(l.criado_em)}
                     </td>
                     <td className="px-4 py-3">
-                      <Link href="/painel/conversas" className="text-xs text-blue-600 hover:underline font-medium">Ver conversa</Link>
+                      <Link href="/painel/conversas" className="text-xs text-indigo-600 hover:underline font-medium">Ver conversa</Link>
                     </td>
                   </tr>
                 ))}

@@ -47,7 +47,7 @@ export default function RelatorioVendas() {
           <select
             value={periodo}
             onChange={(e) => setPeriodo(e.target.value as RelatorioVendasPeriodo)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           >
             {(Object.keys(PERIODO_LABELS) as RelatorioVendasPeriodo[]).map((p) => (
               <option key={p} value={p}>

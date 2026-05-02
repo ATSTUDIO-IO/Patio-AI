@@ -34,7 +34,7 @@ function InputField({
       <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
       <input
         {...props}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
       />
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
@@ -52,7 +52,7 @@ function TextareaField({
       <textarea
         {...props}
         rows={3}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
       />
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
@@ -70,7 +70,7 @@ function SelectField({
       <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
       <select
         {...props}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white"
       >
         {children}
       </select>
@@ -99,7 +99,7 @@ function ToggleField({
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${checked ? "bg-blue-600" : "bg-gray-200"}`}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 ${checked ? "bg-indigo-600" : "bg-gray-200"}`}
       >
         <span
           className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out ${checked ? "translate-x-5" : "translate-x-0"}`}
@@ -353,7 +353,7 @@ export default function PainelConfiguracoes() {
             <button
               type="submit"
               disabled={updateLoja.isPending}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-60"
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60"
             >
               {updateLoja.isPending ? "Salvando..." : "Salvar Dados da Loja"}
             </button>
@@ -469,7 +469,7 @@ export default function PainelConfiguracoes() {
               </>
             )}
 
-            <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
+            <div className="bg-indigo-50 rounded-xl p-3 text-xs text-indigo-700">
               <span className="font-semibold">Prévia da apresentação: </span>
               "Olá! Eu sou {agenteForm.nome_agente || "o Agente"}, da {user?.loja?.nome_fantasia ?? "nossa loja"}!
               {agenteForm.aceita_troca ? " Aceitamos troca de veículos." : ""} Como posso te ajudar?"
@@ -635,7 +635,7 @@ export default function PainelConfiguracoes() {
                       Remover
                     </button>
                   ) : (
-                    <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">Você</span>
+                    <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg">Você</span>
                   )}
                 </div>
               ))}

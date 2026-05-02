@@ -100,7 +100,7 @@ function ModalRegistrarVenda({
               value={valorStr}
               onChange={(e) => setValorStr(e.target.value)}
               placeholder={`Ex: ${Number(modal.precoVenda).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-50"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50 disabled:bg-gray-50"
             />
           </div>
         </div>
@@ -126,7 +126,7 @@ function ModalRegistrarVenda({
           <button
             onClick={() => onConfirm(modal.veiculoId, pular ? null : valorNum)}
             disabled={!valido || loading}
-            className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50"
           >
             {loading ? "Salvando..." : "Confirmar Venda"}
           </button>
@@ -199,7 +199,7 @@ export default function PainelVeiculos() {
         title="Veículos"
         subtitle={`${veiculos.filter(v => v.status === "ativo").length} ativos`}
         actions={
-          <Link href="/painel/veiculos/novo" className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+          <Link href="/painel/veiculos/novo" className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
             + Novo Veículo
           </Link>
         }
@@ -212,12 +212,12 @@ export default function PainelVeiculos() {
             placeholder="Buscar por marca, modelo ou placa..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="flex-1 min-w-[180px] border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 min-w-[180px] border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           />
           <select
             value={statusFiltro}
             onChange={(e) => setStatusFiltro(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           >
             <option value="todos">Todos</option>
             <option value="ativo">Ativos</option>
@@ -238,7 +238,7 @@ export default function PainelVeiculos() {
         ) : filtrado.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-400 text-lg">Nenhum veículo encontrado</p>
-            <Link href="/painel/veiculos/novo" className="mt-3 inline-block px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700">Cadastrar primeiro veículo</Link>
+            <Link href="/painel/veiculos/novo" className="mt-3 inline-block px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700">Cadastrar primeiro veículo</Link>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -319,7 +319,7 @@ export default function PainelVeiculos() {
                           <Link href={`/painel/veiculos/${v.id}`} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Ver ficha">
                             <svg viewBox="0 0 20 20" className="w-4 h-4 fill-current"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/></svg>
                           </Link>
-                          <Link href={`/painel/veiculos/${v.id}/editar`} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                          <Link href={`/painel/veiculos/${v.id}/editar`} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Editar">
                             <svg viewBox="0 0 20 20" className="w-4 h-4 fill-current"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12v3h3l-3-3zm-2 4h14v2H3v-2z"/></svg>
                           </Link>
                           {v.status === "ativo" && (

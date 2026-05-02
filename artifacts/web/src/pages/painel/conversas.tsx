@@ -40,7 +40,7 @@ export default function PainelConversas() {
                   <button
                     key={c.id}
                     onClick={() => setSelectedId(c.id)}
-                    className={`w-full text-left p-3 hover:bg-gray-50 transition-colors ${selectedId === c.id ? "bg-blue-50 border-l-2 border-blue-500" : ""}`}
+                    className={`w-full text-left p-3 hover:bg-gray-50 transition-colors ${selectedId === c.id ? "bg-indigo-50 border-l-2 border-indigo-500" : ""}`}
                   >
                     <div className="flex justify-between items-start">
                       <p className="text-sm font-medium text-gray-900 truncate">
@@ -79,9 +79,9 @@ export default function PainelConversas() {
                 </div>
                 <div className="flex-1 overflow-y-auto p-4">
                   {conversa?.resumo_ia && (
-                    <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                      <p className="text-xs font-semibold text-blue-700 mb-1">Resumo da IA</p>
-                      <p className="text-sm text-blue-800">{conversa.resumo_ia}</p>
+                    <div className="mb-4 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                      <p className="text-xs font-semibold text-indigo-700 mb-1">Resumo da IA</p>
+                      <p className="text-sm text-indigo-800">{conversa.resumo_ia}</p>
                     </div>
                   )}
                   {conversa?.transcricao ? (
