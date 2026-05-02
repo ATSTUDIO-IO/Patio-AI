@@ -41,7 +41,16 @@ const agenteRateLimit = rateLimit({
   message: { error: "Muitas requisições. Tente novamente em alguns instantes." },
 });
 
+const landingChatRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Muitas requisições. Tente novamente em alguns instantes." },
+});
+
 app.use("/api/agente", agenteRateLimit);
+app.use("/api/landing/chat", landingChatRateLimit);
 
 app.use(
   "/api/agente/mensagem",
