@@ -35,6 +35,7 @@ export type UserInfo = {
     aceita_troca?: boolean | null;
     descricao_garantia?: string | null;
     bancos_parceiros?: string | null;
+    mencionar_tempo_patio?: boolean | null;
   };
   plano_config?: PlanoConfig | null;
 };

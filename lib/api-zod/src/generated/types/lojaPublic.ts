@@ -35,4 +35,6 @@ export interface LojaPublic {
   descricao_garantia?: string | null;
   /** @nullable */
   bancos_parceiros?: string | null;
+  /** @nullable */
+  mencionar_tempo_patio?: boolean | null;
 }

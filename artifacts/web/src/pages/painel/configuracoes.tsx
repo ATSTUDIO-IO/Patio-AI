@@ -172,6 +172,7 @@ export default function PainelConfiguracoes() {
     aceita_troca: user?.loja?.aceita_troca ?? true,
     descricao_garantia: user?.loja?.descricao_garantia ?? "",
     bancos_parceiros: user?.loja?.bancos_parceiros ?? "",
+    mencionar_tempo_patio: user?.loja?.mencionar_tempo_patio ?? false,
   });
 
   const [vendedorForm, setVendedorForm] = useState({ nome: "", email: "", senha: "" });
@@ -241,6 +242,7 @@ export default function PainelConfiguracoes() {
           aceita_troca: agenteForm.aceita_troca,
           descricao_garantia: agenteForm.descricao_garantia || null,
           bancos_parceiros: agenteForm.bancos_parceiros || null,
+          mencionar_tempo_patio: agenteForm.mencionar_tempo_patio,
         },
       });
       setAgenteStatus("Configurações do agente salvas!");
@@ -400,6 +402,14 @@ export default function PainelConfiguracoes() {
                     checked={agenteForm.aceita_troca}
                     onChange={(val) => setAgenteForm((f) => ({ ...f, aceita_troca: val }))}
                   />
+                  <ToggleField
+                    label="Mencionar Tempo no Pátio"
+                    hint="O agente usa o tempo de estoque (90+ dias) para criar senso de oportunidade ao negociar, quando relevante."
+                    checked={agenteForm.mencionar_tempo_patio}
+                    onChange={(val) => setAgenteForm((f) => ({ ...f, mencionar_tempo_patio: val }))}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <InputField
                     label="Bancos Parceiros"
                     value={agenteForm.bancos_parceiros}

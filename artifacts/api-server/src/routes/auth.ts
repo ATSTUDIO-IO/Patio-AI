@@ -229,6 +229,7 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
         aceita_troca: lojaData.aceitaTroca,
         descricao_garantia: lojaData.descricaoGarantia,
         bancos_parceiros: lojaData.bancosParceiros,
+        mencionar_tempo_patio: lojaData.mencionarTempoPatio,
         criado_em: lojaData.criadoEm,
       };
     }

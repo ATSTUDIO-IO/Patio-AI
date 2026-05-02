@@ -88,6 +88,7 @@ export const GetMeResponse = zod.object({
         aceita_troca: zod.boolean().nullish(),
         descricao_garantia: zod.string().nullish(),
         bancos_parceiros: zod.string().nullish(),
+        mencionar_tempo_patio: zod.boolean().nullish(),
       }),
       zod.null(),
     ])
@@ -114,6 +115,7 @@ export const UpdateLojaBody = zod.object({
   aceita_troca: zod.boolean().nullish(),
   descricao_garantia: zod.string().nullish(),
   bancos_parceiros: zod.string().nullish(),
+  mencionar_tempo_patio: zod.boolean().nullish(),
 });
 
 export const UpdateLojaResponse = zod.object({
@@ -134,6 +136,7 @@ export const UpdateLojaResponse = zod.object({
   aceita_troca: zod.boolean().nullish(),
   descricao_garantia: zod.string().nullish(),
   bancos_parceiros: zod.string().nullish(),
+  mencionar_tempo_patio: zod.boolean().nullish(),
 });
 
 /**

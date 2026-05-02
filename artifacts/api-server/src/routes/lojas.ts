@@ -95,6 +95,8 @@ router.put(
       updateData.descricaoGarantia = body.data.descricao_garantia;
     if (body.data.bancos_parceiros !== undefined)
       updateData.bancosParceiros = body.data.bancos_parceiros;
+    if (body.data.mencionar_tempo_patio !== undefined)
+      updateData.mencionarTempoPatio = body.data.mencionar_tempo_patio;
 
     if (Object.keys(updateData).length === 0) {
       res.status(400).json({ error: "Nenhum campo para atualizar" });
@@ -124,6 +126,7 @@ router.put(
       aceita_troca: lojaAtualizada.aceitaTroca,
       descricao_garantia: lojaAtualizada.descricaoGarantia,
       bancos_parceiros: lojaAtualizada.bancosParceiros,
+      mencionar_tempo_patio: lojaAtualizada.mencionarTempoPatio,
       criado_em: lojaAtualizada.criadoEm,
     });
 

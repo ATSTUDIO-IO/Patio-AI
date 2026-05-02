@@ -34,6 +34,7 @@ export const lojas = pgTable("lojas", {
   aceitaTroca: boolean("aceita_troca").notNull().default(true),
   descricaoGarantia: text("descricao_garantia"),
   bancosParceiros: text("bancos_parceiros"),
+  mencionarTempoPatio: boolean("mencionar_tempo_patio").notNull().default(false),
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
 });
 

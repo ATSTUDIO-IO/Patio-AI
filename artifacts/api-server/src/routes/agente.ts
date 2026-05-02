@@ -68,6 +68,15 @@ const PERFIS_COMPORTAMENTO: Record<string, string> = {
 - Call-to-action direta: "Quer marcar um test drive amanhã de manhã ou à tarde?"`,
 };
 
+function calcularDiasNoPatio(dataEntradaPatio: string | null | undefined): number | null {
+  if (!dataEntradaPatio) return null;
+  const entrada = new Date(dataEntradaPatio);
+  if (isNaN(entrada.getTime())) return null;
+  const hoje = new Date();
+  const diffMs = hoje.getTime() - entrada.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+
 function buildSystemPrompt(
   veiculo: Pick<
     Veiculo,
@@ -82,6 +91,7 @@ function buildSystemPrompt(
     | "combustivel"
     | "opcionais"
     | "descricaoAgente"
+    | "dataEntradaPatio"
   >,
   loja: Pick<
     Loja,
@@ -95,6 +105,7 @@ function buildSystemPrompt(
     | "aceitaTroca"
     | "descricaoGarantia"
     | "bancosParceiros"
+    | "mencionarTempoPatio"
   >,
 ): string {
   const km = veiculo.quilometragem.toLocaleString("pt-BR");
@@ -162,12 +173,27 @@ Quando o cliente perguntar sobre financiamento:
 3. Informe que fará uma simulação e apresente os valores calculados.
 4. Destaque que as parcelas cabem no bolso e que o processo é rápido e simples.`;
 
-  // Bloco 8 — Instruções Especiais
+  // Bloco 8 — Tempo no pátio (somente se a loja habilitou)
+  let blocoTempoPatio = "";
+  if (loja.mencionarTempoPatio) {
+    const dias = calcularDiasNoPatio(veiculo.dataEntradaPatio);
+    if (dias !== null && dias >= 90) {
+      blocoTempoPatio = `TEMPO NO PATIO:
+- dias_no_patio: ${dias}
+Este veículo está disponível há ${dias} dias no pátio (longa permanência).
+Use essa informação com naturalidade para criar senso de oportunidade quando perceber que o cliente está indeciso ou negociando preço. Exemplos de como mencionar:
+- "Esse veículo já está disponível há um bom tempo, então o lojista costuma ter mais flexibilidade para negociar."
+- "Como está há bastante tempo no estoque, é uma boa oportunidade — vale conversar sobre condições."
+Não cite o número exato de dias de forma abrupta; insira essa informação de forma natural e empática. Só use quando for pertinente à conversa.`;
+    }
+  }
+
+  // Bloco 9 — Instruções Especiais
   const blocoInstrucoes = loja.instrucoesEspecificas
     ? `INSTRUCOES ESPECIAIS DA LOJA (siga obrigatoriamente):\n${loja.instrucoesEspecificas}`
     : "";
 
-  // Bloco 9 — Restrições fixas
+  // Bloco 10 — Restrições fixas
   const blocoRestricoes = `REGRAS FIXAS (nunca viole):
 - Respostas curtas e conversacionais: máximo 3 frases por turno de voz.
 - Colete nome, telefone e e-mail do lead de forma natural ao longo da conversa.
@@ -185,6 +211,7 @@ Quando o cliente perguntar sobre financiamento:
     blocoTroca,
     blocoGarantia,
     blocoFinanciamento,
+    blocoTempoPatio,
     blocoInstrucoes,
     blocoRestricoes,
   ]
