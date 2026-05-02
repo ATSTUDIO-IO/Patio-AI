@@ -251,10 +251,12 @@ export default function VeiculoForm() {
                     <option value="consignado">Consignado</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Valor de Aquisição (R$)</label>
-                  <input type="number" value={form.valor_aquisicao ?? ""} onChange={(e) => setForm(f => ({ ...f, valor_aquisicao: e.target.value ? Number(e.target.value) : null }))} min={0} step={100} placeholder="0,00" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
+                {!isConsignado && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Valor de Aquisição (R$)</label>
+                    <input type="number" value={form.valor_aquisicao ?? ""} onChange={(e) => setForm(f => ({ ...f, valor_aquisicao: e.target.value ? Number(e.target.value) : null }))} min={0} step={100} placeholder="0,00" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium text-gray-700 block mb-1">Data de Entrada no Pátio</label>
                   <input type="date" value={form.data_entrada_patio ?? ""} onChange={set("data_entrada_patio")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />

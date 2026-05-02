@@ -46,7 +46,7 @@ function mapVeiculo(
   },
 ) {
   const diasNoPatio = calcularDiasPatio(v.dataEntradaPatio as string | null);
-  const alertaPatio = diasNoPatio !== null && v.status === "ativo" && diasNoPatio > ALERTA_PATIO_AMARELO;
+  const alertaPatio = diasNoPatio !== null && v.status === "ativo" && diasNoPatio >= ALERTA_PATIO_AMARELO;
 
   return {
     id: v.id,
