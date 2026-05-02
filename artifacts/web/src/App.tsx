@@ -11,6 +11,7 @@ import PainelDashboard from "@/pages/painel/dashboard";
 import PainelVeiculos from "@/pages/painel/veiculos";
 import VeiculoForm from "@/pages/painel/veiculo-form";
 import VeiculoQR from "@/pages/painel/veiculo-qr";
+import VeiculoDetalhe from "@/pages/painel/veiculo-detalhe";
 import PainelLeads from "@/pages/painel/leads";
 import PainelConversas from "@/pages/painel/conversas";
 import PainelFatura from "@/pages/painel/fatura";
@@ -51,6 +52,7 @@ function Router() {
       <Route path="/painel/veiculos/novo" component={() => <ProtectedRoute component={VeiculoForm} />} />
       <Route path="/painel/veiculos/:id/editar" component={() => <ProtectedRoute component={VeiculoForm} />} />
       <Route path="/painel/veiculos/:id/qr" component={() => <ProtectedRoute component={VeiculoQR} />} />
+      <Route path="/painel/veiculos/:id" component={() => <ProtectedRoute component={VeiculoDetalhe} />} />
       <Route path="/painel/leads" component={() => <ProtectedRoute component={PainelLeads} />} />
       <Route path="/painel/conversas" component={() => <ProtectedRoute component={PainelConversas} />} />
       <Route path="/painel/fatura" component={() => <ProtectedRoute component={PainelFatura} donoOnly />} />
