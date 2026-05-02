@@ -433,6 +433,25 @@ export const VeiculoResponseStatus = {
   pausado: "pausado",
 } as const;
 
+export type TipoAquisicao = "proprio" | "consignado";
+
+export type CategoriaDespesaVeiculo =
+  | "manutencao_mecanica"
+  | "manutencao_estetica"
+  | "documentacao"
+  | "outros";
+
+export interface VeiculoDespesa {
+  id: string;
+  veiculo_id: string;
+  categoria: CategoriaDespesaVeiculo;
+  descricao: string;
+  valor: string;
+  data: string;
+  /** @nullable */
+  criado_em?: string | null;
+}
+
 export interface VeiculoResponse {
   id: string;
   loja_id: string;
@@ -459,6 +478,23 @@ export interface VeiculoResponse {
   criado_em?: string | null;
   /** @nullable */
   vendido_em?: string | null;
+  tipo_aquisicao?: TipoAquisicao;
+  /** @nullable */
+  valor_aquisicao?: string | null;
+  /** @nullable */
+  consignado_proprietario_nome?: string | null;
+  /** @nullable */
+  consignado_proprietario_telefone?: string | null;
+  /** @nullable */
+  comissao_consignado_pct?: string | null;
+  /** @nullable */
+  data_entrada_patio?: string | null;
+  dias_no_patio?: number;
+  alerta_patio?: boolean;
+  custo_total?: number;
+  /** @nullable */
+  preco_sugerido?: number | null;
+  despesas?: VeiculoDespesa[];
   qr_code?: QRCodeData | null;
 }
 
@@ -508,6 +544,17 @@ export interface CreateVeiculoRequest {
   opcionais?: string[] | null;
   /** @nullable */
   descricao_agente?: string | null;
+  tipo_aquisicao?: TipoAquisicao;
+  /** @nullable */
+  valor_aquisicao?: number | null;
+  /** @nullable */
+  consignado_proprietario_nome?: string | null;
+  /** @nullable */
+  consignado_proprietario_telefone?: string | null;
+  /** @nullable */
+  comissao_consignado_pct?: number | null;
+  /** @nullable */
+  data_entrada_patio?: string | null;
 }
 
 /**
@@ -557,6 +604,17 @@ export interface UpdateVeiculoRequest {
   /** @nullable */
   descricao_agente?: string | null;
   ativo_agente?: boolean;
+  tipo_aquisicao?: TipoAquisicao;
+  /** @nullable */
+  valor_aquisicao?: number | null;
+  /** @nullable */
+  consignado_proprietario_nome?: string | null;
+  /** @nullable */
+  consignado_proprietario_telefone?: string | null;
+  /** @nullable */
+  comissao_consignado_pct?: number | null;
+  /** @nullable */
+  data_entrada_patio?: string | null;
 }
 
 export type PatchStatusRequestStatus =

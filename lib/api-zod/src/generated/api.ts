@@ -291,6 +291,14 @@ export const ListVeiculosResponseItem = zod.object({
   ativo_agente: zod.boolean(),
   criado_em: zod.coerce.date().nullish(),
   vendido_em: zod.coerce.date().nullish(),
+  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  valor_aquisicao: zod.string().nullish(),
+  consignado_proprietario_nome: zod.string().nullish(),
+  consignado_proprietario_telefone: zod.string().nullish(),
+  comissao_consignado_pct: zod.string().nullish(),
+  data_entrada_patio: zod.string().nullish(),
+  dias_no_patio: zod.number().optional(),
+  alerta_patio: zod.boolean().optional(),
   qr_code: zod
     .union([
       zod.object({
@@ -340,6 +348,12 @@ export const CreateVeiculoBody = zod.object({
     .nullish(),
   opcionais: zod.array(zod.string()).nullish(),
   descricao_agente: zod.string().nullish(),
+  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  valor_aquisicao: zod.number().nullish(),
+  consignado_proprietario_nome: zod.string().nullish(),
+  consignado_proprietario_telefone: zod.string().nullish(),
+  comissao_consignado_pct: zod.number().min(0).max(100).nullish(),
+  data_entrada_patio: zod.string().nullish(),
 });
 
 /**
@@ -347,6 +361,16 @@ export const CreateVeiculoBody = zod.object({
  */
 export const GetVeiculoParams = zod.object({
   veiculoId: zod.coerce.string().uuid(),
+});
+
+const veiculoDespesaItem = zod.object({
+  id: zod.string().uuid(),
+  veiculo_id: zod.string().uuid(),
+  categoria: zod.enum(["manutencao_mecanica", "manutencao_estetica", "documentacao", "outros"]),
+  descricao: zod.string(),
+  valor: zod.string(),
+  data: zod.string(),
+  criado_em: zod.coerce.date().nullish(),
 });
 
 export const GetVeiculoResponse = zod.object({
@@ -383,6 +407,17 @@ export const GetVeiculoResponse = zod.object({
   ativo_agente: zod.boolean(),
   criado_em: zod.coerce.date().nullish(),
   vendido_em: zod.coerce.date().nullish(),
+  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  valor_aquisicao: zod.string().nullish(),
+  consignado_proprietario_nome: zod.string().nullish(),
+  consignado_proprietario_telefone: zod.string().nullish(),
+  comissao_consignado_pct: zod.string().nullish(),
+  data_entrada_patio: zod.string().nullish(),
+  dias_no_patio: zod.number().optional(),
+  alerta_patio: zod.boolean().optional(),
+  custo_total: zod.number().optional(),
+  preco_sugerido: zod.number().nullish(),
+  despesas: zod.array(veiculoDespesaItem).optional(),
   qr_code: zod
     .union([
       zod.object({
@@ -436,6 +471,12 @@ export const UpdateVeiculoBody = zod.object({
   opcionais: zod.array(zod.string()).nullish(),
   descricao_agente: zod.string().nullish(),
   ativo_agente: zod.boolean().optional(),
+  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  valor_aquisicao: zod.number().nullish(),
+  consignado_proprietario_nome: zod.string().nullish(),
+  consignado_proprietario_telefone: zod.string().nullish(),
+  comissao_consignado_pct: zod.number().min(0).max(100).nullish(),
+  data_entrada_patio: zod.string().nullish(),
 });
 
 export const UpdateVeiculoResponse = zod.object({
@@ -472,6 +513,14 @@ export const UpdateVeiculoResponse = zod.object({
   ativo_agente: zod.boolean(),
   criado_em: zod.coerce.date().nullish(),
   vendido_em: zod.coerce.date().nullish(),
+  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  valor_aquisicao: zod.string().nullish(),
+  consignado_proprietario_nome: zod.string().nullish(),
+  consignado_proprietario_telefone: zod.string().nullish(),
+  comissao_consignado_pct: zod.string().nullish(),
+  data_entrada_patio: zod.string().nullish(),
+  dias_no_patio: zod.number().optional(),
+  alerta_patio: zod.boolean().optional(),
   qr_code: zod
     .union([
       zod.object({

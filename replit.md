@@ -39,7 +39,8 @@ Todas as tabelas estão em `lib/db/src/schema/` organizadas por domínio:
 - **sessoes** — tokens JWT persistidos
 
 ### Bloco 2 — Núcleo do Produto (`veiculos.ts`)
-- **veiculos** — estoque da loja (status: ativo/vendido/pausado, campo `ativo_agente` controla billing)
+- **veiculos** — estoque da loja (status: ativo/vendido/pausado, campo `ativo_agente` controla billing). Novos campos ERP: `tipo_aquisicao` (proprio/consignado), `valor_aquisicao`, `consignado_proprietario_nome`, `consignado_proprietario_telefone`, `comissao_consignado_pct`, `data_entrada_patio`
+- **veiculoDespesas** (tabela `veiculo_despesas`) — despesas por veículo: manutenção mecânica, estética, documentação, outros. Campos: categoria, descrição, valor, data
 - **qrcodes** — QR code único por veículo (slug único, nunca reutilizado)
 - **financiamentos** — tabelas de financiamento por banco/modalidade
 

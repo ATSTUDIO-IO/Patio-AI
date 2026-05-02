@@ -1,10 +1,13 @@
 import { Router, type IRouter } from "express";
-import { eq, and, lt, sql, gte, inArray, count } from "drizzle-orm";
+import { eq, and, lt, sql, gte, inArray } from "drizzle-orm";
 import { db, leads, veiculos, qrcodes, conversas, lojas } from "@workspace/db";
 import { requireAuth, requireLojaId } from "../middlewares/auth";
 import { getPlanoConfig, getInicioMesAtual } from "../lib/planos";
 
 const router: IRouter = Router();
+
+const ALERTA_PATIO_AMARELO = 60;
+const ALERTA_PATIO_VERMELHO = 90;
 
 type Alerta = {
   tipo:
@@ -13,7 +16,8 @@ type Alerta = {
     | "scans_sem_lead"
     | "lead_financiamento_pendente"
     | "cota_80pct"
-    | "cota_esgotada";
+    | "cota_esgotada"
+    | "veiculo_tempo_patio";
   prioridade: "alta" | "media";
   titulo: string;
   descricao: string;
@@ -30,6 +34,35 @@ router.get("/alertas", requireAuth, async (req, res): Promise<void> => {
   const duasHorasAtras = new Date(agora.getTime() - 2 * 60 * 60 * 1000);
   const trintaDiasAtras = new Date(agora.getTime() - 30 * 24 * 60 * 60 * 1000);
   const seteDiasAtras = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const veiculosAtivosComPatio = await db
+    .select()
+    .from(veiculos)
+    .where(and(eq(veiculos.lojaId, lojaId), eq(veiculos.status, "ativo")));
+
+  for (const veiculo of veiculosAtivosComPatio) {
+    if (!veiculo.dataEntradaPatio) continue;
+    const entrada = new Date((veiculo.dataEntradaPatio as string) + "T12:00:00Z");
+    const dias = Math.floor((agora.getTime() - entrada.getTime()) / (1000 * 60 * 60 * 24));
+    if (dias >= ALERTA_PATIO_AMARELO) {
+      const prioridade = dias >= ALERTA_PATIO_VERMELHO ? "alta" : "media";
+      alertas.push({
+        tipo: "veiculo_tempo_patio",
+        prioridade,
+        titulo: dias >= ALERTA_PATIO_VERMELHO ? "Veículo há mais de 90 dias no pátio" : "Veículo há mais de 60 dias no pátio",
+        descricao: `${veiculo.marca} ${veiculo.modelo} (${veiculo.placa}) está no pátio há ${dias} dias. Considere ajustar o preço ou estratégia de venda.`,
+        contexto: {
+          veiculo_id: veiculo.id,
+          placa: veiculo.placa,
+          marca: veiculo.marca,
+          modelo: veiculo.modelo,
+          dias_no_patio: dias,
+          data_entrada_patio: veiculo.dataEntradaPatio,
+          preco_venda: veiculo.precoVenda,
+        },
+      });
+    }
+  }
 
   const [leadsQuentes, leadsFinanciamento, veiculosAtivos] = await Promise.all([
     db

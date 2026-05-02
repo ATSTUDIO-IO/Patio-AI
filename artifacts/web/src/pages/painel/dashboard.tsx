@@ -52,6 +52,13 @@ const TIPO_COLORS: Record<string, string> = {
   lead_quente: "bg-yellow-50 text-yellow-700 border-yellow-200",
   agente_erro: "bg-red-50 text-red-700 border-red-200",
   fatura_pendente: "bg-orange-50 text-orange-700 border-orange-200",
+  lead_quente_sem_contato: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  lead_financiamento_pendente: "bg-blue-50 text-blue-700 border-blue-200",
+  veiculo_sem_scans: "bg-gray-50 text-gray-600 border-gray-200",
+  scans_sem_lead: "bg-purple-50 text-purple-700 border-purple-200",
+  cota_80pct: "bg-orange-50 text-orange-700 border-orange-200",
+  cota_esgotada: "bg-red-50 text-red-700 border-red-200",
+  veiculo_tempo_patio: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
 export default function PainelDashboard() {

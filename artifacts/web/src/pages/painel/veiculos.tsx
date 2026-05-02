@@ -35,11 +35,32 @@ function AgenteStatus({ temDescricao }: { temDescricao: boolean }) {
   );
 }
 
+function DiasPatioBadge({ dias, status }: { dias?: number; status: string }) {
+  if (status !== "ativo" || dias == null) return <span className="text-gray-300 text-xs">—</span>;
+  if (dias >= 90) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700" title={`${dias} dias no pátio`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+        {dias}d
+      </span>
+    );
+  }
+  if (dias >= 60) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700" title={`${dias} dias no pátio`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />
+        {dias}d
+      </span>
+    );
+  }
+  return <span className="text-gray-500 text-xs">{dias}d</span>;
+}
 
 export default function PainelVeiculos() {
   const qc = useQueryClient();
   const [statusFiltro, setStatusFiltro] = useState<string>("todos");
   const [busca, setBusca] = useState("");
+  const [alertaPatioFiltro, setAlertaPatioFiltro] = useState(false);
 
   const { data: veiculos = [], isLoading } = useListVeiculos();
   const patchStatus = usePatchVeiculoStatus();
@@ -53,9 +74,12 @@ export default function PainelVeiculos() {
     .filter((v) => {
       const matchStatus = statusFiltro === "todos" || v.status === statusFiltro;
       const matchBusca = !busca || `${v.marca} ${v.modelo} ${v.placa ?? ""}`.toLowerCase().includes(busca.toLowerCase());
-      return matchStatus && matchBusca;
+      const matchAlerta = !alertaPatioFiltro || v.alerta_patio === true;
+      return matchStatus && matchBusca && matchAlerta;
     })
     .sort((a, b) => (b.qr_code?.total_scans ?? 0) - (a.qr_code?.total_scans ?? 0));
+
+  const totalAlerta = veiculos.filter(v => v.alerta_patio && v.status === "ativo").length;
 
   return (
     <PainelLayout>
@@ -70,13 +94,13 @@ export default function PainelVeiculos() {
       />
 
       <div className="p-6">
-        <div className="flex gap-3 mb-4">
+        <div className="flex flex-wrap gap-3 mb-4">
           <input
             type="text"
             placeholder="Buscar por marca, modelo ou placa..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 min-w-[180px] border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <select
             value={statusFiltro}
@@ -88,6 +112,13 @@ export default function PainelVeiculos() {
             <option value="pausado">Pausados</option>
             <option value="vendido">Vendidos</option>
           </select>
+          <button
+            onClick={() => setAlertaPatioFiltro((p) => !p)}
+            className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors ${alertaPatioFiltro ? "bg-orange-100 border-orange-300 text-orange-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+            title="Filtrar veículos com alerta de tempo no pátio"
+          >
+            ⚠ Pátio {totalAlerta > 0 && <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${alertaPatioFiltro ? "bg-orange-200" : "bg-orange-100 text-orange-700"}`}>{totalAlerta}</span>}
+          </button>
         </div>
 
         {isLoading ? (
@@ -105,6 +136,7 @@ export default function PainelVeiculos() {
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Veículo</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Info</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Preço</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-500">Pátio</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-500">Scans</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-500">Agente</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-500">Status</th>
@@ -117,11 +149,19 @@ export default function PainelVeiculos() {
                   const scans = v.qr_code?.total_scans ?? 0;
                   const temQr = !!v.qr_code?.slug;
                   const temDescricao = !!v.descricao_agente;
+                  const consignado = v.tipo_aquisicao === "consignado";
                   return (
-                    <tr key={v.id} className="hover:bg-gray-50">
+                    <tr key={v.id} className={`hover:bg-gray-50 ${v.alerta_patio && v.status === "ativo" ? "bg-orange-50/30" : ""}`}>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900">{v.marca} {v.modelo}</p>
-                        <p className="text-gray-400 text-xs">{v.ano_fabricacao}/{v.ano_modelo} · {v.placa ?? "—"}</p>
+                        <div className="flex items-start gap-1.5">
+                          <div>
+                            <p className="font-medium text-gray-900">{v.marca} {v.modelo}</p>
+                            <p className="text-gray-400 text-xs">{v.ano_fabricacao}/{v.ano_modelo} · {v.placa ?? "—"}</p>
+                            {consignado && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium">Consignado</span>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         <p>{v.combustivel ? COMB_LABELS[v.combustivel] ?? v.combustivel : "—"}</p>
@@ -129,6 +169,9 @@ export default function PainelVeiculos() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <p className="font-semibold text-gray-900">{formatBRL(Number(v.preco_venda))}</p>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <DiasPatioBadge dias={v.dias_no_patio} status={v.status} />
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`font-semibold ${scans > 0 ? "text-indigo-600" : "text-gray-400"}`}>
