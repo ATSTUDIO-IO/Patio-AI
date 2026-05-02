@@ -138,8 +138,8 @@ export default function Landing() {
             <a href={painelUrl} className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] hover:-translate-y-1">
               Começar grátis
             </a>
-            <a href="#como-funciona" className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-transparent border-2 border-white/20 hover:border-white/40 hover:bg-white/5 rounded-xl transition-all">
-              Ver como funciona
+            <a href="#demo" className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-transparent border-2 border-white/20 hover:border-white/40 hover:bg-white/5 rounded-xl transition-all">
+              Ver demo
             </a>
           </motion.div>
         </div>
@@ -227,7 +227,7 @@ export default function Landing() {
       </section>
 
       {/* 6. DEMO ANIMADA (Intercalada antes de diferenciais para quebrar o ritmo) */}
-      <section className="py-24 bg-white overflow-hidden">
+      <section id="demo" className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             
@@ -483,6 +483,8 @@ export default function Landing() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">CRM Completo</span></li>
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Financiamento IA</span></li>
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Relatórios Avançados</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Suporte Prioritário</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Consulta Documental</span></li>
               </ul>
               <a href={painelUrl} className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors">
                 Começar agora
