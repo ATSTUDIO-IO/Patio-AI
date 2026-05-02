@@ -283,7 +283,7 @@ export default function VeiculoForm() {
 
               {/* Custo total preview */}
               {Number(form.valor_aquisicao ?? 0) > 0 && (
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                <div className={`rounded-xl p-4 border ${Number(form.preco_venda) > 0 && Number(form.preco_venda) < custoTotal ? "bg-red-50 border-red-200" : "bg-blue-50 border-blue-100"}`}>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Valor de aquisição</span>
                     <span className="font-medium">{formatBRL(Number(form.valor_aquisicao ?? 0))}</span>
@@ -302,6 +302,14 @@ export default function VeiculoForm() {
                     <div className="flex justify-between text-sm mt-1 text-green-700">
                       <span>Preço sugerido (+20%)</span>
                       <span className="font-semibold">{formatBRL(precoSugerido)}</span>
+                    </div>
+                  )}
+                  {Number(form.preco_venda) > 0 && Number(form.preco_venda) < custoTotal && (
+                    <div className="mt-3 flex items-start gap-2 bg-red-100 rounded-lg px-3 py-2">
+                      <span className="text-red-500 text-base leading-none mt-0.5">⚠</span>
+                      <p className="text-xs text-red-700 font-medium">
+                        Preço de venda ({formatBRL(Number(form.preco_venda))}) está <strong>abaixo do custo total</strong> ({formatBRL(custoTotal)}). Você estará vendendo com prejuízo de {formatBRL(custoTotal - Number(form.preco_venda))}.
+                      </p>
                     </div>
                   )}
                 </div>
