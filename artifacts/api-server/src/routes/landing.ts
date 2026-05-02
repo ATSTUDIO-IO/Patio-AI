@@ -1,5 +1,7 @@
 import { Router, type IRouter } from "express";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { z } from "zod/v4";
+import { db, landingLeads } from "@workspace/db";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -119,6 +121,35 @@ router.post("/landing/chat", async (req, res): Promise<void> => {
     res.json({ resposta: texto });
   } catch (err) {
     logger.error({ err }, "Erro na rota /api/landing/chat");
+    res.status(500).json({ error: "Erro interno. Tente novamente." });
+  }
+});
+
+const LandingLeadBody = z.object({
+  nome: z.string().min(2, "Nome deve ter ao menos 2 caracteres").max(120),
+  email: z.string().email("E-mail inválido"),
+  telefone: z.string().max(20).optional(),
+});
+
+router.post("/landing/lead", async (req, res): Promise<void> => {
+  try {
+    const body = LandingLeadBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.issues.map((i) => i.message).join("; ") });
+      return;
+    }
+
+    const { nome, email, telefone } = body.data;
+
+    const [lead] = await db
+      .insert(landingLeads)
+      .values({ nome, email, telefone: telefone ?? null })
+      .returning();
+
+    logger.info({ leadId: lead.id, email }, "Novo lead da landing page");
+    res.status(201).json({ id: lead.id, mensagem: "Lead registrado com sucesso" });
+  } catch (err) {
+    logger.error({ err }, "Erro na rota POST /api/landing/lead");
     res.status(500).json({ error: "Erro interno. Tente novamente." });
   }
 });

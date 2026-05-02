@@ -41,6 +41,8 @@ function useSectionTracking(sectionName: string) {
   return ref;
 }
 
+type LeadFormState = "idle" | "loading" | "success" | "error";
+
 export default function Landing() {
   const painelUrl = "/painel/cadastro";
 
@@ -48,6 +50,35 @@ export default function Landing() {
   const comoFuncionaRef = useSectionTracking("como_funciona");
   const diferenciaisRef = useSectionTracking("diferenciais");
   const planosRef = useSectionTracking("planos");
+
+  const [leadNome, setLeadNome] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadTelefone, setLeadTelefone] = useState("");
+  const [leadFormState, setLeadFormState] = useState<LeadFormState>("idle");
+  const [leadError, setLeadError] = useState("");
+
+  async function handleLeadSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLeadFormState("loading");
+    setLeadError("");
+    try {
+      const res = await fetch("/api/landing/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: leadNome, email: leadEmail, telefone: leadTelefone || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLeadError(data.error ?? "Erro ao enviar. Tente novamente.");
+        setLeadFormState("error");
+      } else {
+        setLeadFormState("success");
+      }
+    } catch {
+      setLeadError("Erro de conexão. Verifique sua internet e tente novamente.");
+      setLeadFormState("error");
+    }
+  }
 
   const staggerContainer = {
     hidden: { opacity: 0 },
@@ -509,7 +540,107 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 9. CTA FINAL */}
+      {/* 9. LEAD CAPTURE */}
+      <section id="lista-espera" className="py-24 bg-white">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-10"
+          >
+            <span className="inline-block px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-primary text-sm font-semibold mb-4">Acesso Antecipado</span>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Entre na lista e comece antes</h2>
+            <p className="text-lg text-gray-500">
+              Deixe seu contato e nossa equipe entra em touch para configurar tudo para você — sem compromisso.
+            </p>
+          </motion.div>
+
+          {leadFormState === "success" ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="flex flex-col items-center gap-4 py-12 px-8 bg-indigo-50 rounded-2xl text-center"
+            >
+              <CheckCircle2 className="w-14 h-14 text-cyan-accent" />
+              <h3 className="text-2xl font-bold text-gray-900">Recebemos seu contato!</h3>
+              <p className="text-gray-600 max-w-md">Nossa equipe vai entrar em contato em breve. Enquanto isso, você já pode criar sua conta gratuitamente.</p>
+              <a href={painelUrl} className="mt-2 inline-flex items-center justify-center px-8 py-3 text-base font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-md">
+                Criar conta grátis
+              </a>
+            </motion.div>
+          ) : (
+            <motion.form
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              onSubmit={handleLeadSubmit}
+              className="bg-gray-50 rounded-2xl p-8 shadow-sm border border-gray-100 flex flex-col gap-4"
+            >
+              <div className="flex flex-col gap-1">
+                <label htmlFor="lead-nome" className="text-sm font-semibold text-gray-700">Nome *</label>
+                <input
+                  id="lead-nome"
+                  type="text"
+                  required
+                  minLength={2}
+                  maxLength={120}
+                  placeholder="Seu nome"
+                  value={leadNome}
+                  onChange={(e) => setLeadNome(e.target.value)}
+                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-primary/40 focus:border-indigo-primary transition-all bg-white"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="lead-email" className="text-sm font-semibold text-gray-700">E-mail *</label>
+                <input
+                  id="lead-email"
+                  type="email"
+                  required
+                  placeholder="seu@email.com"
+                  value={leadEmail}
+                  onChange={(e) => setLeadEmail(e.target.value)}
+                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-primary/40 focus:border-indigo-primary transition-all bg-white"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="lead-telefone" className="text-sm font-semibold text-gray-700">
+                  Telefone <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  id="lead-telefone"
+                  type="tel"
+                  maxLength={20}
+                  placeholder="(11) 99999-9999"
+                  value={leadTelefone}
+                  onChange={(e) => setLeadTelefone(e.target.value)}
+                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-primary/40 focus:border-indigo-primary transition-all bg-white"
+                />
+              </div>
+              {leadFormState === "error" && (
+                <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{leadError}</p>
+              )}
+              <button
+                type="submit"
+                disabled={leadFormState === "loading"}
+                className="mt-2 inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {leadFormState === "loading" ? (
+                  <span className="flex items-center gap-2"><svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Enviando...</span>
+                ) : (
+                  <><Send className="w-4 h-4" /> Quero acesso antecipado</>
+                )}
+              </button>
+              <p className="text-xs text-center text-gray-400">Sem spam. Seus dados são protegidos pela LGPD.</p>
+            </motion.form>
+          )}
+        </div>
+      </section>
+
+      {/* 10. CTA FINAL */}
       <section className="py-24 bg-indigo-primary relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-4xl bg-cyan-accent/10 blur-[100px] rounded-full pointer-events-none"></div>
