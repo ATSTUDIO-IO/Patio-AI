@@ -128,7 +128,7 @@ export default function PainelCadastro() {
             <button
               type="submit"
               disabled={registerMutation.isPending || loginMutation.isPending}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors disabled:opacity-60"
+              className="w-full py-3 rounded-xl btn-primary font-semibold text-sm"
             >
               {registerMutation.isPending ? "Criando conta..." : "Criar conta e entrar"}
             </button>

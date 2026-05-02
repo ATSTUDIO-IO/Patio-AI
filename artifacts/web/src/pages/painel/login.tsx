@@ -87,7 +87,7 @@ export default function PainelLogin() {
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all disabled:opacity-60"
+              className="w-full py-3 rounded-xl btn-primary font-semibold text-sm"
             >
               {loginMutation.isPending ? "Entrando..." : "Entrar"}
             </button>

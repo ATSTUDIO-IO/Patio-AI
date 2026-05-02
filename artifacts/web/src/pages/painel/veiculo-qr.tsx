@@ -64,7 +64,7 @@ export default function VeiculoQR() {
               <button
                 onClick={handleDownload}
                 disabled={!qr?.imagem_qr}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-40"
+                className="px-4 py-2 btn-primary text-sm font-semibold rounded-xl disabled:opacity-40"
               >
                 ⬇️ Baixar PNG
               </button>
