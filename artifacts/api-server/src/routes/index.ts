@@ -11,6 +11,7 @@ import alertasRouter from "./alertas";
 import financiamentosRouter from "./financiamentos";
 import billingRouter from "./billing";
 import adminRouter from "./admin";
+import landingRouter from "./landing";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(alertasRouter);
 router.use(financiamentosRouter);
 router.use(billingRouter);
 router.use(adminRouter);
+router.use(landingRouter);
 
 export default router;
