@@ -604,6 +604,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /veiculos/relatorio-vendas:
+    get:
+      operationId: getRelatorioVendas
+      tags: [veiculos]
+      summary: Sales profitability report
+      description: Returns sold vehicles with cost, sale price, gross profit and margin per vehicle, plus aggregate totals.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: periodo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [mes, trimestre, ano, todos]
+            default: mes
+      responses:
+        "200":
+          description: Profitability report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelatorioVendasResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /veiculos/{veiculoId}/status:
     patch:
       operationId: patchVeiculoStatus
@@ -1996,6 +2026,9 @@ components:
         vendido_em:
           type: ["string", "null"]
           format: date-time
+        valor_venda_real:
+          type: ["number", "null"]
+          description: Actual price the vehicle was sold for (recorded at sale time)
         qr_code:
           oneOf:
             - $ref: "#/components/schemas/QRCodeData"
@@ -2089,6 +2122,71 @@ components:
         ativo_agente:
           type: boolean
 
+    RelatorioVendasItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        marca:
+          type: string
+        modelo:
+          type: string
+        ano_fabricacao:
+          type: integer
+        ano_modelo:
+          type: integer
+        placa:
+          type: ["string", "null"]
+        vendido_em:
+          type: ["string", "null"]
+          format: date-time
+        custo_total:
+          type: number
+        valor_venda_real:
+          type: ["number", "null"]
+        lucro_bruto:
+          type: ["number", "null"]
+        margem_pct:
+          type: ["number", "null"]
+      required:
+        - id
+        - marca
+        - modelo
+        - ano_fabricacao
+        - ano_modelo
+        - custo_total
+
+    RelatorioVendasTotais:
+      type: object
+      properties:
+        receita_total:
+          type: number
+        custo_total:
+          type: number
+        lucro_total:
+          type: number
+        total_vendidos:
+          type: integer
+      required:
+        - receita_total
+        - custo_total
+        - lucro_total
+        - total_vendidos
+
+    RelatorioVendasResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelatorioVendasItem"
+        totais:
+          $ref: "#/components/schemas/RelatorioVendasTotais"
+      required:
+        - items
+        - totais
+
     PatchStatusRequest:
       type: object
       properties:
@@ -2097,6 +2195,9 @@ components:
           enum: [ativo, vendido, pausado]
         motivo:
           type: ["string", "null"]
+        valor_venda_real:
+          type: ["number", "null"]
+          description: Actual sale price recorded when marking vehicle as sold
       required:
         - status
 

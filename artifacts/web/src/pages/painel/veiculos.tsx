@@ -56,11 +56,93 @@ function DiasPatioBadge({ dias, status }: { dias?: number; status: string }) {
   return <span className="text-gray-500 text-xs">{dias}d</span>;
 }
 
+type ModalVenda = {
+  veiculoId: string;
+  precoVenda: string;
+  label: string;
+};
+
+function ModalRegistrarVenda({
+  modal,
+  onConfirm,
+  onClose,
+  loading,
+}: {
+  modal: ModalVenda;
+  onConfirm: (veiculoId: string, valorVendaReal: number | null) => void;
+  onClose: () => void;
+  loading: boolean;
+}) {
+  const [valorStr, setValorStr] = useState("");
+  const [pular, setPular] = useState(false);
+
+  const valorNum = valorStr ? parseFloat(valorStr.replace(/\./g, "").replace(",", ".")) : null;
+  const valido = pular || (valorNum !== null && !isNaN(valorNum) && valorNum > 0);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <h2 className="text-lg font-bold text-gray-900 mb-1">Registrar Venda</h2>
+        <p className="text-sm text-gray-500 mb-5">
+          {modal.label} — Informe o valor de venda real para calcular a rentabilidade.
+        </p>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Valor de venda real
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              disabled={pular}
+              value={valorStr}
+              onChange={(e) => setValorStr(e.target.value)}
+              placeholder={`Ex: ${Number(modal.precoVenda).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-50"
+            />
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 mb-6 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={pular}
+            onChange={(e) => setPular(e.target.checked)}
+            className="rounded"
+          />
+          <span className="text-sm text-gray-600">Registrar depois (sem valor agora)</span>
+        </label>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => onConfirm(modal.veiculoId, pular ? null : valorNum)}
+            disabled={!valido || loading}
+            className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {loading ? "Salvando..." : "Confirmar Venda"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PainelVeiculos() {
   const qc = useQueryClient();
   const [statusFiltro, setStatusFiltro] = useState<string>("todos");
   const [busca, setBusca] = useState("");
   const [alertaPatioFiltro, setAlertaPatioFiltro] = useState(false);
+  const [modalVenda, setModalVenda] = useState<ModalVenda | null>(null);
+  const [loadingVenda, setLoadingVenda] = useState(false);
 
   const { data: veiculos = [], isLoading } = useListVeiculos();
   const patchStatus = usePatchVeiculoStatus();
@@ -68,6 +150,27 @@ export default function PainelVeiculos() {
   const handlePatch = async (veiculoId: string, status: string) => {
     await patchStatus.mutateAsync({ veiculoId, data: { status: status as "ativo" | "pausado" | "vendido" } });
     qc.invalidateQueries({ queryKey: ["/veiculos"] });
+  };
+
+  const handleVender = (veiculoId: string, precoVenda: string, marcaModelo: string) => {
+    setModalVenda({ veiculoId, precoVenda, label: marcaModelo });
+  };
+
+  const handleConfirmarVenda = async (veiculoId: string, valorVendaReal: number | null) => {
+    setLoadingVenda(true);
+    try {
+      await patchStatus.mutateAsync({
+        veiculoId,
+        data: {
+          status: "vendido",
+          valor_venda_real: valorVendaReal,
+        },
+      });
+      qc.invalidateQueries({ queryKey: ["/veiculos"] });
+      setModalVenda(null);
+    } finally {
+      setLoadingVenda(false);
+    }
   };
 
   const filtrado = veiculos
@@ -83,6 +186,15 @@ export default function PainelVeiculos() {
 
   return (
     <PainelLayout>
+      {modalVenda && (
+        <ModalRegistrarVenda
+          modal={modalVenda}
+          onConfirm={handleConfirmarVenda}
+          onClose={() => setModalVenda(null)}
+          loading={loadingVenda}
+        />
+      )}
+
       <PageHeader
         title="Veículos"
         subtitle={`${veiculos.filter(v => v.status === "ativo").length} ativos`}
@@ -169,6 +281,9 @@ export default function PainelVeiculos() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <p className="font-semibold text-gray-900">{formatBRL(Number(v.preco_venda))}</p>
+                        {v.status === "vendido" && v.valor_venda_real && (
+                          <p className="text-xs text-green-600">Vendido: {formatBRL(Number(v.valor_venda_real))}</p>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <DiasPatioBadge dias={v.dias_no_patio} status={v.status} />
@@ -211,7 +326,13 @@ export default function PainelVeiculos() {
                             <button onClick={() => handlePatch(v.id, "ativo")} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors text-xs font-medium" title="Ativar">▶</button>
                           )}
                           {v.status !== "vendido" && (
-                            <button onClick={() => handlePatch(v.id, "vendido")} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs font-medium" title="Vendido">✓</button>
+                            <button
+                              onClick={() => handleVender(v.id, v.preco_venda, `${v.marca} ${v.modelo}`)}
+                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs font-medium"
+                              title="Marcar como vendido"
+                            >
+                              ✓
+                            </button>
                           )}
                         </div>
                       </td>

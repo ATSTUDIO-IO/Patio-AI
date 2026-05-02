@@ -15,6 +15,7 @@ import PainelLeads from "@/pages/painel/leads";
 import PainelConversas from "@/pages/painel/conversas";
 import PainelFatura from "@/pages/painel/fatura";
 import PainelConfiguracoes from "@/pages/painel/configuracoes";
+import RelatorioVendas from "@/pages/painel/relatorio-vendas";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminLojaDetail from "@/pages/admin/loja-detail";
 import AdminBilling from "@/pages/admin/billing";
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/painel/conversas" component={() => <ProtectedRoute component={PainelConversas} />} />
       <Route path="/painel/fatura" component={() => <ProtectedRoute component={PainelFatura} donoOnly />} />
       <Route path="/painel/configuracoes" component={() => <ProtectedRoute component={PainelConfiguracoes} donoOnly />} />
+      <Route path="/painel/relatorio-vendas" component={() => <ProtectedRoute component={RelatorioVendas} donoOnly />} />
       <Route path="/admin" component={() => <AdminRoute component={AdminDashboard} />} />
       <Route path="/admin/dashboard" component={() => <AdminRoute component={AdminDashboard} />} />
       <Route path="/admin/lojas" component={() => <AdminRoute component={AdminDashboard} />} />

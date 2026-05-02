@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql, sum } from "drizzle-orm";
+import { eq, and, sql, sum, gte, desc } from "drizzle-orm";
 import { db, veiculos, qrcodes, eventosBilling, lojas, veiculoDespesas } from "@workspace/db";
 import {
   ListVeiculosQueryParams,
@@ -75,6 +75,7 @@ function mapVeiculo(
     alerta_patio: alertaPatio,
     criado_em: v.criadoEm,
     vendido_em: v.vendidoEm,
+    valor_venda_real: v.valorVendaReal ? parseFloat(v.valorVendaReal) : null,
     ...(extras?.custoTotal !== undefined && { custo_total: extras.custoTotal }),
     ...(extras?.precoSugerido !== undefined && { preco_sugerido: extras.precoSugerido }),
     ...(extras?.despesas !== undefined && { despesas: extras.despesas }),
@@ -254,6 +255,84 @@ router.post("/veiculos", requireAuth, async (req, res): Promise<void> => {
   res.status(201).json(mapVeiculo(veiculo, qr));
 });
 
+// ─── GET /veiculos/relatorio-vendas ───────────────────────────────────────────
+const RelatorioVendasQueryParams = zod.object({
+  periodo: zod.enum(["mes", "trimestre", "ano", "todos"]).default("mes"),
+});
+
+router.get("/veiculos/relatorio-vendas", requireAuth, async (req, res): Promise<void> => {
+  const query = RelatorioVendasQueryParams.safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ error: formatZodError(query.error) });
+    return;
+  }
+
+  const lojaId = requireLojaId(req, res);
+  if (!lojaId) return;
+
+  const periodo = query.data.periodo;
+  const agora = new Date();
+  let dataInicio: Date | null = null;
+
+  if (periodo === "mes") {
+    dataInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
+  } else if (periodo === "trimestre") {
+    const trimestre = Math.floor(agora.getMonth() / 3);
+    dataInicio = new Date(agora.getFullYear(), trimestre * 3, 1);
+  } else if (periodo === "ano") {
+    dataInicio = new Date(agora.getFullYear(), 0, 1);
+  }
+
+  const conditions = [eq(veiculos.lojaId, lojaId), eq(veiculos.status, "vendido")];
+  if (dataInicio) {
+    conditions.push(gte(veiculos.vendidoEm, dataInicio));
+  }
+
+  const vendidos = await db
+    .select()
+    .from(veiculos)
+    .where(and(...conditions))
+    .orderBy(desc(veiculos.vendidoEm));
+
+  const items = await Promise.all(
+    vendidos.map(async (v) => {
+      const custoTotal = await calcularCustoTotal(v.id, v.valorAquisicao);
+      const valorVendaReal = v.valorVendaReal ? parseFloat(v.valorVendaReal) : null;
+      const lucroBruto = valorVendaReal !== null ? valorVendaReal - custoTotal : null;
+      const margemPct = lucroBruto !== null && valorVendaReal !== null && valorVendaReal > 0 ? (lucroBruto / valorVendaReal) * 100 : null;
+
+      return {
+        id: v.id,
+        marca: v.marca,
+        modelo: v.modelo,
+        ano_fabricacao: v.anoFabricacao,
+        ano_modelo: v.anoModelo,
+        placa: v.placa,
+        vendido_em: v.vendidoEm?.toISOString() ?? null,
+        custo_total: custoTotal,
+        valor_venda_real: valorVendaReal,
+        lucro_bruto: lucroBruto,
+        margem_pct: margemPct !== null ? parseFloat(margemPct.toFixed(2)) : null,
+      };
+    }),
+  );
+
+  const comVenda = items.filter((i) => i.valor_venda_real !== null);
+  const receitaTotal = comVenda.reduce((acc, i) => acc + (i.valor_venda_real ?? 0), 0);
+  const custoTotalGeral = comVenda.reduce((acc, i) => acc + i.custo_total, 0);
+  const lucroTotal = comVenda.reduce((acc, i) => acc + (i.lucro_bruto ?? 0), 0);
+
+  res.json({
+    items,
+    totais: {
+      receita_total: receitaTotal,
+      custo_total: custoTotalGeral,
+      lucro_total: lucroTotal,
+      total_vendidos: items.length,
+    },
+  });
+});
+
 // ─── GET /veiculos/:veiculoId ─────────────────────────────────────────────────
 router.get("/veiculos/:veiculoId", requireAuth, async (req, res): Promise<void> => {
   const params = GetVeiculoParams.safeParse(req.params);
@@ -420,6 +499,7 @@ router.patch("/veiculos/:veiculoId/status", requireAuth, async (req, res): Promi
 
   const novoStatus = body.data.status as "ativo" | "vendido" | "pausado";
   const motivo = body.data.motivo ?? null;
+  const valorVendaReal = (body.data as { valor_venda_real?: number | null }).valor_venda_real ?? null;
 
   const { veiculoAtualizado, qrAtualizado } = await db.transaction(async (tx) => {
     const veiculoUpdate: Record<string, unknown> = { status: novoStatus };
@@ -427,11 +507,15 @@ router.patch("/veiculos/:veiculoId/status", requireAuth, async (req, res): Promi
     if (novoStatus === "vendido") {
       veiculoUpdate.ativoAgente = false;
       veiculoUpdate.vendidoEm = new Date();
+      if (valorVendaReal !== null) {
+        veiculoUpdate.valorVendaReal = String(valorVendaReal);
+      }
     } else if (novoStatus === "pausado") {
       veiculoUpdate.ativoAgente = false;
     } else if (novoStatus === "ativo") {
       veiculoUpdate.ativoAgente = true;
       veiculoUpdate.vendidoEm = null;
+      veiculoUpdate.valorVendaReal = null;
     }
 
     const [veiculoAtualizado] = await tx

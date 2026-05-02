@@ -16,6 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/painel/veiculos", label: "Veículos", icon: "🚗" },
   { href: "/painel/leads", label: "Leads", icon: "👤" },
   { href: "/painel/conversas", label: "Conversas", icon: "💬" },
+  { href: "/painel/relatorio-vendas", label: "Rentabilidade", icon: "📈", donoOnly: true },
   { href: "/painel/fatura", label: "Fatura", icon: "💰", donoOnly: true },
   { href: "/painel/configuracoes", label: "Configurações", icon: "⚙️", donoOnly: true },
 ];

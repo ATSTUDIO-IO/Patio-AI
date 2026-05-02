@@ -482,6 +482,8 @@ export interface VeiculoResponse {
   criado_em?: string | null;
   /** @nullable */
   vendido_em?: string | null;
+  /** @nullable */
+  valor_venda_real?: number | null;
   tipo_aquisicao?: TipoAquisicao;
   /** @nullable */
   valor_aquisicao?: string | null;
@@ -634,6 +636,40 @@ export interface PatchStatusRequest {
   status: PatchStatusRequestStatus;
   /** @nullable */
   motivo?: string | null;
+  /** @nullable */
+  valor_venda_real?: number | null;
+}
+
+export interface RelatorioVendasItem {
+  id: string;
+  marca: string;
+  modelo: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+  placa: string;
+  vendido_em: string;
+  custo_total: number;
+  valor_venda_real: number | null;
+  lucro_bruto: number | null;
+  margem_pct: number | null;
+}
+
+export interface RelatorioVendasTotais {
+  receita_total: number;
+  custo_total: number;
+  lucro_total: number;
+  total_vendidos: number;
+}
+
+export interface RelatorioVendas {
+  items: RelatorioVendasItem[];
+  totais: RelatorioVendasTotais;
+}
+
+export type RelatorioVendasPeriodo = "mes" | "trimestre" | "ano" | "todos";
+
+export interface GetRelatorioVendasParams {
+  periodo?: RelatorioVendasPeriodo;
 }
 
 export interface VeiculoPublicoData {

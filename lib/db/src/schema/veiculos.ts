@@ -72,6 +72,7 @@ export const veiculos = pgTable(
     dataEntradaPatio: date("data_entrada_patio"),
     criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
     vendidoEm: timestamp("vendido_em", { withTimezone: true }),
+    valorVendaReal: numeric("valor_venda_real", { precision: 12, scale: 2 }),
   },
   (table) => [
     unique("uq_veiculo_loja_placa").on(table.lojaId, table.placa),

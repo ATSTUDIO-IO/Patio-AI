@@ -549,6 +549,7 @@ export const PatchVeiculoStatusParams = zod.object({
 export const PatchVeiculoStatusBody = zod.object({
   status: zod.enum(["ativo", "vendido", "pausado"]),
   motivo: zod.string().nullish(),
+  valor_venda_real: zod.number().positive().nullish(),
 });
 
 export const PatchVeiculoStatusResponse = zod.object({
