@@ -30,4 +30,8 @@ export interface UpdateLojaRequest {
   bancos_parceiros?: string | null;
   /** @nullable */
   mencionar_tempo_patio?: boolean | null;
+  /** @nullable */
+  whatsapp_numero_id?: string | null;
+  /** @nullable */
+  whatsapp_access_token?: string | null;
 }

@@ -164,6 +164,12 @@ export default function PainelConfiguracoes() {
     cidade: user?.loja?.cidade ?? "",
   });
 
+  const [whatsappForm, setWhatsappForm] = useState({
+    whatsapp_numero_id: user?.loja?.whatsapp_numero_id ?? "",
+    whatsapp_access_token: "",
+  });
+  const [whatsappStatus, setWhatsappStatus] = useState<string | null>(null);
+
   const [agenteForm, setAgenteForm] = useState({
     nome_agente: user?.loja?.nome_agente ?? "Agente PátioAI",
     tom_agente: user?.loja?.tom_agente ?? "profissional_cordial",
@@ -203,6 +209,26 @@ export default function PainelConfiguracoes() {
     setAgenteForm((f) => ({ ...f, [k]: e.target.value }));
   const setVendedor = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setVendedorForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const handleSaveWhatsapp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWhatsappStatus(null);
+    try {
+      const payload: Record<string, string | null> = {
+        whatsapp_numero_id: whatsappForm.whatsapp_numero_id || null,
+      };
+      if (whatsappForm.whatsapp_access_token) {
+        payload["whatsapp_access_token"] = whatsappForm.whatsapp_access_token;
+      }
+      await updateLoja.mutateAsync({ lojaId, data: payload });
+      setWhatsappStatus("Configurações WhatsApp salvas!");
+      setWhatsappForm((f) => ({ ...f, whatsapp_access_token: "" }));
+      setTimeout(() => setWhatsappStatus(null), 3000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro";
+      setWhatsappStatus(`Erro: ${msg.replace(/HTTP \d+: /, "")}`);
+    }
+  };
 
   const handleSaveLoja = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -614,6 +640,57 @@ export default function PainelConfiguracoes() {
             </div>
           </div>
           )}
+        </SectionCard>
+
+        <SectionCard
+          title="Integração WhatsApp Business"
+          subtitle="Configure o agente de vendas pelo WhatsApp (Meta Cloud API)"
+        >
+          <form onSubmit={handleSaveWhatsapp} className="space-y-4">
+            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3 text-xs text-cyan-800">
+              <p className="font-semibold mb-1">Como configurar:</p>
+              <ol className="list-decimal list-inside space-y-0.5">
+                <li>Acesse o Meta for Developers e crie um app WhatsApp Business.</li>
+                <li>Copie o <strong>Phone Number ID</strong> do número cadastrado.</li>
+                <li>Gere um <strong>Access Token</strong> permanente na plataforma Meta.</li>
+                <li>Configure o webhook da Meta para: <code className="bg-cyan-100 px-1 rounded">/api/whatsapp/webhook</code></li>
+                <li>Use o <strong>Verify Token</strong> definido no ambiente do servidor.</li>
+              </ol>
+            </div>
+
+            <InputField
+              label="Phone Number ID"
+              value={whatsappForm.whatsapp_numero_id}
+              onChange={(e) => setWhatsappForm((f) => ({ ...f, whatsapp_numero_id: e.target.value }))}
+              placeholder="Ex: 123456789012345"
+              hint="ID do número de telefone WhatsApp Business na plataforma Meta."
+            />
+
+            <InputField
+              label="Access Token"
+              type="password"
+              value={whatsappForm.whatsapp_access_token}
+              onChange={(e) => setWhatsappForm((f) => ({ ...f, whatsapp_access_token: e.target.value }))}
+              placeholder={user?.loja?.whatsapp_numero_id ? "••••••••• (deixe em branco para não alterar)" : "Cole o token de acesso permanente"}
+              hint="Token de acesso gerado no painel da Meta. Armazenado de forma segura."
+            />
+
+            {user?.loja?.whatsapp_numero_id && (
+              <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg">
+                <span className="w-2 h-2 rounded-full bg-green-500 inline-block flex-shrink-0"></span>
+                WhatsApp configurado · Phone ID: {user.loja.whatsapp_numero_id}
+              </div>
+            )}
+
+            <StatusMessage msg={whatsappStatus} />
+            <button
+              type="submit"
+              disabled={updateLoja.isPending}
+              className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-60"
+            >
+              {updateLoja.isPending ? "Salvando..." : "Salvar Configurações WhatsApp"}
+            </button>
+          </form>
         </SectionCard>
 
         <SectionCard title="Equipe de Vendas" subtitle="Gerencie os usuários que têm acesso ao painel">

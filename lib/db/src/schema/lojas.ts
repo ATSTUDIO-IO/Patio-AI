@@ -35,6 +35,8 @@ export const lojas = pgTable("lojas", {
   descricaoGarantia: text("descricao_garantia"),
   bancosParceiros: text("bancos_parceiros"),
   mencionarTempoPatio: boolean("mencionar_tempo_patio").notNull().default(false),
+  whatsappNumeroId: text("whatsapp_numero_id"),
+  whatsappAccessToken: text("whatsapp_access_token"),
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
 });
 

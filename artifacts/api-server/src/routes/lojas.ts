@@ -97,6 +97,10 @@ router.put(
       updateData.bancosParceiros = body.data.bancos_parceiros;
     if (body.data.mencionar_tempo_patio !== undefined)
       updateData.mencionarTempoPatio = body.data.mencionar_tempo_patio;
+    if (body.data.whatsapp_numero_id !== undefined)
+      updateData.whatsappNumeroId = body.data.whatsapp_numero_id;
+    if (body.data.whatsapp_access_token !== undefined)
+      updateData.whatsappAccessToken = body.data.whatsapp_access_token;
 
     if (Object.keys(updateData).length === 0) {
       res.status(400).json({ error: "Nenhum campo para atualizar" });
@@ -127,6 +131,7 @@ router.put(
       descricao_garantia: lojaAtualizada.descricaoGarantia,
       bancos_parceiros: lojaAtualizada.bancosParceiros,
       mencionar_tempo_patio: lojaAtualizada.mencionarTempoPatio,
+      whatsapp_numero_id: lojaAtualizada.whatsappNumeroId,
       criado_em: lojaAtualizada.criadoEm,
     });
 

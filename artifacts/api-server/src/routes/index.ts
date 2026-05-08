@@ -12,6 +12,7 @@ import financiamentosRouter from "./financiamentos";
 import billingRouter from "./billing";
 import adminRouter from "./admin";
 import landingRouter from "./landing";
+import whatsappRouter from "./whatsapp";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(financiamentosRouter);
 router.use(billingRouter);
 router.use(adminRouter);
 router.use(landingRouter);
+router.use(whatsappRouter);
 
 export default router;

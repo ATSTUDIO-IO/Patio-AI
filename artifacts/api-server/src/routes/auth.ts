@@ -230,6 +230,7 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
         descricao_garantia: lojaData.descricaoGarantia,
         bancos_parceiros: lojaData.bancosParceiros,
         mencionar_tempo_patio: lojaData.mencionarTempoPatio,
+        whatsapp_numero_id: lojaData.whatsappNumeroId,
         criado_em: lojaData.criadoEm,
       };
     }

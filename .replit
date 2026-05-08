@@ -49,3 +49,4 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
+WHATSAPP_VERIFY_TOKEN = "patioai_whatsapp_webhook_2026"

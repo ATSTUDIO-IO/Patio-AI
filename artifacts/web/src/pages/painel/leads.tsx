@@ -11,6 +11,12 @@ const STATUS_INFO: Record<string, { label: string; color: string }> = {
   perdido: { label: "Perdido", color: "bg-red-100 text-red-700" },
 };
 
+const ORIGEM_INFO: Record<string, { label: string; color: string }> = {
+  whatsapp: { label: "WhatsApp", color: "bg-green-100 text-green-700" },
+  qr_patio: { label: "QR Pátio", color: "bg-indigo-100 text-indigo-700" },
+  landing: { label: "Landing", color: "bg-purple-100 text-purple-700" },
+};
+
 const INTERESSE_INFO: Record<string, { label: string; color: string }> = {
   alto: { label: "Alto", color: "text-green-600" },
   medio: { label: "Médio", color: "text-yellow-600" },
@@ -89,6 +95,7 @@ export default function PainelLeads() {
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Lead</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Veículo</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-500">Origem</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-500">Interesse</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-500">Status</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Quando</th>
@@ -96,7 +103,10 @@ export default function PainelLeads() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtrado.map((l) => (
+                {filtrado.map((l) => {
+                  const origem = (l as Record<string, unknown>)["origem"] as string | undefined;
+                  const origemInfo = origem ? (ORIGEM_INFO[origem] ?? { label: origem, color: "bg-gray-100 text-gray-600" }) : null;
+                  return (
                   <tr key={l.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-900">{l.nome ?? "Anônimo"}</p>
@@ -104,6 +114,13 @@ export default function PainelLeads() {
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
                       {l.veiculo ? `${l.veiculo.marca ?? ""} ${l.veiculo.modelo ?? ""}`.trim() || "—" : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {origemInfo && (
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${origemInfo.color}`}>
+                          {origemInfo.label}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`text-xs font-medium ${INTERESSE_INFO[l.interesse]?.color ?? "text-gray-500"}`}>
@@ -128,7 +145,8 @@ export default function PainelLeads() {
                       <Link href="/painel/conversas" className="text-xs text-indigo-600 hover:underline font-medium">Ver conversa</Link>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

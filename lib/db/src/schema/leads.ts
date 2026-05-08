@@ -26,9 +26,7 @@ export const leads = pgTable(
   "leads",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    veiculoId: uuid("veiculo_id")
-      .notNull()
-      .references(() => veiculos.id),
+    veiculoId: uuid("veiculo_id").references(() => veiculos.id),
     lojaId: uuid("loja_id").notNull().references(() => lojas.id),
     nome: text("nome"),
     telefone: text("telefone"),
@@ -53,12 +51,9 @@ export const conversas = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     leadId: uuid("lead_id").references(() => leads.id),
-    veiculoId: uuid("veiculo_id")
-      .notNull()
-      .references(() => veiculos.id),
-    qrcodeId: uuid("qrcode_id")
-      .notNull()
-      .references(() => qrcodes.id),
+    veiculoId: uuid("veiculo_id").references(() => veiculos.id),
+    qrcodeId: uuid("qrcode_id").references(() => qrcodes.id),
+    canal: text("canal").notNull().default("qr_patio"),
     iniciadaEm: timestamp("iniciada_em", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -74,6 +69,7 @@ export const conversas = pgTable(
     index("idx_conversas_data").on(table.iniciadaEm),
     index("idx_conversas_lead").on(table.leadId),
     index("idx_conversas_qrcode").on(table.qrcodeId),
+    index("idx_conversas_canal").on(table.canal),
   ],
 );
 

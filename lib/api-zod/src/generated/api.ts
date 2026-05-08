@@ -89,6 +89,7 @@ export const GetMeResponse = zod.object({
         descricao_garantia: zod.string().nullish(),
         bancos_parceiros: zod.string().nullish(),
         mencionar_tempo_patio: zod.boolean().nullish(),
+        whatsapp_numero_id: zod.string().nullish(),
       }),
       zod.null(),
     ])
@@ -116,6 +117,8 @@ export const UpdateLojaBody = zod.object({
   descricao_garantia: zod.string().nullish(),
   bancos_parceiros: zod.string().nullish(),
   mencionar_tempo_patio: zod.boolean().nullish(),
+  whatsapp_numero_id: zod.string().nullish(),
+  whatsapp_access_token: zod.string().nullish(),
 });
 
 export const UpdateLojaResponse = zod.object({
@@ -137,6 +140,7 @@ export const UpdateLojaResponse = zod.object({
   descricao_garantia: zod.string().nullish(),
   bancos_parceiros: zod.string().nullish(),
   mencionar_tempo_patio: zod.boolean().nullish(),
+  whatsapp_numero_id: zod.string().nullish(),
 });
 
 /**

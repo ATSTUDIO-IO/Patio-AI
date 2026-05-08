@@ -36,6 +36,7 @@ export type UserInfo = {
     descricao_garantia?: string | null;
     bancos_parceiros?: string | null;
     mencionar_tempo_patio?: boolean | null;
+    whatsapp_numero_id?: string | null;
   };
   plano_config?: PlanoConfig | null;
 };
