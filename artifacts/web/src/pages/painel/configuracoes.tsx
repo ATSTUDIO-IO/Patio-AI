@@ -169,6 +169,10 @@ export default function PainelConfiguracoes() {
     whatsapp_access_token: "",
   });
   const [whatsappStatus, setWhatsappStatus] = useState<string | null>(null);
+  const [whatsappConexao, setWhatsappConexao] = useState<
+    { conectado: boolean; display_phone_number?: string; erro?: string } | null
+  >(null);
+  const [testando, setTestando] = useState(false);
 
   const [agenteForm, setAgenteForm] = useState({
     nome_agente: user?.loja?.nome_agente ?? "Agente PátioAI",
@@ -210,6 +214,38 @@ export default function PainelConfiguracoes() {
   const setVendedor = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setVendedorForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const handleTestarConexao = async () => {
+    if (!whatsappForm.whatsapp_numero_id) {
+      setWhatsappConexao({ conectado: false, erro: "Informe o Phone Number ID antes de testar." });
+      return;
+    }
+    if (!whatsappForm.whatsapp_access_token) {
+      setWhatsappConexao({ conectado: false, erro: "Informe o Access Token antes de testar." });
+      return;
+    }
+    setTestando(true);
+    setWhatsappConexao(null);
+    try {
+      const resp = await fetch("/api/whatsapp/testar-conexao", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          whatsapp_numero_id: whatsappForm.whatsapp_numero_id,
+          whatsapp_access_token: whatsappForm.whatsapp_access_token,
+        }),
+      });
+      const data = (await resp.json()) as { conectado: boolean; display_phone_number?: string; erro?: string };
+      setWhatsappConexao(data);
+    } catch {
+      setWhatsappConexao({ conectado: false, erro: "Erro de rede ao testar conexão." });
+    } finally {
+      setTestando(false);
+    }
+  };
+
   const handleSaveWhatsapp = async (e: React.FormEvent) => {
     e.preventDefault();
     setWhatsappStatus(null);
@@ -223,6 +259,7 @@ export default function PainelConfiguracoes() {
       await updateLoja.mutateAsync({ lojaId, data: payload });
       setWhatsappStatus("Configurações WhatsApp salvas!");
       setWhatsappForm((f) => ({ ...f, whatsapp_access_token: "" }));
+      setWhatsappConexao(null);
       setTimeout(() => setWhatsappStatus(null), 3000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro";
@@ -675,21 +712,52 @@ export default function PainelConfiguracoes() {
               hint="Token de acesso gerado no painel da Meta. Armazenado de forma segura."
             />
 
-            {user?.loja?.whatsapp_numero_id && (
-              <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block flex-shrink-0"></span>
-                WhatsApp configurado · Phone ID: {user.loja.whatsapp_numero_id}
+            {whatsappConexao && (
+              <div className={`flex items-start gap-2 text-xs px-3 py-2 rounded-lg ${whatsappConexao.conectado ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${whatsappConexao.conectado ? "bg-green-500" : "bg-red-500"}`}></span>
+                <div>
+                  {whatsappConexao.conectado ? (
+                    <>
+                      <span className="font-semibold">Conectado</span>
+                      {whatsappConexao.display_phone_number && (
+                        <span> · Número: {whatsappConexao.display_phone_number}</span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold">Token inválido ou Phone ID incorreto</span>
+                      {whatsappConexao.erro && <span> — {whatsappConexao.erro}</span>}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!whatsappConexao && user?.loja?.whatsapp_numero_id && (
+              <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+                <span className="w-2 h-2 rounded-full bg-gray-400 inline-block flex-shrink-0"></span>
+                Configurado · Phone ID: {user.loja.whatsapp_numero_id} — informe o token para testar conexão
               </div>
             )}
 
             <StatusMessage msg={whatsappStatus} />
-            <button
-              type="submit"
-              disabled={updateLoja.isPending}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-60"
-            >
-              {updateLoja.isPending ? "Salvando..." : "Salvar Configurações WhatsApp"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleTestarConexao}
+                disabled={testando}
+                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-60"
+              >
+                {testando ? "Testando..." : "Testar Conexão"}
+              </button>
+              <button
+                type="submit"
+                disabled={updateLoja.isPending}
+                className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-60"
+              >
+                {updateLoja.isPending ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
           </form>
         </SectionCard>
 
