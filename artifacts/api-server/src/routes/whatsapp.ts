@@ -599,7 +599,7 @@ async function processWhatsAppMessage(payload: unknown): Promise<void> {
     text,
     session.inventario,
   );
-  if (veiculoDetectado && !session.veiculoIdDetectado) {
+  if (veiculoDetectado && veiculoDetectado !== session.veiculoIdDetectado) {
     session.veiculoIdDetectado = veiculoDetectado;
   }
 
@@ -623,20 +623,49 @@ async function processWhatsAppMessage(payload: unknown): Promise<void> {
     const entradaPct = pctMatch ? parseInt(pctMatch[1], 10) : 20;
     const nParcelas = parcelasMatch ? parseInt(parcelasMatch[1], 10) : 48;
 
-    const precoMatch = lowerText.match(/r?\$\s*([\d.,]+)/);
-    if (precoMatch) {
-      const precoRaw = precoMatch[1].replace(/\./g, "").replace(",", ".");
-      const preco = parseFloat(precoRaw);
-      if (!isNaN(preco) && preco > 0) {
-        const sim = await simular({
-          lojaId: loja.id,
-          precoVenda: preco,
-          entradaPct,
-          nParcelas,
-        }).catch(() => null);
-        if (sim) {
-          systemPrompt += `\n\n${formatarSimulacaoParaAgente(sim)}\nUse estes valores calculados ao responder sobre financiamento.`;
+    let precoParaSimular: number | null = null;
+
+    const veiculoDeInteresse = session.veiculoIdDetectado
+      ? session.inventario.find((v) => v.id === session.veiculoIdDetectado)
+      : null;
+
+    if (veiculoDeInteresse) {
+      const precoDoVeiculo = parseFloat(String(veiculoDeInteresse.precoVenda));
+      if (!isNaN(precoDoVeiculo) && precoDoVeiculo > 0) {
+        precoParaSimular = precoDoVeiculo;
+      }
+    }
+
+    if (precoParaSimular === null) {
+      const precoMatch = lowerText.match(/r?\$\s*([\d.,]+)/);
+      if (precoMatch) {
+        const precoRaw = precoMatch[1].replace(/\./g, "").replace(",", ".");
+        const preco = parseFloat(precoRaw);
+        if (!isNaN(preco) && preco > 0) {
+          precoParaSimular = preco;
         }
+      }
+    }
+
+    if (precoParaSimular !== null) {
+      const sim = await simular({
+        lojaId: loja.id,
+        precoVenda: precoParaSimular,
+        entradaPct,
+        nParcelas,
+      }).catch(() => null);
+      if (sim) {
+        const ano =
+          veiculoDeInteresse &&
+          veiculoDeInteresse.anoFabricacao !== veiculoDeInteresse.anoModelo
+            ? `${veiculoDeInteresse.anoFabricacao}/${veiculoDeInteresse.anoModelo}`
+            : veiculoDeInteresse
+              ? String(veiculoDeInteresse.anoFabricacao)
+              : null;
+        const veiculoDesc = veiculoDeInteresse
+          ? ` para o ${veiculoDeInteresse.marca} ${veiculoDeInteresse.modelo}${ano ? ` ${ano}` : ""}`
+          : "";
+        systemPrompt += `\n\n${formatarSimulacaoParaAgente(sim)}${veiculoDesc}\nUse estes valores calculados ao responder sobre financiamento.`;
       }
     }
   }
