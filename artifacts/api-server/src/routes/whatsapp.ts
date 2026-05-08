@@ -1,4 +1,5 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
+import { createHmac, timingSafeEqual } from "crypto";
 import { eq, asc, and } from "drizzle-orm";
 import {
   db,
@@ -678,6 +679,42 @@ async function processWhatsAppMessage(payload: unknown): Promise<void> {
   }
 }
 
+function validarAssinaturaWebhook(req: Request & { rawBody?: Buffer }): boolean {
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+
+  if (!appSecret) {
+    logger.warn(
+      "WHATSAPP_APP_SECRET não configurado — validação de assinatura desabilitada (modo desenvolvimento)",
+    );
+    return true;
+  }
+
+  const signature = req.headers["x-hub-signature-256"] as string | undefined;
+  if (!signature) {
+    logger.warn("Webhook recebido sem header X-Hub-Signature-256");
+    return false;
+  }
+
+  const rawBody = req.rawBody;
+  if (!rawBody) {
+    logger.warn("rawBody não disponível para validação de assinatura");
+    return false;
+  }
+
+  const expectedSig =
+    "sha256=" +
+    createHmac("sha256", appSecret).update(rawBody).digest("hex");
+
+  try {
+    const sigBuf = Buffer.from(signature.padEnd(expectedSig.length), "utf8");
+    const expBuf = Buffer.from(expectedSig, "utf8");
+    if (sigBuf.length !== expBuf.length) return false;
+    return timingSafeEqual(sigBuf, expBuf);
+  } catch {
+    return false;
+  }
+}
+
 router.get("/whatsapp/webhook", (req, res): void => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
@@ -694,7 +731,12 @@ router.get("/whatsapp/webhook", (req, res): void => {
   }
 });
 
-router.post("/whatsapp/webhook", (req, res): void => {
+router.post("/whatsapp/webhook", (req: Request & { rawBody?: Buffer }, res): void => {
+  if (!validarAssinaturaWebhook(req)) {
+    logger.warn("Webhook rejeitado: assinatura inválida ou ausente");
+    res.sendStatus(401);
+    return;
+  }
   res.sendStatus(200);
   processWhatsAppMessage(req.body).catch((err) => {
     logger.error({ err }, "Erro ao processar mensagem WhatsApp");
