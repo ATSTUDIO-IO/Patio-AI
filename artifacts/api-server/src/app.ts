@@ -34,19 +34,38 @@ app.use(
   }),
 );
 
-const ALLOWED_ORIGIN_PATTERNS = [
-  /^https?:\/\/localhost(:\d+)?$/,
-  /\.replit\.dev$/,
-  /\.replit\.app$/,
-];
+const isDev = process.env.NODE_ENV === "development";
+
+// Build exact-match origin allowlist from REPLIT_DOMAINS at startup
+const replitDomainOrigins = new Set<string>();
+const replitDomainsEnv = process.env.REPLIT_DOMAINS ?? "";
+for (const domain of replitDomainsEnv.split(",")) {
+  const d = domain.trim();
+  if (d) {
+    replitDomainOrigins.add(`https://${d}`);
+    if (isDev) replitDomainOrigins.add(`http://${d}`);
+  }
+}
+
+// Strict regex for production .replit.app domains (exact subdomain, no suffix bypass)
+const REPLIT_APP_RE = /^https:\/\/[a-zA-Z0-9-]+\.replit\.app$/;
+
+function isOriginAllowed(origin: string): boolean {
+  // Exact match against configured REPLIT_DOMAINS
+  if (replitDomainOrigins.has(origin)) return true;
+  // Localhost only in development
+  if (isDev && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return true;
+  // In production: allow .replit.app deploy domains not listed in REPLIT_DOMAINS
+  if (!isDev && REPLIT_APP_RE.test(origin)) return true;
+  return false;
+}
 
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Allow server-to-server requests (no Origin header: curl, proxy, etc.)
       if (!origin) return callback(null, true);
-      if (ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin))) {
-        return callback(null, true);
-      }
+      if (isOriginAllowed(origin)) return callback(null, true);
       logger.warn({ origin }, "CORS: origem rejeitada");
       callback(new Error("Origem não permitida por CORS"));
     },
