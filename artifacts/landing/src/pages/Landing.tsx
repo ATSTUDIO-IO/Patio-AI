@@ -70,21 +70,53 @@ const VOICE_BARS = [
 
 function JourneySceneQR({ active }: { active: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-4">
-      <div className="relative">
-        <div className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center">
-          <QrCode className="w-10 h-10 text-gray-900" strokeWidth={1.5} />
-        </div>
+    <div className="flex flex-col items-center justify-center h-full gap-3 px-2">
+      {/* Car illustration with QR on windshield */}
+      <div className="relative w-full max-w-[220px]">
+        <svg viewBox="0 0 220 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto drop-shadow-lg">
+          {/* Car body */}
+          <rect x="8" y="50" width="204" height="36" rx="10" fill="hsl(244 47% 20%)" />
+          {/* Cabin/roof */}
+          <path d="M50 50 L68 18 L152 18 L170 50 Z" fill="hsl(244 47% 16%)" />
+          {/* Windshield area */}
+          <path d="M76 50 L88 22 L140 22 L152 50 Z" fill="rgba(6,182,212,0.18)" stroke="rgba(6,182,212,0.55)" strokeWidth="1.2" />
+          {/* QR sticker on windshield */}
+          <rect x="102" y="29" width="16" height="16" rx="2.5" fill="white" opacity="0.95" />
+          <g fill="hsl(244 47% 20%)" opacity="0.9">
+            <rect x="104.5" y="31.5" width="4" height="4" rx="0.5" />
+            <rect x="111.5" y="31.5" width="4" height="4" rx="0.5" />
+            <rect x="104.5" y="38.5" width="4" height="4" rx="0.5" />
+            <rect x="111.5" y="38" width="2" height="2" rx="0.3" />
+            <rect x="114.5" y="40" width="2" height="2" rx="0.3" />
+            <rect x="111.5" y="41.5" width="2" height="2" rx="0.3" />
+          </g>
+          {/* Rear window */}
+          <path d="M55 50 L67 24 L80 24 L68 50 Z" fill="rgba(255,255,255,0.07)" />
+          {/* Wheels */}
+          <circle cx="58" cy="86" r="12" fill="#1f2937" stroke="#374151" strokeWidth="2" />
+          <circle cx="58" cy="86" r="5" fill="#374151" />
+          <circle cx="162" cy="86" r="12" fill="#1f2937" stroke="#374151" strokeWidth="2" />
+          <circle cx="162" cy="86" r="5" fill="#374151" />
+          {/* Headlights */}
+          <rect x="202" y="57" width="6" height="10" rx="2" fill="rgba(251,191,36,0.85)" />
+          {/* Taillights */}
+          <rect x="12" y="57" width="6" height="10" rx="2" fill="rgba(239,68,68,0.75)" />
+          {/* Door line */}
+          <line x1="110" y1="53" x2="110" y2="83" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+        </svg>
+
+        {/* Animated QR glow pulse on windshield */}
         {active && (
           <motion.div
-            animate={{ boxShadow: ["0 0 0px rgba(6,182,212,0)", "0 0 28px rgba(6,182,212,0.6)", "0 0 0px rgba(6,182,212,0)"] }}
+            className="absolute rounded-sm pointer-events-none"
+            style={{ top: "27%", left: "46.5%", width: "7.5%", height: "17%" }}
+            animate={{ boxShadow: ["0 0 0px rgba(6,182,212,0)", "0 0 12px rgba(6,182,212,0.8)", "0 0 0px rgba(6,182,212,0)"] }}
             transition={{ duration: 1.8, repeat: Infinity }}
-            className="absolute inset-0 rounded-2xl"
           />
         )}
       </div>
 
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-2 w-full">
         <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border"
              style={{ background: "rgba(6,182,212,0.08)", borderColor: "rgba(6,182,212,0.3)" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-accent animate-pulse" />

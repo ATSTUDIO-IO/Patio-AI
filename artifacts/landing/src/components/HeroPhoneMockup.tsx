@@ -136,6 +136,18 @@ function PhaseChat({ visible }: { visible: number[] }) {
   );
 }
 
+const CONFETTI_DOTS = [
+  { angle: 0,   color: "#06b6d4", r: 3,   dist: 44 },
+  { angle: 40,  color: "#34d399", r: 2.5, dist: 38 },
+  { angle: 80,  color: "#a78bfa", r: 3,   dist: 46 },
+  { angle: 120, color: "#f472b6", r: 2,   dist: 36 },
+  { angle: 160, color: "#fbbf24", r: 3,   dist: 42 },
+  { angle: 200, color: "#06b6d4", r: 2,   dist: 40 },
+  { angle: 240, color: "#34d399", r: 3,   dist: 44 },
+  { angle: 280, color: "#f472b6", r: 2.5, dist: 38 },
+  { angle: 320, color: "#fbbf24", r: 2,   dist: 42 },
+];
+
 function PhaseLeadCaptured() {
   return (
     <motion.div
@@ -143,16 +155,35 @@ function PhaseLeadCaptured() {
       transition={{ duration: 0.35 }}
       className="absolute inset-0 bg-gray-50 flex flex-col items-center justify-center gap-3 pt-6 px-4"
     >
-      <motion.div
-        initial={{ scale: 0 }} animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 350, damping: 22, delay: 0.2 }}
-        className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center"
-        style={{ boxShadow: "0 8px 24px rgba(34,197,94,0.4)" }}
-      >
-        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </motion.div>
+      <div className="relative flex items-center justify-center">
+        {/* Confetti burst */}
+        {CONFETTI_DOTS.map((dot, i) => {
+          const rad = (dot.angle * Math.PI) / 180;
+          const tx = Math.cos(rad) * dot.dist;
+          const ty = Math.sin(rad) * dot.dist;
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 0, y: 0, scale: 0 }}
+              animate={{ opacity: [0, 1, 0], x: tx, y: ty, scale: [0, 1.4, 0.8] }}
+              transition={{ duration: 0.6, delay: 0.25 + i * 0.03, ease: "easeOut" as const }}
+              className="absolute rounded-full pointer-events-none"
+              style={{ width: dot.r * 2, height: dot.r * 2, background: dot.color }}
+            />
+          );
+        })}
+
+        <motion.div
+          initial={{ scale: 0 }} animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 350, damping: 22, delay: 0.2 }}
+          className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center relative z-10"
+          style={{ boxShadow: "0 8px 24px rgba(34,197,94,0.4)" }}
+        >
+          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </motion.div>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}

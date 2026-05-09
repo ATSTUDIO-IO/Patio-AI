@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LEADS = [
@@ -22,16 +22,20 @@ interface LeadToastProps {
 export function LeadToast({ className = "", variant = "dark", offset = 0 }: LeadToastProps) {
   const [idx, setIdx] = useState(offset % LEADS.length);
   const [show, setShow] = useState(true);
+  const innerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       setShow(false);
-      setTimeout(() => {
+      innerTimer.current = setTimeout(() => {
         setIdx(i => (i + 1) % LEADS.length);
         setShow(true);
       }, 500);
     }, 5500);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(interval);
+      if (innerTimer.current) clearTimeout(innerTimer.current);
+    };
   }, []);
 
   const lead = LEADS[idx];
