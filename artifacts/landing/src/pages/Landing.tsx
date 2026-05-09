@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { CheckCircle2, ChevronRight, QrCode, Smartphone, Clock, Send, Users } from "lucide-react";
+import { CheckCircle2, ChevronRight, QrCode, Smartphone, Clock, Send, Users, Building2, BarChart3, Package, Crown } from "lucide-react";
 import { ChatIA } from "@/components/ChatIA";
 import { HeroPhoneMockup } from "@/components/HeroPhoneMockup";
 import { LeadToast } from "@/components/LeadToast";
@@ -810,11 +810,169 @@ export default function Landing() {
       {/* ── PLANOS ─────────────────────────────────────────────────────── */}
       <section id="planos" ref={planosRef} className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="text-center max-w-3xl mx-auto mb-12">
             <h2 className="text-3xl md:text-5xl font-bold text-indigo-primary mb-6">Preços simples, sem surpresa</h2>
             <p className="text-lg text-gray-600">Escolha o plano ideal para o tamanho do seu pátio. Todos incluem 14 dias de teste grátis.</p>
           </div>
 
+          {/* ── CRM / ERP Comparison block ───────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.55 }}
+            className="max-w-5xl mx-auto mb-12 rounded-2xl border border-gray-100 bg-gray-50 overflow-hidden"
+          >
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-indigo-primary" />
+              <span className="text-sm font-semibold text-indigo-primary">Gestão da loja — o que cada plano oferece</span>
+            </div>
+
+            {/* Desktop: 3-column grid */}
+            <div className="hidden lg:grid grid-cols-3 divide-x divide-gray-100">
+              {/* Starter */}
+              <div className="p-6 flex flex-col gap-3">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-200 rounded-full px-3 py-1 w-fit">
+                  CRM Básico
+                </span>
+                <ul className="space-y-2.5 text-sm text-gray-600">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-primary mt-0.5 flex-shrink-0" />
+                    <span>Captura automática de leads pelo agente</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-primary mt-0.5 flex-shrink-0" />
+                    <span>Histórico de conversas do dia</span>
+                  </li>
+                  <li className="flex items-start gap-2 opacity-40">
+                    <Minus className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <span>Pipeline de leads e follow-up</span>
+                  </li>
+                  <li className="flex items-start gap-2 opacity-40">
+                    <Minus className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <span>Controle de consignados e repasses</span>
+                  </li>
+                  <li className="flex items-start gap-2 opacity-40">
+                    <Minus className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <span>ERP financeiro e relatórios de frota</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Pro */}
+              <div className="p-6 flex flex-col gap-3 bg-indigo-primary/5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-accent bg-cyan-accent/10 border border-cyan-accent/25 rounded-full px-3 py-1 w-fit">
+                  <BarChart3 className="w-3 h-3" /> CRM + ERP Avançado
+                </span>
+                <ul className="space-y-2.5 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-accent mt-0.5 flex-shrink-0" />
+                    <span>Captura automática de leads pelo agente</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-accent mt-0.5 flex-shrink-0" />
+                    <span>Histórico do mês corrente</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-accent mt-0.5 flex-shrink-0" />
+                    <span>Pipeline de leads e follow-up</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-accent mt-0.5 flex-shrink-0" />
+                    <span>Controle de consignados e repasses</span>
+                  </li>
+                  <li className="flex items-start gap-2 opacity-40">
+                    <Minus className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <span>ERP financeiro e relatórios de frota</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Full */}
+              <div className="p-6 flex flex-col gap-3">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-primary bg-indigo-primary/8 border border-indigo-primary/20 rounded-full px-3 py-1 w-fit">
+                  <Crown className="w-3 h-3" /> ERP Completo
+                </span>
+                <ul className="space-y-2.5 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-primary mt-0.5 flex-shrink-0" />
+                    <span>Captura automática de leads pelo agente</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-primary mt-0.5 flex-shrink-0" />
+                    <span>Histórico ilimitado de conversas</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-primary mt-0.5 flex-shrink-0" />
+                    <span>Pipeline de leads e follow-up</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-primary mt-0.5 flex-shrink-0" />
+                    <span>Controle de consignados e repasses</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-primary mt-0.5 flex-shrink-0" />
+                    <span className="font-medium">ERP financeiro e relatórios de frota</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Mobile: stacked accordion-style */}
+            <div className="lg:hidden divide-y divide-gray-100">
+              {[
+                {
+                  label: "Starter — CRM Básico",
+                  badge: "bg-gray-200 text-gray-500",
+                  items: [
+                    { ok: true,  text: "Captura automática de leads" },
+                    { ok: true,  text: "Histórico do dia" },
+                    { ok: false, text: "Pipeline e follow-up" },
+                    { ok: false, text: "Controle de consignados" },
+                    { ok: false, text: "ERP financeiro e relatórios de frota" },
+                  ],
+                },
+                {
+                  label: "Pro — CRM + ERP Avançado",
+                  badge: "bg-cyan-accent/10 text-cyan-accent border border-cyan-accent/25",
+                  items: [
+                    { ok: true,  text: "Captura automática de leads" },
+                    { ok: true,  text: "Histórico do mês corrente" },
+                    { ok: true,  text: "Pipeline e follow-up" },
+                    { ok: true,  text: "Controle de consignados" },
+                    { ok: false, text: "ERP financeiro e relatórios de frota" },
+                  ],
+                },
+                {
+                  label: "Full — ERP Completo",
+                  badge: "bg-indigo-primary/8 text-indigo-primary border border-indigo-primary/20",
+                  items: [
+                    { ok: true, text: "Captura automática de leads" },
+                    { ok: true, text: "Histórico ilimitado" },
+                    { ok: true, text: "Pipeline e follow-up" },
+                    { ok: true, text: "Controle de consignados" },
+                    { ok: true, text: "ERP financeiro e relatórios de frota" },
+                  ],
+                },
+              ].map((tier) => (
+                <div key={tier.label} className="p-5">
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 mb-3 ${tier.badge}`}>
+                    {tier.label}
+                  </span>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    {tier.items.map((item, i) => (
+                      <li key={i} className={`flex items-start gap-2 ${!item.ok ? "opacity-40" : ""}`}>
+                        {item.ok
+                          ? <CheckCircle2 className="w-4 h-4 text-indigo-primary mt-0.5 flex-shrink-0" />
+                          : <Minus className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />}
+                        <span>{item.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ── Pricing cards ────────────────────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Starter */}
             <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex flex-col mt-8">
@@ -823,62 +981,123 @@ export default function Landing() {
                 <span className="text-4xl font-extrabold text-gray-900">R$129,90</span>
                 <span className="text-gray-500 ml-2">/mês</span>
               </div>
-              <ul className="space-y-4 mb-8 flex-1">
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">60 conversas/mês</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">1 usuário</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">CRM Básico</span></li>
-                <li className="flex items-center gap-3 opacity-50"><Minus className="w-5 h-5 text-gray-400" /><span className="text-gray-500">Financiamento IA</span></li>
-                <li className="flex items-center gap-3 opacity-50"><Minus className="w-5 h-5 text-gray-400" /><span className="text-gray-500">Personalização</span></li>
+              <ul className="space-y-4 mb-6 flex-1">
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">60 conversas/mês</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">1 usuário</span></li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-700 font-medium">CRM Básico</span>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Captura de leads e histórico do dia</p>
+                  </div>
+                </li>
+                <li className="flex items-center gap-3 opacity-50"><Minus className="w-5 h-5 text-gray-400 flex-shrink-0" /><span className="text-gray-500">Financiamento IA</span></li>
+                <li className="flex items-center gap-3 opacity-50"><Minus className="w-5 h-5 text-gray-400 flex-shrink-0" /><span className="text-gray-500">Personalização do agente</span></li>
+                <li className="flex items-center gap-3 opacity-50"><Minus className="w-5 h-5 text-gray-400 flex-shrink-0" /><span className="text-gray-500">ERP de frota e consignados</span></li>
               </ul>
               <a href={painelUrl} onClick={() => trackPlanClick("starter")}
-                className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors">
+                className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors mb-3">
                 Começar agora
+              </a>
+              <a href="#planos" onClick={(e) => { e.preventDefault(); document.querySelector(".bg-indigo-primary.rounded-3xl")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}
+                className="text-center text-xs text-gray-400 hover:text-indigo-primary transition-colors">
+                Precisa de ERP? Ver plano Pro →
               </a>
             </div>
 
             {/* Pro */}
             <div className="bg-indigo-primary rounded-3xl p-8 border-2 border-cyan-accent shadow-2xl flex flex-col relative transform md:-translate-y-4">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cyan-accent text-indigo-primary font-bold px-4 py-1 rounded-full text-sm">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cyan-accent text-indigo-primary font-bold px-4 py-1 rounded-full text-sm whitespace-nowrap">
                 Mais Popular
               </div>
               <h3 className="text-xl font-semibold text-cyan-accent mb-2">Pro</h3>
-              <div className="flex items-baseline mb-6">
+              <div className="flex items-baseline mb-4">
                 <span className="text-4xl font-extrabold text-white">R$249,90</span>
                 <span className="text-gray-300 ml-2">/mês</span>
               </div>
-              <ul className="space-y-4 mb-8 flex-1">
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent" /><span className="text-white">200 conversas/mês</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent" /><span className="text-white">5 usuários</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent" /><span className="text-white">CRM Completo</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent" /><span className="text-white">Financiamento IA</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent" /><span className="text-white">Personalização</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent" /><span className="text-white">Suporte Prioritário</span></li>
+              {/* ERP badge */}
+              <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-cyan-accent/15 border border-cyan-accent/30">
+                <Package className="w-4 h-4 text-cyan-accent flex-shrink-0" />
+                <div>
+                  <p className="text-cyan-accent text-xs font-bold leading-none">CRM + ERP Avançado</p>
+                  <p className="text-cyan-accent/70 text-[10px] mt-0.5">Pipeline · Consignados · Relatórios de frota</p>
+                </div>
+              </div>
+              <ul className="space-y-4 mb-6 flex-1">
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0" /><span className="text-white">200 conversas/mês</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0" /><span className="text-white">5 usuários</span></li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-white font-medium">CRM Completo</span>
+                    <p className="text-cyan-accent/60 text-[11px] mt-0.5">Pipeline de leads + histórico do mês</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-white font-medium">ERP: consignados e repasses</span>
+                    <p className="text-cyan-accent/60 text-[11px] mt-0.5">Controle de entrada, saída e comissões</p>
+                  </div>
+                </li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0" /><span className="text-white">Financiamento IA</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0" /><span className="text-white">Personalização do agente</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0" /><span className="text-white">Suporte Prioritário</span></li>
               </ul>
               <a href={painelUrl} onClick={() => trackPlanClick("pro")}
-                className="w-full block text-center px-6 py-3 rounded-xl bg-cyan-accent text-indigo-primary font-bold hover:bg-cyan-400 transition-colors shadow-lg">
+                className="w-full block text-center px-6 py-3 rounded-xl bg-cyan-accent text-indigo-primary font-bold hover:bg-cyan-400 transition-colors shadow-lg mb-3">
                 Começar agora
+              </a>
+              <a href="#lista-espera"
+                className="text-center text-xs text-cyan-accent/70 hover:text-cyan-accent transition-colors">
+                Gerencie toda a sua loja →
               </a>
             </div>
 
             {/* Full */}
             <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex flex-col mt-8">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Full</h3>
-              <div className="flex items-baseline mb-6">
+              <div className="flex items-baseline mb-4">
                 <span className="text-4xl font-extrabold text-gray-900">R$449,90</span>
                 <span className="text-gray-500 ml-2">/mês</span>
               </div>
-              <ul className="space-y-4 mb-8 flex-1">
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">500 conversas/mês</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Usuários ilimitados</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">CRM Completo</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Financiamento IA</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Relatórios Avançados</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Suporte Prioritário</span></li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary" /><span className="text-gray-600">Consulta Documental</span></li>
+              {/* ERP badge */}
+              <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-indigo-primary/6 border border-indigo-primary/15">
+                <Crown className="w-4 h-4 text-indigo-primary flex-shrink-0" />
+                <div>
+                  <p className="text-indigo-primary text-xs font-bold leading-none">ERP Completo para sua loja</p>
+                  <p className="text-gray-400 text-[10px] mt-0.5">Frota · Financeiro · Histórico ilimitado</p>
+                </div>
+              </div>
+              <ul className="space-y-4 mb-6 flex-1">
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">500 conversas/mês</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">Usuários ilimitados</span></li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-700 font-medium">CRM Completo</span>
+                    <p className="text-gray-400 text-[11px] mt-0.5">Pipeline de leads + histórico ilimitado</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-700 font-medium">ERP completo de frota</span>
+                    <p className="text-gray-400 text-[11px] mt-0.5">Consignados, repasses, financeiro e relatórios</p>
+                  </div>
+                </li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">Financiamento IA</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">Relatórios Avançados</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">Suporte Prioritário</span></li>
+                <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">Consulta Documental</span></li>
               </ul>
               <a href={painelUrl} onClick={() => trackPlanClick("full")}
-                className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors">
+                className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors mb-3">
                 Começar agora
+              </a>
+              <a href="#lista-espera"
+                className="text-center text-xs text-gray-400 hover:text-indigo-primary transition-colors">
+                ERP para grandes frotas →
               </a>
             </div>
           </div>
