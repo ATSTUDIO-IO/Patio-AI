@@ -175,6 +175,8 @@
 
   .indigo-primary { color: hsl(0 0% 7%); }
   .cyan-accent { color: hsl(25 95% 52%); }
+  .text-indigo-primary { color: hsl(0 0% 7%); }
+  .text-cyan-accent { color: hsl(25 95% 52%); }
   .bg-indigo-primary { background-color: hsl(0 0% 7%); }
   .bg-cyan-accent { background-color: hsl(25 95% 52%); }
   .border-cyan-accent { border-color: hsl(25 95% 52%); }
