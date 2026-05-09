@@ -1016,11 +1016,11 @@ export default function Landing() {
                 <span className="text-gray-300 ml-2">/mês</span>
               </div>
               {/* ERP badge */}
-              <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-cyan-accent/15 border border-cyan-accent/30">
+              <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-orange-500/20 border border-orange-500/40">
                 <Package className="w-4 h-4 text-cyan-accent flex-shrink-0" />
                 <div>
                   <p className="text-cyan-accent text-xs font-bold leading-none">ERP Completo</p>
-                  <p className="text-cyan-accent/70 text-[10px] mt-0.5">Pipeline · Consignados · Relatórios de frota</p>
+                  <p className="text-white/60 text-[10px] mt-0.5">Pipeline · Consignados · Relatórios de frota</p>
                 </div>
               </div>
               <ul className="space-y-4 mb-6 flex-1">
@@ -1030,14 +1030,14 @@ export default function Landing() {
                   <CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0 mt-0.5" />
                   <div>
                     <span className="text-white font-medium">CRM Completo</span>
-                    <p className="text-cyan-accent/60 text-[11px] mt-0.5">Pipeline de leads + histórico do mês</p>
+                    <p className="text-white/60 text-[11px] mt-0.5">Pipeline de leads + histórico do mês</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0 mt-0.5" />
                   <div>
                     <span className="text-white font-medium">ERP: consignados e repasses</span>
-                    <p className="text-cyan-accent/60 text-[11px] mt-0.5">Controle de entrada, saída e comissões</p>
+                    <p className="text-white/60 text-[11px] mt-0.5">Controle de entrada, saída e comissões</p>
                   </div>
                 </li>
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0" /><span className="text-white">Financiamento IA</span></li>
@@ -1049,7 +1049,7 @@ export default function Landing() {
                 Começar agora
               </a>
               <a href="#lista-espera"
-                className="text-center text-xs text-cyan-accent/70 hover:text-cyan-accent transition-colors">
+                className="text-center text-xs text-white/60 hover:text-white/90 transition-colors">
                 Gerencie toda a sua loja →
               </a>
             </div>
