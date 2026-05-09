@@ -5,12 +5,14 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ConversaDetailCanal } from "./conversaDetailCanal";
 import type { ConversaDetailLead } from "./conversaDetailLead";
 import type { ConversaDetailVeiculo } from "./conversaDetailVeiculo";
 import type { MensagemItem } from "./mensagemItem";
 
 export interface ConversaDetail {
   id: string;
+  canal?: ConversaDetailCanal;
   iniciada_em: Date;
   /** @nullable */
   encerrada_em?: Date | null;

@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LojaPublic } from "./lojaPublic";
+import type { PlanoConfig } from "./planoConfig";
 import type { UsuarioPublic } from "./usuarioPublic";
 
 export interface MeResponse {
   usuario: UsuarioPublic;
   loja?: LojaPublic | null;
+  plano_config?: PlanoConfig | null;
 }

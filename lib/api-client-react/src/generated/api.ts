@@ -19,8 +19,6 @@ import type {
 import type {
   Alerta,
   AuthResponse,
-  GetRelatorioVendasParams,
-  RelatorioVendas,
   CicloBilling,
   ConversaDetail,
   ConversaListItem,
@@ -37,6 +35,7 @@ import type {
   FinanciamentoResponse,
   GetAdminLojasParams,
   GetAdminStats200,
+  GetRelatorioVendasParams,
   HealthStatus,
   IniciarSessaoRequest,
   IniciarSessaoResponse,
@@ -63,6 +62,7 @@ import type {
   PatchStatusRequest,
   PostAdminLojasLojaIdNotasBody,
   RegisterRequest,
+  RelatorioVendasResponse,
   SimularFinanciamentoRequest,
   SimularFinanciamentoResponse,
   UpdateFinanciamentoRequest,
@@ -1501,6 +1501,110 @@ export const useUpdateVeiculo = <
 > => {
   return useMutation(getUpdateVeiculoMutationOptions(options));
 };
+
+/**
+ * Returns sold vehicles with cost, sale price, gross profit and margin per vehicle, plus aggregate totals.
+ * @summary Sales profitability report
+ */
+export const getGetRelatorioVendasUrl = (params?: GetRelatorioVendasParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/veiculos/relatorio-vendas?${stringifiedParams}`
+    : `/api/veiculos/relatorio-vendas`;
+};
+
+export const getRelatorioVendas = async (
+  params?: GetRelatorioVendasParams,
+  options?: RequestInit,
+): Promise<RelatorioVendasResponse> => {
+  return customFetch<RelatorioVendasResponse>(
+    getGetRelatorioVendasUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetRelatorioVendasQueryKey = (
+  params?: GetRelatorioVendasParams,
+) => {
+  return [
+    `/api/veiculos/relatorio-vendas`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetRelatorioVendasQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRelatorioVendas>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: GetRelatorioVendasParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRelatorioVendas>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetRelatorioVendasQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRelatorioVendas>>
+  > = ({ signal }) => getRelatorioVendas(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRelatorioVendas>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRelatorioVendasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRelatorioVendas>>
+>;
+export type GetRelatorioVendasQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Sales profitability report
+ */
+
+export function useGetRelatorioVendas<
+  TData = Awaited<ReturnType<typeof getRelatorioVendas>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: GetRelatorioVendasParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRelatorioVendas>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRelatorioVendasQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Change vehicle status (ativo, vendido, pausado)
@@ -3724,80 +3828,5 @@ export function useGetAdminInteligencia<
     queryKey: QueryKey;
   };
 
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-// ─── GET /veiculos/relatorio-vendas ──────────────────────────────────────────
-
-export const getGetRelatorioVendasUrl = (params?: GetRelatorioVendasParams) => {
-  const searchParams = new URLSearchParams();
-  if (params?.periodo) searchParams.set("periodo", params.periodo);
-  const qs = searchParams.toString();
-  return `/api/veiculos/relatorio-vendas${qs ? `?${qs}` : ""}`;
-};
-
-export const getRelatorioVendas = async (
-  params?: GetRelatorioVendasParams,
-  options?: RequestInit,
-): Promise<RelatorioVendas> => {
-  return customFetch<RelatorioVendas>(getGetRelatorioVendasUrl(params), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetRelatorioVendasQueryKey = (params?: GetRelatorioVendasParams) => {
-  return [`/api/veiculos/relatorio-vendas`, params] as const;
-};
-
-export const getGetRelatorioVendasQueryOptions = <
-  TData = Awaited<ReturnType<typeof getRelatorioVendas>>,
-  TError = ErrorType<ErrorResponse>,
->(
-  params?: GetRelatorioVendasParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getRelatorioVendas>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetRelatorioVendasQueryKey(params);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRelatorioVendas>>> = ({
-    signal,
-  }) => getRelatorioVendas(params, { signal, ...requestOptions });
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getRelatorioVendas>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type GetRelatorioVendasQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getRelatorioVendas>>
->;
-export type GetRelatorioVendasQueryError = ErrorType<ErrorResponse>;
-
-export function useGetRelatorioVendas<
-  TData = Awaited<ReturnType<typeof getRelatorioVendas>>,
-  TError = ErrorType<ErrorResponse>,
->(
-  params?: GetRelatorioVendasParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getRelatorioVendas>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetRelatorioVendasQueryOptions(params, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
   return { ...query, queryKey: queryOptions.queryKey };
 }

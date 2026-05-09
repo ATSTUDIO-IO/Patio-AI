@@ -11,6 +11,7 @@ const router: IRouter = Router();
 const ListConversasQuery = z.object({
   veiculo_id: z.string().uuid().optional(),
   lead_id: z.string().uuid().optional(),
+  canal: z.enum(["qr_patio", "whatsapp"]).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -30,11 +31,12 @@ router.get("/conversas", requireAuth, async (req, res): Promise<void> => {
   const [lojaData] = await db.select({ plano: lojas.plano }).from(lojas).where(eq(lojas.id, lojaId)).limit(1);
   const crmSince = getCrmDataSince(lojaData?.plano ?? "starter");
 
-  const { veiculo_id, lead_id, limit, offset } = query.data;
+  const { veiculo_id, lead_id, canal, limit, offset } = query.data;
 
   const conditions = [eq(veiculos.lojaId, lojaId)];
   if (veiculo_id) conditions.push(eq(conversas.veiculoId, veiculo_id));
   if (lead_id) conditions.push(eq(conversas.leadId, lead_id));
+  if (canal) conditions.push(eq(conversas.canal, canal));
   if (crmSince) conditions.push(gte(conversas.iniciadaEm, crmSince));
 
   const rows = await db
@@ -64,6 +66,7 @@ router.get("/conversas", requireAuth, async (req, res): Promise<void> => {
   res.json(
     rows.map((r) => ({
       id: r.conversa.id,
+      canal: r.conversa.canal,
       iniciada_em: r.conversa.iniciadaEm,
       encerrada_em: r.conversa.encerradaEm,
       duracao_segundos: r.conversa.duracaoSegundos,
@@ -159,6 +162,7 @@ router.get(
 
     res.json({
       id: row.conversa.id,
+      canal: row.conversa.canal,
       iniciada_em: row.conversa.iniciadaEm,
       encerrada_em: row.conversa.encerradaEm,
       duracao_segundos: row.conversa.duracaoSegundos,

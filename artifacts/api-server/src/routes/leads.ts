@@ -120,7 +120,7 @@ router.get("/leads/:leadId", requireAuth, async (req, res): Promise<void> => {
   const [veiculo] = await db
     .select()
     .from(veiculos)
-    .where(eq(veiculos.id, lead.veiculoId))
+    .where(eq(veiculos.id, lead.veiculoId!))
     .limit(1);
 
   const conversasLead = await db

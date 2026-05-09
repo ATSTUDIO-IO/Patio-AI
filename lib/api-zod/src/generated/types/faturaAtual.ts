@@ -11,8 +11,14 @@ import type { FaturaAtualStatus } from "./faturaAtualStatus";
 export interface FaturaAtual {
   mes_ref: Date;
   plano: FaturaAtualPlano;
-  veiculos_ativos: number;
-  preco_unitario: number;
+  conversas_incluidas: number;
+  conversas_usadas: number;
+  conversas_excedentes: number;
+  buffer_excedente?: number;
+  preco_excedente?: number;
+  pct_cota?: number;
+  valor_base: number;
+  valor_excedente: number;
   valor_total: number;
   status: FaturaAtualStatus;
   vencimento: Date;

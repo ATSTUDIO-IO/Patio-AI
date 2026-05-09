@@ -11,4 +11,9 @@ export interface PatchStatusRequest {
   status: PatchStatusRequestStatus;
   /** @nullable */
   motivo?: string | null;
+  /**
+   * Actual sale price recorded when marking vehicle as sold
+   * @nullable
+   */
+  valor_venda_real?: number | null;
 }

@@ -5,11 +5,13 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ConversaListItemCanal } from "./conversaListItemCanal";
 import type { ConversaListItemLead } from "./conversaListItemLead";
 import type { ConversaListItemVeiculo } from "./conversaListItemVeiculo";
 
 export interface ConversaListItem {
   id: string;
+  canal?: ConversaListItemCanal;
   iniciada_em: Date;
   /** @nullable */
   encerrada_em?: Date | null;

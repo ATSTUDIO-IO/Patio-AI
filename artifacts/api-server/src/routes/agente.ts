@@ -505,7 +505,7 @@ async function resolveConversaComSlug(
   const [veiculo] = await db
     .select()
     .from(veiculos)
-    .where(eq(veiculos.id, conversa.veiculoId))
+    .where(eq(veiculos.id, conversa.veiculoId!))
     .limit(1);
 
   if (!veiculo) return { error: "Veículo não encontrado", status: 404 };

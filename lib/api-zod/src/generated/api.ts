@@ -88,8 +88,21 @@ export const GetMeResponse = zod.object({
         aceita_troca: zod.boolean().nullish(),
         descricao_garantia: zod.string().nullish(),
         bancos_parceiros: zod.string().nullish(),
-        mencionar_tempo_patio: zod.boolean().nullish(),
-        whatsapp_numero_id: zod.string().nullish(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  plano_config: zod
+    .union([
+      zod.object({
+        preco_unitario: zod.number(),
+        conversas_incluidas: zod.number(),
+        buffer_excedente: zod.number(),
+        preco_excedente: zod.number(),
+        personalizacao_avancada: zod.boolean(),
+        assistente_financiamento: zod.boolean(),
+        consulta_documental: zod.boolean(),
+        crm_retencao_dias: zod.number().nullish(),
       }),
       zod.null(),
     ])
@@ -139,8 +152,6 @@ export const UpdateLojaResponse = zod.object({
   aceita_troca: zod.boolean().nullish(),
   descricao_garantia: zod.string().nullish(),
   bancos_parceiros: zod.string().nullish(),
-  mencionar_tempo_patio: zod.boolean().nullish(),
-  whatsapp_numero_id: zod.string().nullish(),
 });
 
 /**
@@ -192,8 +203,11 @@ export const DeleteUsuarioResponse = zod.object({
 export const ListFaturasResponseItem = zod.object({
   id: zod.string().uuid(),
   mes_ref: zod.coerce.date(),
-  veiculos_ativos: zod.number(),
-  preco_unitario: zod.number(),
+  conversas_incluidas: zod.number().optional(),
+  conversas_usadas: zod.number().optional(),
+  conversas_excedentes: zod.number().optional(),
+  valor_base: zod.number().optional(),
+  valor_excedente: zod.number().optional(),
   valor_total: zod.number(),
   status: zod.enum(["aberto", "pago", "inadimplente"]),
   gerado_em: zod.coerce.date().nullish(),
@@ -207,8 +221,14 @@ export const ListFaturasResponse = zod.array(ListFaturasResponseItem);
 export const GetFaturaAtualResponse = zod.object({
   mes_ref: zod.coerce.date(),
   plano: zod.enum(["starter", "pro", "full"]),
-  veiculos_ativos: zod.number(),
-  preco_unitario: zod.number(),
+  conversas_incluidas: zod.number(),
+  conversas_usadas: zod.number(),
+  conversas_excedentes: zod.number(),
+  buffer_excedente: zod.number().optional(),
+  preco_excedente: zod.number().optional(),
+  pct_cota: zod.number().optional(),
+  valor_base: zod.number(),
+  valor_excedente: zod.number(),
   valor_total: zod.number(),
   status: zod.enum(["aberto", "pago", "inadimplente"]),
   vencimento: zod.coerce.date(),
@@ -296,16 +316,45 @@ export const ListVeiculosResponseItem = zod.object({
   descricao_agente: zod.string().nullish(),
   status: zod.enum(["ativo", "vendido", "pausado"]),
   ativo_agente: zod.boolean(),
-  criado_em: zod.coerce.date().nullish(),
-  vendido_em: zod.coerce.date().nullish(),
-  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  tipo_aquisicao: zod
+    .union([
+      zod.literal("proprio"),
+      zod.literal("consignado"),
+      zod.literal(null),
+    ])
+    .nullish(),
   valor_aquisicao: zod.string().nullish(),
   consignado_proprietario_nome: zod.string().nullish(),
   consignado_proprietario_telefone: zod.string().nullish(),
   comissao_consignado_pct: zod.string().nullish(),
-  data_entrada_patio: zod.string().nullish(),
-  dias_no_patio: zod.number().optional(),
-  alerta_patio: zod.boolean().optional(),
+  data_entrada_patio: zod.coerce.date().nullish(),
+  dias_no_patio: zod.number().nullish(),
+  alerta_patio: zod.boolean(),
+  custo_total: zod.number().nullish(),
+  preco_sugerido: zod.number().nullish(),
+  despesas: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        categoria: zod.enum([
+          "manutencao_mecanica",
+          "manutencao_estetica",
+          "documentacao",
+          "outros",
+        ]),
+        descricao: zod.string(),
+        valor: zod.string(),
+        data: zod.coerce.date(),
+        criado_em: zod.coerce.date().nullish(),
+      }),
+    )
+    .nullish(),
+  criado_em: zod.coerce.date().nullish(),
+  vendido_em: zod.coerce.date().nullish(),
+  valor_venda_real: zod
+    .number()
+    .nullish()
+    .describe("Actual price the vehicle was sold for (recorded at sale time)"),
   qr_code: zod
     .union([
       zod.object({
@@ -355,12 +404,18 @@ export const CreateVeiculoBody = zod.object({
     .nullish(),
   opcionais: zod.array(zod.string()).nullish(),
   descricao_agente: zod.string().nullish(),
-  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  tipo_aquisicao: zod
+    .union([
+      zod.literal("proprio"),
+      zod.literal("consignado"),
+      zod.literal(null),
+    ])
+    .nullish(),
   valor_aquisicao: zod.number().nullish(),
   consignado_proprietario_nome: zod.string().nullish(),
   consignado_proprietario_telefone: zod.string().nullish(),
-  comissao_consignado_pct: zod.number().min(0).max(100).nullish(),
-  data_entrada_patio: zod.string().nullish(),
+  comissao_consignado_pct: zod.number().nullish(),
+  data_entrada_patio: zod.coerce.date().nullish(),
 });
 
 /**
@@ -368,16 +423,6 @@ export const CreateVeiculoBody = zod.object({
  */
 export const GetVeiculoParams = zod.object({
   veiculoId: zod.coerce.string().uuid(),
-});
-
-const veiculoDespesaItem = zod.object({
-  id: zod.string().uuid(),
-  veiculo_id: zod.string().uuid(),
-  categoria: zod.enum(["manutencao_mecanica", "manutencao_estetica", "documentacao", "outros"]),
-  descricao: zod.string(),
-  valor: zod.string(),
-  data: zod.string(),
-  criado_em: zod.coerce.date().nullish(),
 });
 
 export const GetVeiculoResponse = zod.object({
@@ -412,19 +457,45 @@ export const GetVeiculoResponse = zod.object({
   descricao_agente: zod.string().nullish(),
   status: zod.enum(["ativo", "vendido", "pausado"]),
   ativo_agente: zod.boolean(),
-  criado_em: zod.coerce.date().nullish(),
-  vendido_em: zod.coerce.date().nullish(),
-  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  tipo_aquisicao: zod
+    .union([
+      zod.literal("proprio"),
+      zod.literal("consignado"),
+      zod.literal(null),
+    ])
+    .nullish(),
   valor_aquisicao: zod.string().nullish(),
   consignado_proprietario_nome: zod.string().nullish(),
   consignado_proprietario_telefone: zod.string().nullish(),
   comissao_consignado_pct: zod.string().nullish(),
-  data_entrada_patio: zod.string().nullish(),
-  dias_no_patio: zod.number().optional(),
-  alerta_patio: zod.boolean().optional(),
-  custo_total: zod.number().optional(),
+  data_entrada_patio: zod.coerce.date().nullish(),
+  dias_no_patio: zod.number().nullish(),
+  alerta_patio: zod.boolean(),
+  custo_total: zod.number().nullish(),
   preco_sugerido: zod.number().nullish(),
-  despesas: zod.array(veiculoDespesaItem).optional(),
+  despesas: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        categoria: zod.enum([
+          "manutencao_mecanica",
+          "manutencao_estetica",
+          "documentacao",
+          "outros",
+        ]),
+        descricao: zod.string(),
+        valor: zod.string(),
+        data: zod.coerce.date(),
+        criado_em: zod.coerce.date().nullish(),
+      }),
+    )
+    .nullish(),
+  criado_em: zod.coerce.date().nullish(),
+  vendido_em: zod.coerce.date().nullish(),
+  valor_venda_real: zod
+    .number()
+    .nullish()
+    .describe("Actual price the vehicle was sold for (recorded at sale time)"),
   qr_code: zod
     .union([
       zod.object({
@@ -478,12 +549,18 @@ export const UpdateVeiculoBody = zod.object({
   opcionais: zod.array(zod.string()).nullish(),
   descricao_agente: zod.string().nullish(),
   ativo_agente: zod.boolean().optional(),
-  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  tipo_aquisicao: zod
+    .union([
+      zod.literal("proprio"),
+      zod.literal("consignado"),
+      zod.literal(null),
+    ])
+    .nullish(),
   valor_aquisicao: zod.number().nullish(),
   consignado_proprietario_nome: zod.string().nullish(),
   consignado_proprietario_telefone: zod.string().nullish(),
-  comissao_consignado_pct: zod.number().min(0).max(100).nullish(),
-  data_entrada_patio: zod.string().nullish(),
+  comissao_consignado_pct: zod.number().nullish(),
+  data_entrada_patio: zod.coerce.date().nullish(),
 });
 
 export const UpdateVeiculoResponse = zod.object({
@@ -518,16 +595,45 @@ export const UpdateVeiculoResponse = zod.object({
   descricao_agente: zod.string().nullish(),
   status: zod.enum(["ativo", "vendido", "pausado"]),
   ativo_agente: zod.boolean(),
-  criado_em: zod.coerce.date().nullish(),
-  vendido_em: zod.coerce.date().nullish(),
-  tipo_aquisicao: zod.enum(["proprio", "consignado"]).optional(),
+  tipo_aquisicao: zod
+    .union([
+      zod.literal("proprio"),
+      zod.literal("consignado"),
+      zod.literal(null),
+    ])
+    .nullish(),
   valor_aquisicao: zod.string().nullish(),
   consignado_proprietario_nome: zod.string().nullish(),
   consignado_proprietario_telefone: zod.string().nullish(),
   comissao_consignado_pct: zod.string().nullish(),
-  data_entrada_patio: zod.string().nullish(),
-  dias_no_patio: zod.number().optional(),
-  alerta_patio: zod.boolean().optional(),
+  data_entrada_patio: zod.coerce.date().nullish(),
+  dias_no_patio: zod.number().nullish(),
+  alerta_patio: zod.boolean(),
+  custo_total: zod.number().nullish(),
+  preco_sugerido: zod.number().nullish(),
+  despesas: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        categoria: zod.enum([
+          "manutencao_mecanica",
+          "manutencao_estetica",
+          "documentacao",
+          "outros",
+        ]),
+        descricao: zod.string(),
+        valor: zod.string(),
+        data: zod.coerce.date(),
+        criado_em: zod.coerce.date().nullish(),
+      }),
+    )
+    .nullish(),
+  criado_em: zod.coerce.date().nullish(),
+  vendido_em: zod.coerce.date().nullish(),
+  valor_venda_real: zod
+    .number()
+    .nullish()
+    .describe("Actual price the vehicle was sold for (recorded at sale time)"),
   qr_code: zod
     .union([
       zod.object({
@@ -544,6 +650,42 @@ export const UpdateVeiculoResponse = zod.object({
 });
 
 /**
+ * Returns sold vehicles with cost, sale price, gross profit and margin per vehicle, plus aggregate totals.
+ * @summary Sales profitability report
+ */
+export const getRelatorioVendasQueryPeriodoDefault = `mes`;
+
+export const GetRelatorioVendasQueryParams = zod.object({
+  periodo: zod
+    .enum(["mes", "trimestre", "ano", "todos"])
+    .default(getRelatorioVendasQueryPeriodoDefault),
+});
+
+export const GetRelatorioVendasResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      marca: zod.string(),
+      modelo: zod.string(),
+      ano_fabricacao: zod.number(),
+      ano_modelo: zod.number(),
+      placa: zod.string().nullish(),
+      vendido_em: zod.coerce.date().nullish(),
+      custo_total: zod.number(),
+      valor_venda_real: zod.number().nullish(),
+      lucro_bruto: zod.number().nullish(),
+      margem_pct: zod.number().nullish(),
+    }),
+  ),
+  totais: zod.object({
+    receita_total: zod.number(),
+    custo_total: zod.number(),
+    lucro_total: zod.number(),
+    total_vendidos: zod.number(),
+  }),
+});
+
+/**
  * @summary Change vehicle status (ativo, vendido, pausado)
  */
 export const PatchVeiculoStatusParams = zod.object({
@@ -553,7 +695,10 @@ export const PatchVeiculoStatusParams = zod.object({
 export const PatchVeiculoStatusBody = zod.object({
   status: zod.enum(["ativo", "vendido", "pausado"]),
   motivo: zod.string().nullish(),
-  valor_venda_real: zod.number().positive().nullish(),
+  valor_venda_real: zod
+    .number()
+    .nullish()
+    .describe("Actual sale price recorded when marking vehicle as sold"),
 });
 
 export const PatchVeiculoStatusResponse = zod.object({
@@ -588,8 +733,45 @@ export const PatchVeiculoStatusResponse = zod.object({
   descricao_agente: zod.string().nullish(),
   status: zod.enum(["ativo", "vendido", "pausado"]),
   ativo_agente: zod.boolean(),
+  tipo_aquisicao: zod
+    .union([
+      zod.literal("proprio"),
+      zod.literal("consignado"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  valor_aquisicao: zod.string().nullish(),
+  consignado_proprietario_nome: zod.string().nullish(),
+  consignado_proprietario_telefone: zod.string().nullish(),
+  comissao_consignado_pct: zod.string().nullish(),
+  data_entrada_patio: zod.coerce.date().nullish(),
+  dias_no_patio: zod.number().nullish(),
+  alerta_patio: zod.boolean(),
+  custo_total: zod.number().nullish(),
+  preco_sugerido: zod.number().nullish(),
+  despesas: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        categoria: zod.enum([
+          "manutencao_mecanica",
+          "manutencao_estetica",
+          "documentacao",
+          "outros",
+        ]),
+        descricao: zod.string(),
+        valor: zod.string(),
+        data: zod.coerce.date(),
+        criado_em: zod.coerce.date().nullish(),
+      }),
+    )
+    .nullish(),
   criado_em: zod.coerce.date().nullish(),
   vendido_em: zod.coerce.date().nullish(),
+  valor_venda_real: zod
+    .number()
+    .nullish()
+    .describe("Actual price the vehicle was sold for (recorded at sale time)"),
   qr_code: zod
     .union([
       zod.object({
@@ -807,6 +989,7 @@ export const listConversasQueryOffsetMin = 0;
 export const ListConversasQueryParams = zod.object({
   veiculo_id: zod.coerce.string().uuid().optional(),
   lead_id: zod.coerce.string().uuid().optional(),
+  canal: zod.enum(["qr_patio", "whatsapp"]).optional(),
   limit: zod.coerce
     .number()
     .min(1)
@@ -820,6 +1003,7 @@ export const ListConversasQueryParams = zod.object({
 
 export const ListConversasResponseItem = zod.object({
   id: zod.string().uuid(),
+  canal: zod.enum(["qr_patio", "whatsapp"]).optional(),
   iniciada_em: zod.coerce.date(),
   encerrada_em: zod.coerce.date().nullish(),
   duracao_segundos: zod.number().nullish(),
@@ -855,6 +1039,7 @@ export const GetConversaParams = zod.object({
 
 export const GetConversaResponse = zod.object({
   id: zod.string().uuid(),
+  canal: zod.enum(["qr_patio", "whatsapp"]).optional(),
   iniciada_em: zod.coerce.date(),
   encerrada_em: zod.coerce.date().nullish(),
   duracao_segundos: zod.number().nullish(),

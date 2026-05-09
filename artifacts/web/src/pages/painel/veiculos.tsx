@@ -286,7 +286,7 @@ export default function PainelVeiculos() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <DiasPatioBadge dias={v.dias_no_patio} status={v.status} />
+                        <DiasPatioBadge dias={v.dias_no_patio ?? undefined} status={v.status} />
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`font-semibold ${scans > 0 ? "text-indigo-600" : "text-gray-400"}`}>

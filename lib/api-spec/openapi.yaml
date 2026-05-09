@@ -617,9 +617,7 @@ paths:
           in: query
           required: false
           schema:
-            type: string
-            enum: [mes, trimestre, ano, todos]
-            default: mes
+            $ref: "#/components/schemas/RelatorioVendasPeriodo"
       responses:
         "200":
           description: Profitability report
@@ -977,6 +975,12 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: canal
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [qr_patio, whatsapp]
         - name: limit
           in: query
           required: false
@@ -1899,6 +1903,34 @@ components:
         - token
         - usuario
 
+    PlanoConfig:
+      type: object
+      properties:
+        preco_unitario:
+          type: number
+        conversas_incluidas:
+          type: integer
+        buffer_excedente:
+          type: integer
+        preco_excedente:
+          type: number
+        personalizacao_avancada:
+          type: boolean
+        assistente_financiamento:
+          type: boolean
+        consulta_documental:
+          type: boolean
+        crm_retencao_dias:
+          type: ["integer", "null"]
+      required:
+        - preco_unitario
+        - conversas_incluidas
+        - buffer_excedente
+        - preco_excedente
+        - personalizacao_avancada
+        - assistente_financiamento
+        - consulta_documental
+
     MeResponse:
       type: object
       properties:
@@ -1907,6 +1939,10 @@ components:
         loja:
           oneOf:
             - $ref: "#/components/schemas/LojaPublic"
+            - type: "null"
+        plano_config:
+          oneOf:
+            - $ref: "#/components/schemas/PlanoConfig"
             - type: "null"
       required:
         - usuario
@@ -1937,6 +1973,12 @@ components:
         descricao_garantia:
           type: ["string", "null"]
         bancos_parceiros:
+          type: ["string", "null"]
+        mencionar_tempo_patio:
+          type: ["boolean", "null"]
+        whatsapp_numero_id:
+          type: ["string", "null"]
+        whatsapp_access_token:
           type: ["string", "null"]
 
     CreateVendedorRequest:
@@ -1977,6 +2019,39 @@ components:
         - url_publica
         - ativo
         - total_scans
+
+    CategoriaDespesaVeiculo:
+      type: string
+      enum:
+        - manutencao_mecanica
+        - manutencao_estetica
+        - documentacao
+        - outros
+
+    VeiculoDespesa:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        categoria:
+          $ref: "#/components/schemas/CategoriaDespesaVeiculo"
+        descricao:
+          type: string
+        valor:
+          type: string
+        data:
+          type: string
+          format: date
+        criado_em:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - id
+        - categoria
+        - descricao
+        - valor
+        - data
 
     VeiculoResponse:
       type: object
@@ -2020,6 +2095,32 @@ components:
           enum: [ativo, vendido, pausado]
         ativo_agente:
           type: boolean
+        tipo_aquisicao:
+          type: ["string", "null"]
+          enum: [proprio, consignado, null]
+        valor_aquisicao:
+          type: ["string", "null"]
+        consignado_proprietario_nome:
+          type: ["string", "null"]
+        consignado_proprietario_telefone:
+          type: ["string", "null"]
+        comissao_consignado_pct:
+          type: ["string", "null"]
+        data_entrada_patio:
+          type: ["string", "null"]
+          format: date
+        dias_no_patio:
+          type: ["integer", "null"]
+        alerta_patio:
+          type: boolean
+        custo_total:
+          type: ["number", "null"]
+        preco_sugerido:
+          type: ["number", "null"]
+        despesas:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/VeiculoDespesa"
         criado_em:
           type: ["string", "null"]
           format: date-time
@@ -2045,6 +2146,7 @@ components:
         - preco_venda
         - status
         - ativo_agente
+        - alerta_patio
 
     CreateVeiculoRequest:
       type: object
@@ -2078,6 +2180,20 @@ components:
             type: string
         descricao_agente:
           type: ["string", "null"]
+        tipo_aquisicao:
+          type: ["string", "null"]
+          enum: [proprio, consignado, null]
+        valor_aquisicao:
+          type: ["number", "null"]
+        consignado_proprietario_nome:
+          type: ["string", "null"]
+        consignado_proprietario_telefone:
+          type: ["string", "null"]
+        comissao_consignado_pct:
+          type: ["number", "null"]
+        data_entrada_patio:
+          type: ["string", "null"]
+          format: date
       required:
         - placa
         - marca
@@ -2121,6 +2237,25 @@ components:
           type: ["string", "null"]
         ativo_agente:
           type: boolean
+        tipo_aquisicao:
+          type: ["string", "null"]
+          enum: [proprio, consignado, null]
+        valor_aquisicao:
+          type: ["number", "null"]
+        consignado_proprietario_nome:
+          type: ["string", "null"]
+        consignado_proprietario_telefone:
+          type: ["string", "null"]
+        comissao_consignado_pct:
+          type: ["number", "null"]
+        data_entrada_patio:
+          type: ["string", "null"]
+          format: date
+
+    RelatorioVendasPeriodo:
+      type: string
+      enum: [mes, trimestre, ano, todos]
+      default: mes
 
     RelatorioVendasItem:
       type: object
@@ -2554,6 +2689,9 @@ components:
         id:
           type: string
           format: uuid
+        canal:
+          type: string
+          enum: [qr_patio, whatsapp]
         iniciada_em:
           type: string
           format: date-time
@@ -2609,6 +2747,9 @@ components:
         id:
           type: string
           format: uuid
+        canal:
+          type: string
+          enum: [qr_patio, whatsapp]
         iniciada_em:
           type: string
           format: date-time
@@ -2843,9 +2984,15 @@ components:
         mes_ref:
           type: string
           format: date
-        veiculos_ativos:
+        conversas_incluidas:
           type: integer
-        preco_unitario:
+        conversas_usadas:
+          type: integer
+        conversas_excedentes:
+          type: integer
+        valor_base:
+          type: number
+        valor_excedente:
           type: number
         valor_total:
           type: number
@@ -2861,8 +3008,6 @@ components:
       required:
         - id
         - mes_ref
-        - veiculos_ativos
-        - preco_unitario
         - valor_total
         - status
 
@@ -2875,9 +3020,21 @@ components:
         plano:
           type: string
           enum: [starter, pro, full]
-        veiculos_ativos:
+        conversas_incluidas:
           type: integer
-        preco_unitario:
+        conversas_usadas:
+          type: integer
+        conversas_excedentes:
+          type: integer
+        buffer_excedente:
+          type: integer
+        preco_excedente:
+          type: number
+        pct_cota:
+          type: integer
+        valor_base:
+          type: number
+        valor_excedente:
           type: number
         valor_total:
           type: number
@@ -2893,8 +3050,11 @@ components:
       required:
         - mes_ref
         - plano
-        - veiculos_ativos
-        - preco_unitario
+        - conversas_incluidas
+        - conversas_usadas
+        - conversas_excedentes
+        - valor_base
+        - valor_excedente
         - valor_total
         - status
         - vencimento

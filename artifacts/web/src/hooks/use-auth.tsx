@@ -12,7 +12,7 @@ export type PlanoConfig = {
   personalizacao_avancada: boolean;
   assistente_financiamento: boolean;
   consulta_documental: boolean;
-  crm_retencao_dias: number | null;
+  crm_retencao_dias?: number | null;
 };
 
 export type UserInfo = {

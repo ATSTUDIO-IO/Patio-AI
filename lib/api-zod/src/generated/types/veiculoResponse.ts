@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { QRCodeData } from "./qRCodeData";
+import type { VeiculoDespesa } from "./veiculoDespesa";
 import type { VeiculoResponseCambio } from "./veiculoResponseCambio";
 import type { VeiculoResponseCombustivel } from "./veiculoResponseCombustivel";
 import type { VeiculoResponseStatus } from "./veiculoResponseStatus";
+import type { VeiculoResponseTipoAquisicao } from "./veiculoResponseTipoAquisicao";
 
 export interface VeiculoResponse {
   id: string;
@@ -33,8 +35,34 @@ export interface VeiculoResponse {
   status: VeiculoResponseStatus;
   ativo_agente: boolean;
   /** @nullable */
+  tipo_aquisicao?: VeiculoResponseTipoAquisicao;
+  /** @nullable */
+  valor_aquisicao?: string | null;
+  /** @nullable */
+  consignado_proprietario_nome?: string | null;
+  /** @nullable */
+  consignado_proprietario_telefone?: string | null;
+  /** @nullable */
+  comissao_consignado_pct?: string | null;
+  /** @nullable */
+  data_entrada_patio?: Date | null;
+  /** @nullable */
+  dias_no_patio?: number | null;
+  alerta_patio: boolean;
+  /** @nullable */
+  custo_total?: number | null;
+  /** @nullable */
+  preco_sugerido?: number | null;
+  /** @nullable */
+  despesas?: VeiculoDespesa[] | null;
+  /** @nullable */
   criado_em?: Date | null;
   /** @nullable */
   vendido_em?: Date | null;
+  /**
+   * Actual price the vehicle was sold for (recorded at sale time)
+   * @nullable
+   */
+  valor_venda_real?: number | null;
   qr_code?: QRCodeData | null;
 }

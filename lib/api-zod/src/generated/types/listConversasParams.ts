@@ -5,10 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ListConversasCanal } from "./listConversasCanal";
 
 export type ListConversasParams = {
   veiculo_id?: string;
   lead_id?: string;
+  canal?: ListConversasCanal;
   /**
    * @minimum 1
    * @maximum 200

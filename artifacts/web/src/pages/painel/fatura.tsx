@@ -65,18 +65,18 @@ export default function PainelFatura() {
               </div>
 
               <QuotaBar
-                usadas={atual.conversas_usadas}
-                incluidas={atual.conversas_incluidas}
-                buffer={atual.buffer_excedente}
+                usadas={atual.conversas_usadas ?? 0}
+                incluidas={atual.conversas_incluidas ?? 0}
+                buffer={atual.buffer_excedente ?? 0}
               />
 
               <div className="mt-4 pt-4 border-t border-white/20">
                 <p className="text-xs text-white/60">
                   Mês de referência: {atual.mes_ref} · Vencimento: {new Date(atual.vencimento).toLocaleDateString("pt-BR")}
                 </p>
-                {atual.conversas_excedentes > 0 && (
+                {(atual.conversas_excedentes ?? 0) > 0 && (
                   <p className="text-xs text-white/60 mt-1">
-                    {atual.conversas_excedentes} conversas excedentes × {formatBRL(atual.preco_excedente)} = {formatBRL(atual.valor_excedente)}
+                    {atual.conversas_excedentes} conversas excedentes × {formatBRL(atual.preco_excedente ?? 0)} = {formatBRL(atual.valor_excedente)}
                   </p>
                 )}
                 <span className="inline-block mt-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
@@ -105,7 +105,7 @@ export default function PainelFatura() {
                     <p className="text-sm font-medium text-gray-900">{f.mes_ref}</p>
                     <p className="text-xs text-gray-400">
                       {f.conversas_usadas}/{f.conversas_incluidas} conversas
-                      {f.conversas_excedentes > 0 ? ` · +${f.conversas_excedentes} excedentes` : ""}
+                      {(f.conversas_excedentes ?? 0) > 0 ? ` · +${f.conversas_excedentes} excedentes` : ""}
                       {f.gerado_em ? ` · ${new Date(f.gerado_em).toLocaleDateString("pt-BR")}` : ""}
                     </p>
                   </div>

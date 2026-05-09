@@ -190,7 +190,10 @@ router.post("/veiculos", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const dataEntrada = parsed.data.data_entrada_patio ?? new Date().toISOString().slice(0, 10);
+  const dataEntradaRaw = parsed.data.data_entrada_patio;
+  const dataEntrada = dataEntradaRaw instanceof Date
+    ? dataEntradaRaw.toISOString().slice(0, 10)
+    : dataEntradaRaw ?? new Date().toISOString().slice(0, 10);
 
   const { veiculo, qr } = await db.transaction(async (tx) => {
     const [veiculo] = await tx

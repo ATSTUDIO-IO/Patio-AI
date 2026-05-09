@@ -10,8 +10,11 @@ import type { CicloBillingStatus } from "./cicloBillingStatus";
 export interface CicloBilling {
   id: string;
   mes_ref: Date;
-  veiculos_ativos: number;
-  preco_unitario: number;
+  conversas_incluidas?: number;
+  conversas_usadas?: number;
+  conversas_excedentes?: number;
+  valor_base?: number;
+  valor_excedente?: number;
   valor_total: number;
   status: CicloBillingStatus;
   /** @nullable */

@@ -104,7 +104,7 @@ export default function PainelLeads() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtrado.map((l) => {
-                  const origem = (l as Record<string, unknown>)["origem"] as string | undefined;
+                  const origem = l.origem ?? undefined;
                   const origemInfo = origem ? (ORIGEM_INFO[origem] ?? { label: origem, color: "bg-gray-100 text-gray-600" }) : null;
                   return (
                   <tr key={l.id} className="hover:bg-gray-50">

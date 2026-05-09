@@ -7,6 +7,7 @@
  */
 import type { UpdateVeiculoRequestCambio } from "./updateVeiculoRequestCambio";
 import type { UpdateVeiculoRequestCombustivel } from "./updateVeiculoRequestCombustivel";
+import type { UpdateVeiculoRequestTipoAquisicao } from "./updateVeiculoRequestTipoAquisicao";
 
 export interface UpdateVeiculoRequest {
   placa?: string;
@@ -28,4 +29,16 @@ export interface UpdateVeiculoRequest {
   /** @nullable */
   descricao_agente?: string | null;
   ativo_agente?: boolean;
+  /** @nullable */
+  tipo_aquisicao?: UpdateVeiculoRequestTipoAquisicao;
+  /** @nullable */
+  valor_aquisicao?: number | null;
+  /** @nullable */
+  consignado_proprietario_nome?: string | null;
+  /** @nullable */
+  consignado_proprietario_telefone?: string | null;
+  /** @nullable */
+  comissao_consignado_pct?: number | null;
+  /** @nullable */
+  data_entrada_patio?: Date | null;
 }

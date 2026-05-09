@@ -7,6 +7,7 @@
  */
 import type { CreateVeiculoRequestCambio } from "./createVeiculoRequestCambio";
 import type { CreateVeiculoRequestCombustivel } from "./createVeiculoRequestCombustivel";
+import type { CreateVeiculoRequestTipoAquisicao } from "./createVeiculoRequestTipoAquisicao";
 
 export interface CreateVeiculoRequest {
   placa: string;
@@ -27,4 +28,16 @@ export interface CreateVeiculoRequest {
   opcionais?: string[] | null;
   /** @nullable */
   descricao_agente?: string | null;
+  /** @nullable */
+  tipo_aquisicao?: CreateVeiculoRequestTipoAquisicao;
+  /** @nullable */
+  valor_aquisicao?: number | null;
+  /** @nullable */
+  consignado_proprietario_nome?: string | null;
+  /** @nullable */
+  consignado_proprietario_telefone?: string | null;
+  /** @nullable */
+  comissao_consignado_pct?: number | null;
+  /** @nullable */
+  data_entrada_patio?: Date | null;
 }

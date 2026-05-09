@@ -332,8 +332,6 @@ export interface LojaPublic {
   descricao_garantia?: string | null;
   /** @nullable */
   bancos_parceiros?: string | null;
-  /** @nullable */
-  mencionar_tempo_patio?: boolean | null;
 }
 
 export interface AuthResponse {
@@ -341,7 +339,7 @@ export interface AuthResponse {
   usuario: UsuarioPublic;
 }
 
-export interface PlanoConfigResponse {
+export interface PlanoConfig {
   preco_unitario: number;
   conversas_incluidas: number;
   buffer_excedente: number;
@@ -349,13 +347,14 @@ export interface PlanoConfigResponse {
   personalizacao_avancada: boolean;
   assistente_financiamento: boolean;
   consulta_documental: boolean;
-  crm_retencao_dias: number | null;
+  /** @nullable */
+  crm_retencao_dias?: number | null;
 }
 
 export interface MeResponse {
   usuario: UsuarioPublic;
   loja?: LojaPublic | null;
-  plano_config?: PlanoConfigResponse | null;
+  plano_config?: PlanoConfig | null;
 }
 
 export interface UpdateLojaRequest {
@@ -382,6 +381,10 @@ export interface UpdateLojaRequest {
   bancos_parceiros?: string | null;
   /** @nullable */
   mencionar_tempo_patio?: boolean | null;
+  /** @nullable */
+  whatsapp_numero_id?: string | null;
+  /** @nullable */
+  whatsapp_access_token?: string | null;
 }
 
 export interface CreateVendedorRequest {
@@ -399,6 +402,26 @@ export interface QRCodeData {
   imagem_qr?: string | null;
   ativo: boolean;
   total_scans: number;
+}
+
+export type CategoriaDespesaVeiculo =
+  (typeof CategoriaDespesaVeiculo)[keyof typeof CategoriaDespesaVeiculo];
+
+export const CategoriaDespesaVeiculo = {
+  manutencao_mecanica: "manutencao_mecanica",
+  manutencao_estetica: "manutencao_estetica",
+  documentacao: "documentacao",
+  outros: "outros",
+} as const;
+
+export interface VeiculoDespesa {
+  id: string;
+  categoria: CategoriaDespesaVeiculo;
+  descricao: string;
+  valor: string;
+  data: string;
+  /** @nullable */
+  criado_em?: string | null;
 }
 
 /**
@@ -437,24 +460,17 @@ export const VeiculoResponseStatus = {
   pausado: "pausado",
 } as const;
 
-export type TipoAquisicao = "proprio" | "consignado";
+/**
+ * @nullable
+ */
+export type VeiculoResponseTipoAquisicao =
+  | (typeof VeiculoResponseTipoAquisicao)[keyof typeof VeiculoResponseTipoAquisicao]
+  | null;
 
-export type CategoriaDespesaVeiculo =
-  | "manutencao_mecanica"
-  | "manutencao_estetica"
-  | "documentacao"
-  | "outros";
-
-export interface VeiculoDespesa {
-  id: string;
-  veiculo_id: string;
-  categoria: CategoriaDespesaVeiculo;
-  descricao: string;
-  valor: string;
-  data: string;
-  /** @nullable */
-  criado_em?: string | null;
-}
+export const VeiculoResponseTipoAquisicao = {
+  proprio: "proprio",
+  consignado: "consignado",
+} as const;
 
 export interface VeiculoResponse {
   id: string;
@@ -479,12 +495,7 @@ export interface VeiculoResponse {
   status: VeiculoResponseStatus;
   ativo_agente: boolean;
   /** @nullable */
-  criado_em?: string | null;
-  /** @nullable */
-  vendido_em?: string | null;
-  /** @nullable */
-  valor_venda_real?: number | null;
-  tipo_aquisicao?: TipoAquisicao;
+  tipo_aquisicao?: VeiculoResponseTipoAquisicao;
   /** @nullable */
   valor_aquisicao?: string | null;
   /** @nullable */
@@ -495,12 +506,24 @@ export interface VeiculoResponse {
   comissao_consignado_pct?: string | null;
   /** @nullable */
   data_entrada_patio?: string | null;
-  dias_no_patio?: number;
-  alerta_patio?: boolean;
-  custo_total?: number;
+  /** @nullable */
+  dias_no_patio?: number | null;
+  alerta_patio: boolean;
+  /** @nullable */
+  custo_total?: number | null;
   /** @nullable */
   preco_sugerido?: number | null;
-  despesas?: VeiculoDespesa[];
+  /** @nullable */
+  despesas?: VeiculoDespesa[] | null;
+  /** @nullable */
+  criado_em?: string | null;
+  /** @nullable */
+  vendido_em?: string | null;
+  /**
+   * Actual price the vehicle was sold for (recorded at sale time)
+   * @nullable
+   */
+  valor_venda_real?: number | null;
   qr_code?: QRCodeData | null;
 }
 
@@ -531,6 +554,18 @@ export const CreateVeiculoRequestCombustivel = {
   eletrico: "eletrico",
 } as const;
 
+/**
+ * @nullable
+ */
+export type CreateVeiculoRequestTipoAquisicao =
+  | (typeof CreateVeiculoRequestTipoAquisicao)[keyof typeof CreateVeiculoRequestTipoAquisicao]
+  | null;
+
+export const CreateVeiculoRequestTipoAquisicao = {
+  proprio: "proprio",
+  consignado: "consignado",
+} as const;
+
 export interface CreateVeiculoRequest {
   placa: string;
   marca: string;
@@ -550,7 +585,8 @@ export interface CreateVeiculoRequest {
   opcionais?: string[] | null;
   /** @nullable */
   descricao_agente?: string | null;
-  tipo_aquisicao?: TipoAquisicao;
+  /** @nullable */
+  tipo_aquisicao?: CreateVeiculoRequestTipoAquisicao;
   /** @nullable */
   valor_aquisicao?: number | null;
   /** @nullable */
@@ -590,6 +626,18 @@ export const UpdateVeiculoRequestCombustivel = {
   eletrico: "eletrico",
 } as const;
 
+/**
+ * @nullable
+ */
+export type UpdateVeiculoRequestTipoAquisicao =
+  | (typeof UpdateVeiculoRequestTipoAquisicao)[keyof typeof UpdateVeiculoRequestTipoAquisicao]
+  | null;
+
+export const UpdateVeiculoRequestTipoAquisicao = {
+  proprio: "proprio",
+  consignado: "consignado",
+} as const;
+
 export interface UpdateVeiculoRequest {
   placa?: string;
   marca?: string;
@@ -610,7 +658,8 @@ export interface UpdateVeiculoRequest {
   /** @nullable */
   descricao_agente?: string | null;
   ativo_agente?: boolean;
-  tipo_aquisicao?: TipoAquisicao;
+  /** @nullable */
+  tipo_aquisicao?: UpdateVeiculoRequestTipoAquisicao;
   /** @nullable */
   valor_aquisicao?: number | null;
   /** @nullable */
@@ -621,6 +670,47 @@ export interface UpdateVeiculoRequest {
   comissao_consignado_pct?: number | null;
   /** @nullable */
   data_entrada_patio?: string | null;
+}
+
+export type RelatorioVendasPeriodo =
+  (typeof RelatorioVendasPeriodo)[keyof typeof RelatorioVendasPeriodo];
+
+export const RelatorioVendasPeriodo = {
+  mes: "mes",
+  trimestre: "trimestre",
+  ano: "ano",
+  todos: "todos",
+} as const;
+
+export interface RelatorioVendasItem {
+  id: string;
+  marca: string;
+  modelo: string;
+  ano_fabricacao: number;
+  ano_modelo: number;
+  /** @nullable */
+  placa?: string | null;
+  /** @nullable */
+  vendido_em?: string | null;
+  custo_total: number;
+  /** @nullable */
+  valor_venda_real?: number | null;
+  /** @nullable */
+  lucro_bruto?: number | null;
+  /** @nullable */
+  margem_pct?: number | null;
+}
+
+export interface RelatorioVendasTotais {
+  receita_total: number;
+  custo_total: number;
+  lucro_total: number;
+  total_vendidos: number;
+}
+
+export interface RelatorioVendasResponse {
+  items: RelatorioVendasItem[];
+  totais: RelatorioVendasTotais;
 }
 
 export type PatchStatusRequestStatus =
@@ -636,40 +726,11 @@ export interface PatchStatusRequest {
   status: PatchStatusRequestStatus;
   /** @nullable */
   motivo?: string | null;
-  /** @nullable */
+  /**
+   * Actual sale price recorded when marking vehicle as sold
+   * @nullable
+   */
   valor_venda_real?: number | null;
-}
-
-export interface RelatorioVendasItem {
-  id: string;
-  marca: string;
-  modelo: string;
-  ano_fabricacao: number;
-  ano_modelo: number;
-  placa: string;
-  vendido_em: string;
-  custo_total: number;
-  valor_venda_real: number | null;
-  lucro_bruto: number | null;
-  margem_pct: number | null;
-}
-
-export interface RelatorioVendasTotais {
-  receita_total: number;
-  custo_total: number;
-  lucro_total: number;
-  total_vendidos: number;
-}
-
-export interface RelatorioVendas {
-  items: RelatorioVendasItem[];
-  totais: RelatorioVendasTotais;
-}
-
-export type RelatorioVendasPeriodo = "mes" | "trimestre" | "ano" | "todos";
-
-export interface GetRelatorioVendasParams {
-  periodo?: RelatorioVendasPeriodo;
 }
 
 export interface VeiculoPublicoData {
@@ -935,6 +996,14 @@ export interface PatchLeadStatusResponse {
   status_crm: PatchLeadStatusResponseStatusCrm;
 }
 
+export type ConversaListItemCanal =
+  (typeof ConversaListItemCanal)[keyof typeof ConversaListItemCanal];
+
+export const ConversaListItemCanal = {
+  qr_patio: "qr_patio",
+  whatsapp: "whatsapp",
+} as const;
+
 export type ConversaListItemVeiculo = {
   id: string;
   marca: string;
@@ -952,6 +1021,7 @@ export type ConversaListItemLead = {
 
 export interface ConversaListItem {
   id: string;
+  canal?: ConversaListItemCanal;
   iniciada_em: string;
   /** @nullable */
   encerrada_em?: string | null;
@@ -965,6 +1035,14 @@ export interface ConversaListItem {
   veiculo: ConversaListItemVeiculo;
   lead?: ConversaListItemLead;
 }
+
+export type ConversaDetailCanal =
+  (typeof ConversaDetailCanal)[keyof typeof ConversaDetailCanal];
+
+export const ConversaDetailCanal = {
+  qr_patio: "qr_patio",
+  whatsapp: "whatsapp",
+} as const;
 
 export type ConversaDetailVeiculo = {
   id: string;
@@ -994,6 +1072,7 @@ export type ConversaDetailLead = {
 
 export interface ConversaDetail {
   id: string;
+  canal?: ConversaDetailCanal;
   iniciada_em: string;
   /** @nullable */
   encerrada_em?: string | null;
@@ -1018,8 +1097,6 @@ export const AlertaTipo = {
   veiculo_sem_scans: "veiculo_sem_scans",
   scans_sem_lead: "scans_sem_lead",
   lead_financiamento_pendente: "lead_financiamento_pendente",
-  cota_80pct: "cota_80pct",
-  cota_esgotada: "cota_esgotada",
 } as const;
 
 export type AlertaPrioridade =
@@ -1151,11 +1228,11 @@ export const CicloBillingStatus = {
 export interface CicloBilling {
   id: string;
   mes_ref: string;
-  conversas_incluidas: number;
-  conversas_usadas: number;
-  conversas_excedentes: number;
-  valor_base: number;
-  valor_excedente: number;
+  conversas_incluidas?: number;
+  conversas_usadas?: number;
+  conversas_excedentes?: number;
+  valor_base?: number;
+  valor_excedente?: number;
   valor_total: number;
   status: CicloBillingStatus;
   /** @nullable */
@@ -1188,9 +1265,9 @@ export interface FaturaAtual {
   conversas_incluidas: number;
   conversas_usadas: number;
   conversas_excedentes: number;
-  buffer_excedente: number;
-  preco_excedente: number;
-  pct_cota: number;
+  buffer_excedente?: number;
+  preco_excedente?: number;
+  pct_cota?: number;
   valor_base: number;
   valor_excedente: number;
   valor_total: number;
@@ -1253,6 +1330,10 @@ export const ListVeiculosStatus = {
   pausado: "pausado",
 } as const;
 
+export type GetRelatorioVendasParams = {
+  periodo?: RelatorioVendasPeriodo;
+};
+
 export type ListLeadsParams = {
   status?: ListLeadsStatus;
   interesse?: ListLeadsInteresse;
@@ -1292,6 +1373,7 @@ export const ListLeadsInteresse = {
 export type ListConversasParams = {
   veiculo_id?: string;
   lead_id?: string;
+  canal?: ListConversasCanal;
   /**
    * @minimum 1
    * @maximum 200
@@ -1302,6 +1384,14 @@ export type ListConversasParams = {
    */
   offset?: number;
 };
+
+export type ListConversasCanal =
+  (typeof ListConversasCanal)[keyof typeof ListConversasCanal];
+
+export const ListConversasCanal = {
+  qr_patio: "qr_patio",
+  whatsapp: "whatsapp",
+} as const;
 
 export type GetAdminStats200 = {
   total_lojas_ativas?: number;

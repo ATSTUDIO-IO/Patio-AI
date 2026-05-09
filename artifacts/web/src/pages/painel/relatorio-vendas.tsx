@@ -158,7 +158,7 @@ export default function RelatorioVendas() {
                           {formatBRL(item.custo_total)}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {item.valor_venda_real !== null ? (
+                          {item.valor_venda_real != null ? (
                             <span className="text-gray-900 font-medium">
                               {formatBRL(item.valor_venda_real)}
                             </span>
@@ -169,10 +169,10 @@ export default function RelatorioVendas() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {formatLucro(item.lucro_bruto)}
+                          {formatLucro(item.lucro_bruto ?? null)}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {formatPct(item.margem_pct)}
+                          {formatPct(item.margem_pct ?? null)}
                         </td>
                       </tr>
                     ))}
