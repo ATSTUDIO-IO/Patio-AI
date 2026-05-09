@@ -36,7 +36,11 @@ app.use(
 
 const isDev = process.env.NODE_ENV === "development";
 
-// Build exact-match origin allowlist from REPLIT_DOMAINS at startup
+// Build exact-match origin allowlist from REPLIT_DOMAINS at startup.
+// REPLIT_DOMAINS is a comma-separated list of domains assigned by Replit
+// (e.g. "abc123.picard.replit.dev" in dev, "myapp.replit.app" in prod).
+// Deploy checklist: ensure REPLIT_DOMAINS, JWT_SECRET, WHATSAPP_APP_SECRET,
+// and WHATSAPP_VERIFY_TOKEN are set in production secrets before first deploy.
 const replitDomainOrigins = new Set<string>();
 const replitDomainsEnv = process.env.REPLIT_DOMAINS ?? "";
 for (const domain of replitDomainsEnv.split(",")) {
@@ -47,15 +51,18 @@ for (const domain of replitDomainsEnv.split(",")) {
   }
 }
 
-// Strict regex for production .replit.app domains (exact subdomain, no suffix bypass)
+// Strict regex for .replit.app deploy domains (single-level subdomain only).
+// Used as a fallback when REPLIT_DOMAINS does not list all production URLs
+// (e.g. custom deployment domains). Intentionally limited to .replit.app TLD.
 const REPLIT_APP_RE = /^https:\/\/[a-zA-Z0-9-]+\.replit\.app$/;
 
 function isOriginAllowed(origin: string): boolean {
-  // Exact match against configured REPLIT_DOMAINS
+  // Priority 1: exact match against REPLIT_DOMAINS (most restrictive)
   if (replitDomainOrigins.has(origin)) return true;
-  // Localhost only in development
+  // Priority 2: localhost only in development
   if (isDev && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return true;
-  // In production: allow .replit.app deploy domains not listed in REPLIT_DOMAINS
+  // Priority 3: .replit.app regex fallback for production deploy domains
+  // not explicitly listed in REPLIT_DOMAINS (intentional, see comment above)
   if (!isDev && REPLIT_APP_RE.test(origin)) return true;
   return false;
 }
@@ -111,7 +118,16 @@ const whatsappWebhookRateLimit = rateLimit({
 
 app.use("/api/agente", agenteRateLimit);
 app.use("/api/landing/chat", landingChatRateLimit);
-app.use("/api/whatsapp/webhook", whatsappWebhookRateLimit);
+
+// Webhook rate limit scoped to POST only — GET /webhook is used by Meta's
+// verification handshake and must not be throttled.
+app.use("/api/whatsapp/webhook", (req, res, next) => {
+  if (req.method === "POST") {
+    whatsappWebhookRateLimit(req, res, next);
+  } else {
+    next();
+  }
+});
 
 app.use(
   "/api/agente/mensagem",
