@@ -407,9 +407,9 @@ export default function Landing() {
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
         </div>
 
-        {/* Lead toast — bottom-left, desktop only */}
-        <div className="absolute bottom-8 left-6 z-20 hidden lg:block">
-          <LeadToast />
+        {/* Lead toast — bottom-left */}
+        <div className="absolute bottom-8 left-6 z-20">
+          <LeadToast variant="dark" offset={0} />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
@@ -607,7 +607,7 @@ export default function Landing() {
       </section>
 
       {/* ── DEMO ───────────────────────────────────────────────────────── */}
-      <section id="demo" className="py-24 bg-white overflow-hidden">
+      <section id="demo" className="py-24 bg-white overflow-hidden relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
 
@@ -719,6 +719,11 @@ export default function Landing() {
               </div>
             </motion.div>
           </div>
+        </div>
+
+        {/* Lead toast — floats over demo section, bottom-left */}
+        <div className="absolute bottom-8 left-6 z-20">
+          <LeadToast variant="light" offset={3} />
         </div>
       </section>
 
