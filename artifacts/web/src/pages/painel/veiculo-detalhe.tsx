@@ -36,7 +36,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 const LEAD_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  novo: { label: "Novo", color: "bg-blue-100 text-blue-700" },
+  novo: { label: "Novo", color: "bg-orange-100 text-orange-700" },
   em_contato: { label: "Em contato", color: "bg-yellow-100 text-yellow-700" },
   ganho: { label: "Ganho", color: "bg-green-100 text-green-700" },
   perdido: { label: "Perdido", color: "bg-red-100 text-red-700" },
@@ -165,7 +165,7 @@ export default function VeiculoDetalhe() {
           <p className="text-gray-400">Este veículo não foi encontrado.</p>
           <button
             onClick={() => setLocation("/painel/veiculos")}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700"
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-semibold rounded-xl hover:bg-orange-700"
           >
             Voltar para Veículos
           </button>
@@ -215,7 +215,7 @@ export default function VeiculoDetalhe() {
             </button>
             <Link
               href={`/painel/veiculos/${veiculoId}/editar`}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-orange-600 text-white text-sm font-semibold rounded-xl hover:bg-orange-700 transition-colors"
             >
               Editar Veículo
             </Link>
@@ -230,13 +230,13 @@ export default function VeiculoDetalhe() {
             label="Scans do QR"
             value={scans}
             sub="pessoas escanearam"
-            color={scans > 0 ? "text-indigo-600" : "text-gray-400"}
+            color={scans > 0 ? "text-orange-600" : "text-gray-400"}
           />
           <MetricCard
             label="Leads gerados"
             value={leads.length}
             sub="contatos identificados"
-            color={leads.length > 0 ? "text-blue-600" : "text-gray-400"}
+            color={leads.length > 0 ? "text-orange-600" : "text-gray-400"}
           />
           <MetricCard
             label="Conversas"
@@ -368,7 +368,7 @@ export default function VeiculoDetalhe() {
               {precoSugerido !== null && (
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">Preço sugerido (+20%)</span>
-                  <span className="text-sm text-blue-600 font-medium">
+                  <span className="text-sm text-orange-600 font-medium">
                     {formatBRL(precoSugerido)}
                   </span>
                 </div>
@@ -453,7 +453,7 @@ export default function VeiculoDetalhe() {
                 <button
                   onClick={handleDownloadQr}
                   disabled={!qr.imagem_qr}
-                  className="text-xs px-3 py-1.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40"
+                  className="text-xs px-3 py-1.5 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-40"
                 >
                   Baixar PNG
                 </button>
@@ -479,7 +479,7 @@ export default function VeiculoDetalhe() {
               <div className="space-y-2 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">Total de scans</span>
-                  <span className={`text-lg font-bold ${scans > 0 ? "text-indigo-600" : "text-gray-400"}`}>
+                  <span className={`text-lg font-bold ${scans > 0 ? "text-orange-600" : "text-gray-400"}`}>
                     {scans}
                   </span>
                 </div>
@@ -497,7 +497,7 @@ export default function VeiculoDetalhe() {
                     href={qr.url_publica}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline break-all"
+                    className="text-xs text-orange-600 hover:underline break-all"
                   >
                     {qr.url_publica}
                   </a>
@@ -516,7 +516,7 @@ export default function VeiculoDetalhe() {
             leads.length > 0 ? (
               <Link
                 href={`/painel/leads`}
-                className="text-xs text-blue-600 hover:underline"
+                className="text-xs text-orange-600 hover:underline"
               >
                 Ver todos os leads →
               </Link>
@@ -589,7 +589,7 @@ export default function VeiculoDetalhe() {
                     {isExpanded && (
                       <div className="px-4 pb-4 pt-1 border-t border-gray-50 bg-gray-50/50 grid grid-cols-2 gap-2 text-xs">
                         {lead.pediu_financiamento && (
-                          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg font-medium">
+                          <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded-lg font-medium">
                             💰 Pediu financiamento
                           </span>
                         )}
@@ -632,7 +632,7 @@ export default function VeiculoDetalhe() {
             conversas.length > 0 ? (
               <Link
                 href={`/painel/conversas`}
-                className="text-xs text-blue-600 hover:underline"
+                className="text-xs text-orange-600 hover:underline"
               >
                 Ver todas →
               </Link>
@@ -667,7 +667,7 @@ export default function VeiculoDetalhe() {
                             </span>
                           )}
                           {c.simulacao_realizada && (
-                            <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">
+                            <span className="text-xs px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full font-medium">
                               Simulação
                             </span>
                           )}

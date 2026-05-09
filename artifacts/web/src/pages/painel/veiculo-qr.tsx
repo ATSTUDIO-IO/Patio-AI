@@ -81,9 +81,9 @@ export default function VeiculoQR() {
             </div>
           </div>
 
-          <div className="mt-4 bg-blue-50 rounded-2xl p-4">
-            <p className="text-sm font-medium text-blue-700 mb-1.5">💡 Como usar</p>
-            <ul className="text-xs text-blue-600 space-y-1">
+          <div className="mt-4 bg-orange-50 rounded-2xl p-4">
+            <p className="text-sm font-medium text-orange-700 mb-1.5">💡 Como usar</p>
+            <ul className="text-xs text-orange-600 space-y-1">
               <li>• Imprima e cole no para-brisa ou vitrine do veículo</li>
               <li>• O cliente escaneia com a câmera do celular</li>
               <li>• O agente de voz IA inicia automaticamente</li>
