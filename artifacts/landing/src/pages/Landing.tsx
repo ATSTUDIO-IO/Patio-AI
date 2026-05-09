@@ -1019,7 +1019,7 @@ export default function Landing() {
               <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-cyan-accent/15 border border-cyan-accent/30">
                 <Package className="w-4 h-4 text-cyan-accent flex-shrink-0" />
                 <div>
-                  <p className="text-cyan-accent text-xs font-bold leading-none">CRM + ERP Avançado</p>
+                  <p className="text-cyan-accent text-xs font-bold leading-none">ERP Completo</p>
                   <p className="text-cyan-accent/70 text-[10px] mt-0.5">Pipeline · Consignados · Relatórios de frota</p>
                 </div>
               </div>
@@ -1062,11 +1062,11 @@ export default function Landing() {
                 <span className="text-gray-500 ml-2">/mês</span>
               </div>
               {/* ERP badge */}
-              <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-indigo-primary/6 border border-indigo-primary/15">
-                <Crown className="w-4 h-4 text-indigo-primary flex-shrink-0" />
+              <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-cyan-accent/10 border border-cyan-accent/25">
+                <Crown className="w-4 h-4 text-cyan-accent flex-shrink-0" />
                 <div>
-                  <p className="text-indigo-primary text-xs font-bold leading-none">ERP Completo para sua loja</p>
-                  <p className="text-gray-400 text-[10px] mt-0.5">Frota · Financeiro · Histórico ilimitado</p>
+                  <p className="text-cyan-accent text-xs font-bold leading-none">ERP Completo</p>
+                  <p className="text-cyan-accent/70 text-[10px] mt-0.5">Frota · Financeiro · Histórico ilimitado</p>
                 </div>
               </div>
               <ul className="space-y-4 mb-6 flex-1">
