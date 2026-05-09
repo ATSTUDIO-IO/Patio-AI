@@ -55,9 +55,6 @@ export function getCrmDataSince(plano: string): Date | null {
   const cfg = getPlanoConfig(plano);
   if (cfg.crmRetencaoDias === null) return null;
   const d = new Date();
-  if (plano === "starter") {
-    return new Date(d.getTime() + 1);
-  }
   d.setDate(1);
   d.setHours(0, 0, 0, 0);
   return d;

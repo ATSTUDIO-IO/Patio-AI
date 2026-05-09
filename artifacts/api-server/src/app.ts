@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
 import rateLimit from "express-rate-limit";
 import router from "./routes";
@@ -26,7 +27,32 @@ app.use(
     },
   }),
 );
-app.use(cors());
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
+
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https?:\/\/localhost(:\d+)?$/,
+  /\.replit\.dev$/,
+  /\.replit\.app$/,
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin))) {
+        return callback(null, true);
+      }
+      logger.warn({ origin }, "CORS: origem rejeitada");
+      callback(new Error("Origem não permitida por CORS"));
+    },
+    credentials: true,
+  }),
+);
 
 app.use(
   express.json({
@@ -56,8 +82,17 @@ const landingChatRateLimit = rateLimit({
   message: { error: "Muitas requisições. Tente novamente em alguns instantes." },
 });
 
+const whatsappWebhookRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Muitas requisições ao webhook." },
+});
+
 app.use("/api/agente", agenteRateLimit);
 app.use("/api/landing/chat", landingChatRateLimit);
+app.use("/api/whatsapp/webhook", whatsappWebhookRateLimit);
 
 app.use(
   "/api/agente/mensagem",
