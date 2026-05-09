@@ -4,3 +4,4 @@ export * from "./leads";
 export * from "./billing";
 export * from "./admin";
 export * from "./landing_leads";
+export * from "./whatsapp_sessoes";

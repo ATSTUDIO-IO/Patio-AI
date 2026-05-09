@@ -8,6 +8,7 @@ import {
   mensagens,
   leads,
   veiculos,
+  whatsappSessoes,
   type Loja,
 } from "@workspace/db";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
@@ -42,6 +43,64 @@ interface WhatsAppSession {
 
 const sessions = new Map<string, WhatsAppSession>();
 const SESSION_TTL_MS = 30 * 60 * 1000;
+
+async function persistirSessaoDB(
+  from: string,
+  lojaId: string,
+  conversaId: string,
+  veiculoIdDetectado?: string,
+): Promise<void> {
+  await db
+    .insert(whatsappSessoes)
+    .values({
+      from,
+      lojaId,
+      conversaId,
+      ultimaMensagemEm: new Date(),
+      veiculoIdDetectado: veiculoIdDetectado ?? null,
+    })
+    .onConflictDoUpdate({
+      target: [whatsappSessoes.from, whatsappSessoes.lojaId],
+      set: {
+        conversaId,
+        ultimaMensagemEm: new Date(),
+        veiculoIdDetectado: veiculoIdDetectado ?? null,
+      },
+    });
+}
+
+async function atualizarUltimaMensagemDB(
+  from: string,
+  lojaId: string,
+  veiculoIdDetectado?: string,
+): Promise<void> {
+  const where = and(
+    eq(whatsappSessoes.from, from),
+    eq(whatsappSessoes.lojaId, lojaId),
+  );
+  if (veiculoIdDetectado !== undefined) {
+    await db
+      .update(whatsappSessoes)
+      .set({ ultimaMensagemEm: new Date(), veiculoIdDetectado })
+      .where(where);
+  } else {
+    await db
+      .update(whatsappSessoes)
+      .set({ ultimaMensagemEm: new Date() })
+      .where(where);
+  }
+}
+
+async function deletarSessaoDB(from: string, lojaId: string): Promise<void> {
+  await db
+    .delete(whatsappSessoes)
+    .where(
+      and(
+        eq(whatsappSessoes.from, from),
+        eq(whatsappSessoes.lojaId, lojaId),
+      ),
+    );
+}
 
 const PERFIS_COMPORTAMENTO: Record<string, string> = {
   profissional_cordial: `Perfil de comportamento: PROFISSIONAL E CORDIAL
@@ -396,6 +455,10 @@ async function finalizarSessao(
     );
   } catch (err) {
     logger.error({ err, sessionKey }, "Erro ao finalizar sessão WhatsApp");
+  } finally {
+    await deletarSessaoDB(from, session.lojaId).catch((err) =>
+      logger.error({ err, sessionKey }, "Erro ao deletar sessão do banco"),
+    );
   }
 }
 
@@ -406,6 +469,9 @@ function resetarTimer(sessionKey: string, from: string): void {
   session.timer = setTimeout(
     () => finalizarSessao(sessionKey, from),
     SESSION_TTL_MS,
+  );
+  atualizarUltimaMensagemDB(from, session.lojaId).catch((err) =>
+    logger.error({ err, sessionKey }, "Erro ao atualizar ultima_mensagem_em no banco"),
   );
 }
 
@@ -579,6 +645,8 @@ async function processWhatsAppMessage(payload: unknown): Promise<void> {
     };
     sessions.set(sessionKey, session);
 
+    await persistirSessaoDB(from, loja.id, conversa.id);
+
     await enviarMensagemWhatsApp(
       phoneNumberId,
       loja.whatsappAccessToken,
@@ -601,6 +669,10 @@ async function processWhatsAppMessage(payload: unknown): Promise<void> {
   );
   if (veiculoDetectado && veiculoDetectado !== session.veiculoIdDetectado) {
     session.veiculoIdDetectado = veiculoDetectado;
+    atualizarUltimaMensagemDB(from, session.lojaId, veiculoDetectado).catch(
+      (err) =>
+        logger.error({ err, sessionKey }, "Erro ao atualizar veiculo_id_detectado no banco"),
+    );
   }
 
   const esDespedida = detectarDespedida(text);
@@ -705,6 +777,72 @@ async function processWhatsAppMessage(payload: unknown): Promise<void> {
     logger.info({ sessionKey, from }, "Despedida detectada — encerrando sessão WhatsApp imediatamente");
     clearTimeout(session.timer);
     void finalizarSessao(sessionKey, from);
+  }
+}
+
+export async function inicializarSessoes(): Promise<void> {
+  try {
+    const sessoesDB = await db.select().from(whatsappSessoes);
+    const agora = Date.now();
+
+    logger.info(
+      { count: sessoesDB.length },
+      "Recarregando sessões WhatsApp do banco",
+    );
+
+    for (const sessaoDB of sessoesDB) {
+      const sessionKey = `${sessaoDB.from}:${sessaoDB.lojaId}`;
+
+      if (sessions.has(sessionKey)) continue;
+
+      const inventario = await buscarInventario(sessaoDB.lojaId).catch(() => []);
+
+      const ultimaMensagem = sessaoDB.ultimaMensagemEm.getTime();
+      const tempoDecorrido = agora - ultimaMensagem;
+      const ttlRestante = SESSION_TTL_MS - tempoDecorrido;
+
+      if (ttlRestante <= 0) {
+        const placeholderTimer = setTimeout(() => {}, 0);
+        sessions.set(sessionKey, {
+          conversaId: sessaoDB.conversaId,
+          lojaId: sessaoDB.lojaId,
+          from: sessaoDB.from,
+          timer: placeholderTimer,
+          inventario,
+          veiculoIdDetectado: sessaoDB.veiculoIdDetectado ?? undefined,
+        });
+        logger.info(
+          { sessionKey },
+          "Sessão WhatsApp expirada — finalizando agora",
+        );
+        void finalizarSessao(sessionKey, sessaoDB.from);
+      } else {
+        const timer = setTimeout(
+          () => finalizarSessao(sessionKey, sessaoDB.from),
+          ttlRestante,
+        );
+        sessions.set(sessionKey, {
+          conversaId: sessaoDB.conversaId,
+          lojaId: sessaoDB.lojaId,
+          from: sessaoDB.from,
+          timer,
+          inventario,
+          veiculoIdDetectado: sessaoDB.veiculoIdDetectado ?? undefined,
+        });
+        logger.info(
+          {
+            sessionKey,
+            ttlRestanteMin: Math.round(ttlRestante / 60000),
+          },
+          "Sessão WhatsApp restaurada",
+        );
+      }
+    }
+  } catch (err) {
+    logger.error(
+      { err },
+      "CRÍTICO: falha ao recarregar sessões WhatsApp do banco — sessões ativas podem ter sido perdidas",
+    );
   }
 }
 
