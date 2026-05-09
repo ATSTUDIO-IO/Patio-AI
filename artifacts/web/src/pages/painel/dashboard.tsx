@@ -33,11 +33,11 @@ function MiniBarChart({ dados }: { dados: Array<{ data: string; scans: number }>
             <span className="text-xs text-gray-400">{d.scans > 0 ? d.scans : ""}</span>
             <div className="w-full flex flex-col justify-end" style={{ height: "48px" }}>
               <div
-                className={`w-full rounded-t-sm transition-all ${isHoje ? "bg-indigo-500" : "bg-indigo-200"}`}
+                className={`w-full rounded-t-sm transition-all ${isHoje ? "bg-orange-500" : "bg-orange-200"}`}
                 style={{ height: `${Math.max(pct, d.scans > 0 ? 8 : 2)}%` }}
               />
             </div>
-            <span className={`text-xs ${isHoje ? "text-indigo-600 font-semibold" : "text-gray-400"}`}>
+            <span className={`text-xs ${isHoje ? "text-orange-600 font-semibold" : "text-gray-400"}`}>
               {diasSemana[dow]}
             </span>
           </div>
@@ -48,12 +48,12 @@ function MiniBarChart({ dados }: { dados: Array<{ data: string; scans: number }>
 }
 
 const TIPO_COLORS: Record<string, string> = {
-  lead_novo: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  lead_novo: "bg-orange-50 text-orange-700 border-orange-200",
   lead_quente: "bg-yellow-50 text-yellow-700 border-yellow-200",
   agente_erro: "bg-red-50 text-red-700 border-red-200",
   fatura_pendente: "bg-orange-50 text-orange-700 border-orange-200",
   lead_quente_sem_contato: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  lead_financiamento_pendente: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  lead_financiamento_pendente: "bg-orange-50 text-orange-700 border-orange-200",
   veiculo_sem_scans: "bg-gray-50 text-gray-600 border-gray-200",
   scans_sem_lead: "bg-purple-50 text-purple-700 border-purple-200",
   cota_80pct: "bg-orange-50 text-orange-700 border-orange-200",
@@ -95,13 +95,13 @@ export default function PainelDashboard() {
       />
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Veículos Ativos" value={veiculosAtivos} sub="na plataforma" color="text-indigo-600" />
+          <StatCard label="Veículos Ativos" value={veiculosAtivos} sub="na plataforma" color="text-orange-600" />
           <StatCard label="Leads Novos" value={leadsNovos} sub="aguardando contato" color="text-green-600" />
           <StatCard
             label="Scans Hoje"
             value={metricas?.scans_hoje ?? "—"}
             sub={`${totalScansSemana} na semana`}
-            color="text-cyan-600"
+            color="text-orange-500"
           />
           <StatCard
             label="Fatura Estimada"

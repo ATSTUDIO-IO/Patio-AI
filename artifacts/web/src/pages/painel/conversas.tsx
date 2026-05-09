@@ -25,8 +25,8 @@ function ChannelBadge({ canal }: { canal?: string | null }) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block" />
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block" />
       QR Pátio
     </span>
   );
@@ -90,7 +90,7 @@ export default function PainelConversas() {
                         ? key === "whatsapp"
                           ? "bg-green-100 text-green-700"
                           : key === "qr_patio"
-                          ? "bg-indigo-100 text-indigo-700"
+                          ? "bg-orange-100 text-orange-700"
                           : "bg-gray-200 text-gray-700"
                         : "text-gray-500 hover:bg-gray-50"
                     }`}
@@ -116,7 +116,7 @@ export default function PainelConversas() {
                   <button
                     key={c.id}
                     onClick={() => setSelectedId(c.id)}
-                    className={`w-full text-left p-3 hover:bg-gray-50 transition-colors ${selectedId === c.id ? "bg-indigo-50 border-l-2 border-indigo-500" : ""}`}
+                    className={`w-full text-left p-3 hover:bg-gray-50 transition-colors ${selectedId === c.id ? "bg-orange-50 border-l-2 border-orange-500" : ""}`}
                   >
                     <div className="flex justify-between items-start gap-2">
                       <p className="text-sm font-medium text-gray-900 truncate">
@@ -166,9 +166,9 @@ export default function PainelConversas() {
                 </div>
                 <div className={`flex-1 overflow-y-auto p-4 ${isWhatsApp ? "bg-[#ece5dd]" : ""}`}>
                   {conversa?.resumo_ia && (
-                    <div className="mb-4 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
-                      <p className="text-xs font-semibold text-indigo-700 mb-1">Resumo da IA</p>
-                      <p className="text-sm text-indigo-800">{conversa.resumo_ia}</p>
+                    <div className="mb-4 p-3 bg-orange-50 rounded-xl border border-orange-100">
+                      <p className="text-xs font-semibold text-orange-700 mb-1">Resumo da IA</p>
+                      <p className="text-sm text-gray-800">{conversa.resumo_ia}</p>
                     </div>
                   )}
 

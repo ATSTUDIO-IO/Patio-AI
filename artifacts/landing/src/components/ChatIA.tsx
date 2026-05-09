@@ -158,7 +158,7 @@ export function ChatIA() {
                 type="submit" 
                 size="icon" 
                 disabled={!input.trim() || isLoading || messages.length >= 20}
-                className="bg-indigo-primary hover:bg-indigo-900 text-white"
+                className="bg-indigo-primary hover:bg-gray-800 text-white"
               >
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>

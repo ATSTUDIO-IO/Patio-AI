@@ -75,14 +75,14 @@ function JourneySceneQR({ active }: { active: boolean }) {
       <div className="relative w-full max-w-[220px]">
         <svg viewBox="0 0 220 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto drop-shadow-lg">
           {/* Car body */}
-          <rect x="8" y="50" width="204" height="36" rx="10" fill="hsl(244 47% 20%)" />
+          <rect x="8" y="50" width="204" height="36" rx="10" fill="hsl(0 0% 7%)" />
           {/* Cabin/roof */}
-          <path d="M50 50 L68 18 L152 18 L170 50 Z" fill="hsl(244 47% 16%)" />
+          <path d="M50 50 L68 18 L152 18 L170 50 Z" fill="hsl(0 0% 5%)" />
           {/* Windshield area */}
-          <path d="M76 50 L88 22 L140 22 L152 50 Z" fill="rgba(6,182,212,0.18)" stroke="rgba(6,182,212,0.55)" strokeWidth="1.2" />
+          <path d="M76 50 L88 22 L140 22 L152 50 Z" fill="rgba(249,115,22,0.15)" stroke="rgba(249,115,22,0.5)" strokeWidth="1.2" />
           {/* QR sticker on windshield */}
           <rect x="102" y="29" width="16" height="16" rx="2.5" fill="white" opacity="0.95" />
-          <g fill="hsl(244 47% 20%)" opacity="0.9">
+          <g fill="hsl(0 0% 7%)" opacity="0.9">
             <rect x="104.5" y="31.5" width="4" height="4" rx="0.5" />
             <rect x="111.5" y="31.5" width="4" height="4" rx="0.5" />
             <rect x="104.5" y="38.5" width="4" height="4" rx="0.5" />
@@ -110,7 +110,7 @@ function JourneySceneQR({ active }: { active: boolean }) {
           <motion.div
             className="absolute rounded-sm pointer-events-none"
             style={{ top: "27%", left: "46.5%", width: "7.5%", height: "17%" }}
-            animate={{ boxShadow: ["0 0 0px rgba(6,182,212,0)", "0 0 12px rgba(6,182,212,0.8)", "0 0 0px rgba(6,182,212,0)"] }}
+            animate={{ boxShadow: ["0 0 0px rgba(249,115,22,0)", "0 0 12px rgba(249,115,22,0.8)", "0 0 0px rgba(249,115,22,0)"] }}
             transition={{ duration: 1.8, repeat: Infinity }}
           />
         )}
@@ -118,7 +118,7 @@ function JourneySceneQR({ active }: { active: boolean }) {
 
       <div className="flex flex-col items-center gap-2 w-full">
         <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border"
-             style={{ background: "rgba(6,182,212,0.08)", borderColor: "rgba(6,182,212,0.3)" }}>
+             style={{ background: "rgba(249,115,22,0.08)", borderColor: "rgba(249,115,22,0.3)" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-accent animate-pulse" />
           <span className="text-xs font-medium text-cyan-accent">Honda Civic 2022 · Placa ABC-1D23</span>
         </div>
@@ -141,14 +141,14 @@ function JourneySceneVoice({ active }: { active: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-5">
       <div className="relative w-20 h-20 rounded-[28px] border flex items-center justify-center"
-           style={{ background: "hsl(244 47% 20%)", borderColor: "rgba(6,182,212,0.4)" }}>
+           style={{ background: "hsl(0 0% 7%)", borderColor: "rgba(249,115,22,0.4)" }}>
         <Smartphone className="w-9 h-9 text-cyan-accent" />
         {active && (
           <motion.div
             animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
             transition={{ duration: 2, repeat: Infinity }}
             className="absolute inset-0 rounded-[28px]"
-            style={{ border: "2px solid hsl(189 94% 43%)" }}
+            style={{ border: "2px solid hsl(25 95% 52%)" }}
           />
         )}
       </div>
@@ -411,9 +411,9 @@ export default function Landing() {
               <a href="#planos" className="text-sm font-medium text-gray-600 hover:text-indigo-primary transition-colors">Planos</a>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/painel/login" className="text-sm font-medium text-indigo-primary hover:text-indigo-800 transition-colors hidden sm:block">Login</a>
+              <a href="/painel/login" className="text-sm font-medium text-indigo-primary hover:text-gray-700 transition-colors hidden sm:block">Login</a>
               <a href={painelUrl} onClick={() => trackCTAClick("navbar")}
-                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-indigo-primary hover:bg-indigo-900 rounded-lg transition-all shadow-sm hover:shadow-md">
+                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-indigo-primary hover:bg-gray-800 rounded-lg transition-all shadow-sm hover:shadow-md">
                 Começar grátis
               </a>
             </div>
@@ -434,7 +434,7 @@ export default function Landing() {
           <motion.div
             animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.4, 0.2] }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-500/30 blur-[100px]"
+            className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-gray-500/20 blur-[100px]"
           />
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
         </div>
@@ -462,7 +462,7 @@ export default function Landing() {
                 className="text-5xl md:text-6xl xl:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight"
               >
                 Seu veículo fala por{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-accent to-blue-400">si mesmo</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-accent to-orange-300">si mesmo</span>
               </motion.h1>
 
               <motion.p
@@ -477,7 +477,7 @@ export default function Landing() {
                 className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
               >
                 <a href={painelUrl} onClick={() => trackCTAClick("hero")}
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] hover:-translate-y-1">
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-cyan-accent hover:bg-orange-400 rounded-xl transition-all shadow-[0_0_20px_rgba(249,115,22,0.4)] hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] hover:-translate-y-1">
                   Começar grátis
                 </a>
                 <a href="#demo" onClick={() => trackDemoClick()}
@@ -773,7 +773,7 @@ export default function Landing() {
             className="grid grid-cols-1 md:grid-cols-2 gap-8"
           >
             <motion.div variants={item} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center mb-6">
+              <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center mb-6">
                 <Clock className="w-7 h-7 text-indigo-primary" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">Voz em Português 24/7</h3>
@@ -781,7 +781,7 @@ export default function Landing() {
             </motion.div>
 
             <motion.div variants={item} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 rounded-xl bg-cyan-50 flex items-center justify-center mb-6">
+              <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center mb-6">
                 <Database className="w-7 h-7 text-cyan-accent" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">CRM Automático</h3>
@@ -996,7 +996,7 @@ export default function Landing() {
                 <li className="flex items-center gap-3 opacity-50"><Minus className="w-5 h-5 text-gray-400 flex-shrink-0" /><span className="text-gray-500">ERP de frota e consignados</span></li>
               </ul>
               <a href={painelUrl} onClick={() => trackPlanClick("starter")}
-                className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors mb-3">
+                className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-orange-50 transition-colors mb-3">
                 Começar agora
               </a>
               <a href="#planos" onClick={(e) => { e.preventDefault(); document.querySelector(".bg-indigo-primary.rounded-3xl")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}
@@ -1045,7 +1045,7 @@ export default function Landing() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-cyan-accent flex-shrink-0" /><span className="text-white">Suporte Prioritário</span></li>
               </ul>
               <a href={painelUrl} onClick={() => trackPlanClick("pro")}
-                className="w-full block text-center px-6 py-3 rounded-xl bg-cyan-accent text-indigo-primary font-bold hover:bg-cyan-400 transition-colors shadow-lg mb-3">
+                className="w-full block text-center px-6 py-3 rounded-xl bg-cyan-accent text-white font-bold hover:bg-orange-400 transition-colors shadow-lg mb-3">
                 Começar agora
               </a>
               <a href="#lista-espera"
@@ -1092,7 +1092,7 @@ export default function Landing() {
                 <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-indigo-primary flex-shrink-0" /><span className="text-gray-600">Consulta Documental</span></li>
               </ul>
               <a href={painelUrl} onClick={() => trackPlanClick("full")}
-                className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-indigo-50 transition-colors mb-3">
+                className="w-full block text-center px-6 py-3 rounded-xl border-2 border-indigo-primary text-indigo-primary font-bold hover:bg-orange-50 transition-colors mb-3">
                 Começar agora
               </a>
               <a href="#lista-espera"
@@ -1112,7 +1112,7 @@ export default function Landing() {
             viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.6 }}
             className="text-center mb-10"
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-primary text-sm font-semibold mb-4">Acesso Antecipado</span>
+            <span className="inline-block px-4 py-1.5 rounded-full bg-orange-50 text-cyan-accent text-sm font-semibold mb-4">Acesso Antecipado</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Entre na lista e comece antes</h2>
             <p className="text-lg text-gray-500">Deixe seu contato e nossa equipe entra em touch para configurar tudo para você — sem compromisso.</p>
           </motion.div>
@@ -1120,12 +1120,12 @@ export default function Landing() {
           {leadFormState === "success" ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }}
-              className="flex flex-col items-center gap-4 py-12 px-8 bg-indigo-50 rounded-2xl text-center"
+              className="flex flex-col items-center gap-4 py-12 px-8 bg-orange-50 rounded-2xl text-center"
             >
               <CheckCircle2 className="w-14 h-14 text-cyan-accent" />
               <h3 className="text-2xl font-bold text-gray-900">Recebemos seu contato!</h3>
               <p className="text-gray-600 max-w-md">Nossa equipe vai entrar em contato em breve. Enquanto isso, você já pode criar sua conta gratuitamente.</p>
-              <a href={painelUrl} className="mt-2 inline-flex items-center justify-center px-8 py-3 text-base font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-md">
+              <a href={painelUrl} className="mt-2 inline-flex items-center justify-center px-8 py-3 text-base font-bold text-white bg-cyan-accent hover:bg-orange-400 rounded-xl transition-all shadow-md">
                 Criar conta grátis
               </a>
             </motion.div>
@@ -1161,7 +1161,7 @@ export default function Landing() {
               )}
               <button
                 type="submit" disabled={leadFormState === "loading"}
-                className="mt-2 inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-2 inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold text-white bg-cyan-accent hover:bg-orange-400 rounded-xl transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {leadFormState === "loading" ? (
                   <span className="flex items-center gap-2">
@@ -1194,7 +1194,7 @@ export default function Landing() {
           </p>
           <div className="flex flex-col items-center justify-center">
             <a href={painelUrl} onClick={() => trackCTAClick("cta_final")}
-              className="inline-flex items-center justify-center px-10 py-5 text-lg font-bold text-indigo-primary bg-cyan-accent hover:bg-cyan-400 rounded-xl transition-all shadow-[0_0_30px_rgba(6,182,212,0.5)] hover:shadow-[0_0_40px_rgba(6,182,212,0.7)] hover:-translate-y-1 w-full sm:w-auto">
+              className="inline-flex items-center justify-center px-10 py-5 text-lg font-bold text-white bg-cyan-accent hover:bg-orange-400 rounded-xl transition-all shadow-[0_0_30px_rgba(249,115,22,0.5)] hover:shadow-[0_0_40px_rgba(249,115,22,0.7)] hover:-translate-y-1 w-full sm:w-auto">
               Criar conta grátis
             </a>
             <p className="mt-4 text-sm text-gray-400 flex items-center gap-2">

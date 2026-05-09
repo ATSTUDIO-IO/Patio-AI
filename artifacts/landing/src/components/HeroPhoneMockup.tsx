@@ -14,8 +14,8 @@ const DEMO_MSGS: ChatMsg[] = [
   { from: "ai",   text: "Claro! Me fala o modelo e o ano. Qual seu nome?", ms: 5600 },
 ];
 
-const INDIGO = "hsl(244 47% 20%)";
-const CYAN   = "hsl(189 94% 43%)";
+const INDIGO = "hsl(0 0% 7%)";
+const CYAN   = "hsl(25 95% 52%)";
 
 function PhaseQR() {
   return (
@@ -42,7 +42,7 @@ function PhaseQR() {
         ))}
 
         <motion.div
-          animate={{ boxShadow: [`0 0 0px rgba(6,182,212,0)`, `0 0 22px rgba(6,182,212,0.55)`, `0 0 0px rgba(6,182,212,0)`] }}
+          animate={{ boxShadow: [`0 0 0px rgba(249,115,22,0)`, `0 0 22px rgba(249,115,22,0.55)`, `0 0 0px rgba(249,115,22,0)`] }}
           transition={{ duration: 2, repeat: Infinity }}
           className="bg-white p-2.5 rounded-lg"
         >
@@ -60,7 +60,7 @@ function PhaseQR() {
       <motion.div
         initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border"
-        style={{ background: "rgba(6,182,212,0.08)", borderColor: "rgba(6,182,212,0.3)" }}
+        style={{ background: "rgba(249,115,22,0.08)", borderColor: "rgba(249,115,22,0.3)" }}
       >
         <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: CYAN }} />
         <span className="text-[9px] font-semibold" style={{ color: CYAN }}>Honda Civic 2022 · R$89.900</span>
@@ -137,12 +137,12 @@ function PhaseChat({ visible }: { visible: number[] }) {
 }
 
 const CONFETTI_DOTS = [
-  { angle: 0,   color: "#06b6d4", r: 3,   dist: 44 },
+  { angle: 0,   color: "#f97316", r: 3,   dist: 44 },
   { angle: 40,  color: "#34d399", r: 2.5, dist: 38 },
   { angle: 80,  color: "#a78bfa", r: 3,   dist: 46 },
   { angle: 120, color: "#f472b6", r: 2,   dist: 36 },
   { angle: 160, color: "#fbbf24", r: 3,   dist: 42 },
-  { angle: 200, color: "#06b6d4", r: 2,   dist: 40 },
+  { angle: 200, color: "#f97316", r: 2,   dist: 40 },
   { angle: 240, color: "#34d399", r: 3,   dist: 44 },
   { angle: 280, color: "#f472b6", r: 2.5, dist: 38 },
   { angle: 320, color: "#fbbf24", r: 2,   dist: 42 },

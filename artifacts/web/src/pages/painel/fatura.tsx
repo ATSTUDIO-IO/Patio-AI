@@ -42,7 +42,7 @@ export default function PainelFatura() {
     <PainelLayout>
       <PageHeader title="Faturamento" subtitle="Ciclos de cobrança mensais" />
       <div className="p-6 space-y-6 max-w-3xl">
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl p-6 text-white">
+        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 text-white">
           <p className="text-white/70 text-sm font-medium mb-1">Fatura do Mês Atual</p>
           {isLoadingAtual ? (
             <p className="text-2xl font-bold">Carregando...</p>
@@ -121,9 +121,9 @@ export default function PainelFatura() {
           )}
         </div>
 
-        <div className="bg-indigo-50 rounded-2xl p-4 space-y-3">
-          <p className="text-sm text-indigo-700 font-medium">ℹ️ Como funciona a cobrança</p>
-          <p className="text-xs text-indigo-600 leading-relaxed">
+        <div className="bg-orange-50 rounded-2xl p-4 space-y-3">
+          <p className="text-sm text-orange-700 font-medium">ℹ️ Como funciona a cobrança</p>
+          <p className="text-xs text-orange-700 leading-relaxed">
             Cada plano inclui uma cota mensal de conversas. Ao ultrapassar a cota, há um buffer de 20 conversas adicionais incluídas.
             Conversas acima da cota são cobradas a R$0,75 por conversa. O agente é bloqueado ao esgotar o buffer.
           </p>
@@ -133,10 +133,10 @@ export default function PainelFatura() {
               { plano: "Pro", preco: "R$249,90", cotas: "200 conv./mês" },
               { plano: "Full", preco: "R$449,90", cotas: "500 conv./mês" },
             ].map((p) => (
-              <div key={p.plano} className="bg-white rounded-xl p-3 text-center border border-indigo-100">
-                <p className="text-xs font-bold text-indigo-800">{p.plano}</p>
-                <p className="text-sm font-semibold text-indigo-700 mt-1">{p.preco}</p>
-                <p className="text-xs text-indigo-500">{p.cotas}</p>
+              <div key={p.plano} className="bg-white rounded-xl p-3 text-center border border-orange-100">
+                <p className="text-xs font-bold text-gray-900">{p.plano}</p>
+                <p className="text-sm font-semibold text-orange-600 mt-1">{p.preco}</p>
+                <p className="text-xs text-orange-500">{p.cotas}</p>
               </div>
             ))}
           </div>

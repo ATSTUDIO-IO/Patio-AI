@@ -66,7 +66,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* LIGHT MODE — Tech Pátio: índigo + ciano + DM Sans */
+/* LIGHT MODE — Tech Pátio: preto + laranja + DM Sans */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -74,37 +74,37 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 210 20% 96%;
-  --foreground: 244 47% 14%;
-  --border: 214 20% 88%;
+  --background: 0 0% 97%;
+  --foreground: 0 0% 10%;
+  --border: 0 0% 88%;
   --card: 0 0% 100%;
-  --card-foreground: 244 47% 14%;
-  --card-border: 214 20% 88%;
-  --sidebar: 244 47% 18%;
+  --card-foreground: 0 0% 10%;
+  --card-border: 0 0% 88%;
+  --sidebar: 0 0% 7%;
   --sidebar-foreground: 0 0% 98%;
-  --sidebar-border: 244 30% 25%;
-  --sidebar-primary: 189 94% 43%;
-  --sidebar-primary-foreground: 244 47% 10%;
-  --sidebar-accent: 244 30% 28%;
+  --sidebar-border: 0 0% 15%;
+  --sidebar-primary: 25 95% 52%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 13%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 189 94% 43%;
+  --sidebar-ring: 25 95% 52%;
   --popover: 0 0% 100%;
-  --popover-foreground: 244 47% 14%;
-  --popover-border: 214 20% 88%;
-  --primary: 244 47% 20%;
+  --popover-foreground: 0 0% 10%;
+  --popover-border: 0 0% 88%;
+  --primary: 0 0% 7%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 214 20% 92%;
-  --secondary-foreground: 244 47% 14%;
-  --muted: 214 20% 93%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 189 94% 43%;
-  --accent-foreground: 244 47% 10%;
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 0 0% 93%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 25 95% 52%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --input: 214 20% 88%;
-  --ring: 189 94% 43%;
-  --chart-1: 189 94% 43%;
-  --chart-2: 244 47% 50%;
+  --input: 0 0% 88%;
+  --ring: 25 95% 52%;
+  --chart-1: 25 95% 52%;
+  --chart-2: 0 0% 30%;
   --chart-3: 280 65% 60%;
   --chart-4: 38 92% 50%;
   --chart-5: 0 84% 60%;
@@ -113,14 +113,14 @@
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
   --radius: .5rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(244 47% 20% / 0.05);
-  --shadow-xs: 0px 2px 0px 0px hsl(244 47% 20% / 0.05);
-  --shadow-sm: 0px 2px 0px 0px hsl(244 47% 20% / 0.05), 0px 1px 2px -1px hsl(244 47% 20% / 0.08);
-  --shadow: 0px 2px 0px 0px hsl(244 47% 20% / 0.05), 0px 1px 2px -1px hsl(244 47% 20% / 0.08);
-  --shadow-md: 0px 2px 0px 0px hsl(244 47% 20% / 0.05), 0px 2px 4px -1px hsl(244 47% 20% / 0.08);
-  --shadow-lg: 0px 2px 0px 0px hsl(244 47% 20% / 0.05), 0px 4px 6px -1px hsl(244 47% 20% / 0.08);
-  --shadow-xl: 0px 2px 0px 0px hsl(244 47% 20% / 0.05), 0px 8px 10px -1px hsl(244 47% 20% / 0.08);
-  --shadow-2xl: 0px 2px 0px 0px hsl(244 47% 20% / 0.08);
+  --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.08);
+  --shadow: 0px 2px 0px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.08);
+  --shadow-md: 0px 2px 0px 0px hsl(0 0% 0% / 0.05), 0px 2px 4px -1px hsl(0 0% 0% / 0.08);
+  --shadow-lg: 0px 2px 0px 0px hsl(0 0% 0% / 0.05), 0px 4px 6px -1px hsl(0 0% 0% / 0.08);
+  --shadow-xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.05), 0px 8px 10px -1px hsl(0 0% 0% / 0.08);
+  --shadow-2xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.08);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -173,11 +173,11 @@
     cursor: not-allowed;
   }
 
-  .indigo-primary { color: hsl(244 47% 20%); }
-  .cyan-accent { color: hsl(189 94% 43%); }
-  .bg-indigo-primary { background-color: hsl(244 47% 20%); }
-  .bg-cyan-accent { background-color: hsl(189 94% 43%); }
-  .border-cyan-accent { border-color: hsl(189 94% 43%); }
+  .indigo-primary { color: hsl(0 0% 7%); }
+  .cyan-accent { color: hsl(25 95% 52%); }
+  .bg-indigo-primary { background-color: hsl(0 0% 7%); }
+  .bg-cyan-accent { background-color: hsl(25 95% 52%); }
+  .border-cyan-accent { border-color: hsl(25 95% 52%); }
 }
 
 @layer utilities {

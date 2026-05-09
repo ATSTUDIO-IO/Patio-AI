@@ -34,7 +34,7 @@ function InputField({
       <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
       <input
         {...props}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
       />
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
@@ -99,7 +99,7 @@ function ToggleField({
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 ${checked ? "bg-indigo-600" : "bg-gray-200"}`}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 ${checked ? "bg-orange-500" : "bg-gray-200"}`}
       >
         <span
           className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out ${checked ? "translate-x-5" : "translate-x-0"}`}
@@ -416,7 +416,7 @@ export default function PainelConfiguracoes() {
             <button
               type="submit"
               disabled={updateLoja.isPending}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60"
+              className="px-4 py-2 bg-orange-600 text-white text-sm font-semibold rounded-xl hover:bg-orange-700 transition-colors disabled:opacity-60"
             >
               {updateLoja.isPending ? "Salvando..." : "Salvar Dados da Loja"}
             </button>
@@ -532,7 +532,7 @@ export default function PainelConfiguracoes() {
               </>
             )}
 
-            <div className="bg-indigo-50 rounded-xl p-3 text-xs text-indigo-700">
+            <div className="bg-orange-50 rounded-xl p-3 text-xs text-orange-700">
               <span className="font-semibold">Prévia da apresentação: </span>
               "Olá! Eu sou {agenteForm.nome_agente || "o Agente"}, da {user?.loja?.nome_fantasia ?? "nossa loja"}!
               {agenteForm.aceita_troca ? " Aceitamos troca de veículos." : ""} Como posso te ajudar?"
@@ -684,13 +684,13 @@ export default function PainelConfiguracoes() {
           subtitle="Configure o agente de vendas pelo WhatsApp (Meta Cloud API)"
         >
           <form onSubmit={handleSaveWhatsapp} className="space-y-4">
-            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3 text-xs text-cyan-800">
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-xs text-orange-800">
               <p className="font-semibold mb-1">Como configurar:</p>
               <ol className="list-decimal list-inside space-y-0.5">
                 <li>Acesse o Meta for Developers e crie um app WhatsApp Business.</li>
                 <li>Copie o <strong>Phone Number ID</strong> do número cadastrado.</li>
                 <li>Gere um <strong>Access Token</strong> permanente na plataforma Meta.</li>
-                <li>Configure o webhook da Meta para: <code className="bg-cyan-100 px-1 rounded">/api/whatsapp/webhook</code></li>
+                <li>Configure o webhook da Meta para: <code className="bg-orange-100 px-1 rounded">/api/whatsapp/webhook</code></li>
                 <li>Use o <strong>Verify Token</strong> definido no ambiente do servidor.</li>
               </ol>
             </div>
