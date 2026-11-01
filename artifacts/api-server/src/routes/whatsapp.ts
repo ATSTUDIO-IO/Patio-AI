@@ -44,6 +44,27 @@ interface WhatsAppSession {
 const sessions = new Map<string, WhatsAppSession>();
 const SESSION_TTL_MS = 30 * 60 * 1000;
 
+const INVENTORY_CACHE_TTL_MS = 5 * 60 * 1000;
+
+interface InventarioCacheEntry {
+  data: VeiculoInventario[];
+  cachedAt: number;
+}
+
+const inventarioCache = new Map<string, InventarioCacheEntry>();
+
+async function getInventarioCached(lojaId: string): Promise<VeiculoInventario[]> {
+  const cached = inventarioCache.get(lojaId);
+  const agora = Date.now();
+  if (cached && agora - cached.cachedAt < INVENTORY_CACHE_TTL_MS) {
+    return cached.data;
+  }
+  const data = await buscarInventario(lojaId);
+  inventarioCache.set(lojaId, { data, cachedAt: agora });
+  logger.debug({ lojaId, count: data.length }, "Cache de inventário atualizado");
+  return data;
+}
+
 async function persistirSessaoDB(
   from: string,
   lojaId: string,
@@ -611,7 +632,7 @@ async function processWhatsAppMessage(payload: unknown): Promise<void> {
   let session = sessions.get(sessionKey);
 
   if (!session) {
-    const inventario = await buscarInventario(loja.id).catch(() => []);
+    const inventario = await getInventarioCached(loja.id).catch(() => []);
 
     const [conversa] = await db
       .insert(conversas)
@@ -682,6 +703,9 @@ async function processWhatsAppMessage(payload: unknown): Promise<void> {
     .from(mensagens)
     .where(eq(mensagens.conversaId, session.conversaId))
     .orderBy(asc(mensagens.criadoEm));
+
+  const inventarioAtualizado = await getInventarioCached(loja.id).catch(() => session.inventario);
+  session.inventario = inventarioAtualizado;
 
   const inventarioBloco = formatarInventarioParaPrompt(session.inventario);
   let systemPrompt = buildSystemPromptWhatsApp(loja, inventarioBloco);
@@ -795,7 +819,7 @@ export async function inicializarSessoes(): Promise<void> {
 
       if (sessions.has(sessionKey)) continue;
 
-      const inventario = await buscarInventario(sessaoDB.lojaId).catch(() => []);
+      const inventario = await getInventarioCached(sessaoDB.lojaId).catch(() => []);
 
       const ultimaMensagem = sessaoDB.ultimaMensagemEm.getTime();
       const tempoDecorrido = agora - ultimaMensagem;
