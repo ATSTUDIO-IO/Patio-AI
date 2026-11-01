@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,21 +21,24 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminLojaDetail from "@/pages/admin/loja-detail";
 import AdminBilling from "@/pages/admin/billing";
 import AdminInteligencia from "@/pages/admin/inteligencia";
+import { loginRedirect } from "@/lib/auth-navigation";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
 function ProtectedRoute({ component: Component, donoOnly = false }: { component: React.ComponentType; donoOnly?: boolean }) {
-  const { isAuthenticated, user } = useAuth();
-  if (!isAuthenticated) return <Redirect to="/painel/login" />;
+  const { isAuthenticated, user, sessionExpired } = useAuth();
+  const [path] = useLocation();
+  if (!isAuthenticated) return <Redirect to={loginRedirect(path + window.location.search, sessionExpired)} />;
   if (donoOnly && user?.perfil === "vendedor") return <Redirect to="/painel" />;
   return <Component />;
 }
 
 function AdminRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, user } = useAuth();
-  if (!isAuthenticated) return <Redirect to="/painel/login" />;
+  const { isAuthenticated, user, sessionExpired } = useAuth();
+  const [path] = useLocation();
+  if (!isAuthenticated) return <Redirect to={loginRedirect(path + window.location.search, sessionExpired)} />;
   if (user?.perfil !== "admin_patioai") return <Redirect to="/painel" />;
   return <Component />;
 }

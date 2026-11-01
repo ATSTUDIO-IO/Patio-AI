@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { PainelLayout, PageHeader } from "@/components/painel/layout";
-import { useCreateVeiculo, useUpdateVeiculo, useGetVeiculo } from "@workspace/api-client-react";
+import { useCreateVeiculo, useUpdateVeiculo, useGetVeiculo, authenticatedFetch, getGetVeiculoQueryKey, getListVeiculosQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { CreateVeiculoRequest, VeiculoDespesa, CategoriaDespesaVeiculo } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
+import { readVehicleDraft, vehicleDraftKey } from "@/lib/vehicle-draft";
 
 const CATEGORIA_LABELS: Record<CategoriaDespesaVeiculo, string> = {
   manutencao_mecanica: "Manutenção Mecânica",
@@ -44,9 +45,16 @@ export default function VeiculoForm() {
   const editId = params.id;
   const qc = useQueryClient();
   const { user, token } = useAuth();
+  const draftKey = vehicleDraftKey(user!.id, user!.loja_id ?? "", editId);
+  const [draft] = useState(() => {
+    try { return readVehicleDraft(sessionStorage, draftKey); } catch { return null; }
+  });
+  const initializedVehicle = useRef(false);
+  const saved = useRef(false);
+  const [draftWarning, setDraftWarning] = useState(false);
   const planoConfig = user?.plano_config;
   const temConsultaDocumental = planoConfig?.consulta_documental ?? false;
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState(draft?.form ?? EMPTY);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
   const [consultaStatus, setConsultaStatus] = useState<string | null>(null);
@@ -54,20 +62,21 @@ export default function VeiculoForm() {
 
   // Despesas state (only for edit mode)
   const [despesas, setDespesas] = useState<VeiculoDespesa[]>([]);
-  const [novaDespesaCategoria, setNovaDespesaCategoria] = useState<CategoriaDespesaVeiculo>("manutencao_mecanica");
-  const [novaDespesaDescricao, setNovaDespesaDescricao] = useState("");
-  const [novaDespesaValor, setNovaDespesaValor] = useState("");
-  const [novaDespesaData, setNovaDespesaData] = useState(new Date().toISOString().slice(0, 10));
+  const [novaDespesaCategoria, setNovaDespesaCategoria] = useState<CategoriaDespesaVeiculo>((draft?.expense.categoria as CategoriaDespesaVeiculo) ?? "manutencao_mecanica");
+  const [novaDespesaDescricao, setNovaDespesaDescricao] = useState(draft?.expense.descricao ?? "");
+  const [novaDespesaValor, setNovaDespesaValor] = useState(draft?.expense.valor ?? "");
+  const [novaDespesaData, setNovaDespesaData] = useState(draft?.expense.data ?? new Date().toISOString().slice(0, 10));
   const [addingDespesa, setAddingDespesa] = useState(false);
   const [despesaErro, setDespesaErro] = useState<string | null>(null);
 
-  const { data: veiculo } = useGetVeiculo(editId ?? "");
+  const { data: veiculo } = useGetVeiculo(editId ?? "", { query: { queryKey: getGetVeiculoQueryKey(editId ?? ""), enabled: !!editId } });
   const createMutation = useCreateVeiculo();
   const updateMutation = useUpdateVeiculo();
 
   useEffect(() => {
-    if (veiculo) {
-      setForm({
+    if (veiculo && !initializedVehicle.current) {
+      initializedVehicle.current = true;
+      if (!draft) setForm({
         placa: veiculo.placa,
         marca: veiculo.marca,
         modelo: veiculo.modelo,
@@ -89,7 +98,29 @@ export default function VeiculoForm() {
       });
       setDespesas(veiculo.despesas ?? []);
     }
-  }, [veiculo]);
+  }, [veiculo, draft]);
+
+  // Persist before a rejected request can unmount this form. The draft belongs
+  // to this user/store/vehicle and this browser tab, never to a shared account.
+  useLayoutEffect(() => {
+    if (saved.current || (editId && !draft && !initializedVehicle.current)) return;
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({
+        form,
+        expense: { categoria: novaDespesaCategoria, descricao: novaDespesaDescricao, valor: novaDespesaValor, data: novaDespesaData },
+      }));
+      setDraftWarning(false);
+    } catch {
+      setDraftWarning(true);
+    }
+  }, [draftKey, form, editId, draft, veiculo, novaDespesaCategoria, novaDespesaDescricao, novaDespesaValor, novaDespesaData]);
+
+  const discardDraft = () => {
+    saved.current = true;
+    try { sessionStorage.removeItem(draftKey); } catch {
+      // Storage can be disabled; it must not turn a successful save into an error.
+    }
+  };
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const val = e.target.type === "number" ? Number(e.target.value) : e.target.value;
@@ -105,7 +136,9 @@ export default function VeiculoForm() {
       } else {
         await createMutation.mutateAsync({ data: form });
       }
-      qc.invalidateQueries({ queryKey: ["/veiculos"] });
+      discardDraft();
+      qc.invalidateQueries({ queryKey: getListVeiculosQueryKey() });
+      if (editId) qc.invalidateQueries({ queryKey: getGetVeiculoQueryKey(editId) });
       setSucesso(true);
       setTimeout(() => setLocation("/painel/veiculos"), 1000);
     } catch (err: unknown) {
@@ -123,7 +156,7 @@ export default function VeiculoForm() {
     setAddingDespesa(true);
     setDespesaErro(null);
     try {
-      const resp = await fetch(`/api/veiculos/${editId}/despesas`, {
+      const resp = await authenticatedFetch(`/api/veiculos/${editId}/despesas`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -139,7 +172,7 @@ export default function VeiculoForm() {
       setNovaDespesaDescricao("");
       setNovaDespesaValor("");
       setNovaDespesaData(new Date().toISOString().slice(0, 10));
-      qc.invalidateQueries({ queryKey: [`/veiculos/${editId}`] });
+      qc.invalidateQueries({ queryKey: getGetVeiculoQueryKey(editId) });
     } catch {
       setDespesaErro("Erro ao conectar com o servidor.");
     } finally {
@@ -150,13 +183,13 @@ export default function VeiculoForm() {
   const handleDeleteDespesa = async (despesaId: string) => {
     if (!editId) return;
     try {
-      const resp = await fetch(`/api/veiculos/${editId}/despesas/${despesaId}`, {
+      const resp = await authenticatedFetch(`/api/veiculos/${editId}/despesas/${despesaId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (resp.ok) {
         setDespesas((prev) => prev.filter((d) => d.id !== despesaId));
-        qc.invalidateQueries({ queryKey: [`/veiculos/${editId}`] });
+        qc.invalidateQueries({ queryKey: getGetVeiculoQueryKey(editId) });
       }
     } catch {
       // silently ignore
@@ -176,13 +209,15 @@ export default function VeiculoForm() {
         title={editId ? "Editar Veículo" : "Novo Veículo"}
         subtitle={editId ? `${veiculo?.marca ?? ""} ${veiculo?.modelo ?? ""}` : "Cadastrar novo veículo"}
         actions={
-          <button onClick={() => setLocation("/painel/veiculos")} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50">
+          <button onClick={() => { discardDraft(); setLocation("/painel/veiculos"); }} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50">
             Cancelar
           </button>
         }
       />
       <div className="p-6">
         <div className="max-w-2xl mx-auto space-y-5">
+          {draft && !sucesso && <div role="status" className="p-3 bg-orange-50 border border-orange-200 rounded-xl text-orange-900 text-sm">Rascunho restaurado. Confira os dados e salve o veículo.</div>}
+          {draftWarning && <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">O navegador não permitiu preservar o rascunho. Copie os dados antes de sair desta página.</div>}
           {erro && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{erro}</div>}
           {sucesso && <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm">Salvo com sucesso! Redirecionando...</div>}
 
@@ -383,7 +418,7 @@ export default function VeiculoForm() {
                         setConsultaLoading(true);
                         setConsultaStatus(null);
                         try {
-                          const resp = await fetch(`/api/veiculos/${editId}/consulta-documental`, {
+                          const resp = await authenticatedFetch(`/api/veiculos/${editId}/consulta-documental`, {
                             method: "GET",
                             headers: { Authorization: `Bearer ${token}` },
                           });

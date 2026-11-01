@@ -1,1 +1,2 @@
 - [Atualizações dos contratos gerados](contract-dependency-upgrades.md) — atualizar gerador e validação exige validar contratos regenerados; versões compatíveis não são garantidas.
+- [Testes de navegador](browser-testing.md) — se o executor especializado estiver indisponível, usar Playwright local com Chromium do Nix, sem alterar dados reais.

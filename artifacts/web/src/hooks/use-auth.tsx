@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { createContext, useContext, useState, useCallback, useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { setAuthTokenGetter, setUnauthorizedHandler } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TOKEN_KEY = "patioai_token";
 const USER_KEY = "patioai_user";
@@ -45,6 +46,7 @@ type AuthContextType = {
   user: UserInfo | null;
   token: string | null;
   isAuthenticated: boolean;
+  sessionExpired: boolean;
   setAuth: (token: string, user: UserInfo) => void;
   clearAuth: () => void;
 };
@@ -52,34 +54,70 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState<UserInfo | null>(() => {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
     try { return JSON.parse(raw); } catch { return null; }
   });
+  const tokenRef = useRef(token);
 
   const setAuth = useCallback((newToken: string, newUser: UserInfo) => {
+    void queryClient.cancelQueries();
+    queryClient.clear();
+    tokenRef.current = newToken;
     localStorage.setItem(TOKEN_KEY, newToken);
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
-  }, []);
+    setSessionExpired(false);
+  }, [queryClient]);
 
   const clearAuth = useCallback(() => {
+    tokenRef.current = null;
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
-  }, []);
+    void queryClient.cancelQueries();
+    queryClient.clear();
+  }, [queryClient]);
 
-  useEffect(() => {
+  const expireSession = useCallback((rejectedToken: string) => {
+    if (!rejectedToken || tokenRef.current !== rejectedToken) return;
+    setSessionExpired(true);
+    clearAuth();
+  }, [clearAuth]);
+
+  useLayoutEffect(() => {
     setAuthTokenGetter(() => localStorage.getItem(TOKEN_KEY));
-    return () => setAuthTokenGetter(null);
-  }, []);
+    setUnauthorizedHandler(expireSession);
+    return () => {
+      setAuthTokenGetter(null);
+      setUnauthorizedHandler(null);
+    };
+  }, [expireSession]);
+
+  // A stored token is not proof of a live server session. Keep drafts mounted
+  // until the server replies so a rejected session can be resumed after login.
+  useEffect(() => {
+    if (!token) return;
+    const controller = new AbortController();
+    fetch(`${import.meta.env.BASE_URL}api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    }).then((response) => {
+      if (response.status === 401) expireSession(token);
+    }).catch(() => {
+      // A network failure is not evidence that the credentials are invalid.
+    });
+    return () => controller.abort();
+  }, [token, expireSession]);
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, setAuth, clearAuth }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token && !!user, sessionExpired, setAuth, clearAuth }}>
       {children}
     </AuthContext.Provider>
   );

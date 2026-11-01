@@ -17,6 +17,33 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _unauthorizedHandler: ((token: string) => void) | null = null;
+
+/** The rejected request's token lets consumers ignore responses from old sessions. */
+export function setUnauthorizedHandler(handler: ((token: string) => void) | null): void {
+  _unauthorizedHandler = handler;
+}
+
+/** Native Response API for protected callers that don't use generated hooks. */
+export async function authenticatedFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, init.headers);
+  if (_authTokenGetter && !headers.has("authorization")) {
+    const token = await _authTokenGetter();
+    if (token) headers.set("authorization", `Bearer ${token}`);
+  }
+  const response = await fetch(input, { ...init, headers });
+  const authorization = headers.get("authorization");
+  // Incorrect credentials on a public login must not invalidate another session.
+  const path = resolveUrl(input).split("?")[0];
+  if (response.status === 401 && authorization?.startsWith("Bearer ") &&
+      !/\/auth\/(login|register)\/?$/.test(path)) {
+    _unauthorizedHandler?.(authorization.slice(7));
+  }
+  return response;
+}
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -360,7 +387,7 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  const response = await authenticatedFetch(input, { ...init, method, headers });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
