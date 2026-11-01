@@ -100,6 +100,15 @@ const agenteRateLimit = rateLimit({
   message: { error: "Muitas requisições. Tente novamente em alguns instantes." },
 });
 
+const loginRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { error: "Muitas tentativas de login. Tente novamente em 15 minutos." },
+});
+
 const landingChatRateLimit = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
@@ -117,6 +126,7 @@ const whatsappWebhookRateLimit = rateLimit({
 });
 
 app.use("/api/agente", agenteRateLimit);
+app.use("/api/auth/login", loginRateLimit);
 app.use("/api/landing/chat", landingChatRateLimit);
 
 // Webhook rate limit scoped to POST only — GET /webhook is used by Meta's

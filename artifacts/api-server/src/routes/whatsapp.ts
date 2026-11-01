@@ -850,6 +850,9 @@ function validarAssinaturaWebhook(req: Request & { rawBody?: Buffer }): boolean 
   const appSecret = process.env.WHATSAPP_APP_SECRET;
 
   if (!appSecret) {
+    if (process.env.NODE_ENV !== "development") {
+      return false;
+    }
     logger.warn(
       "WHATSAPP_APP_SECRET não configurado — validação de assinatura desabilitada (modo desenvolvimento)",
     );
@@ -893,12 +896,18 @@ router.get("/whatsapp/webhook", (req, res): void => {
     logger.info("WhatsApp webhook verificado com sucesso");
     res.status(200).send(challenge as string);
   } else {
-    logger.warn({ mode, token }, "Falha na verificação do webhook WhatsApp");
+    logger.warn({ mode }, "Falha na verificação do webhook WhatsApp");
     res.sendStatus(403);
   }
 });
 
 router.post("/whatsapp/webhook", (req: Request & { rawBody?: Buffer }, res): void => {
+  if (!process.env.WHATSAPP_APP_SECRET && process.env.NODE_ENV !== "development") {
+    logger.error("Webhook WhatsApp indisponível: WHATSAPP_APP_SECRET não configurado");
+    res.status(503).json({ error: "Webhook WhatsApp não configurado." });
+    return;
+  }
+
   if (!validarAssinaturaWebhook(req)) {
     logger.warn("Webhook rejeitado: assinatura inválida ou ausente");
     res.sendStatus(401);
